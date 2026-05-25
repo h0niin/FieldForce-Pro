@@ -12,7 +12,7 @@ import { useWorkOrderAttachments, useUploadWorkOrderAttachment, useDeleteWorkOrd
 import { useCreateAppointment } from '@/hooks/use-appointments';
 import { useUsers } from '@/hooks/use-users';
 import type { WorkOrderLineItem, WorkOrderNote, WorkOrderAttachment } from '@/types/models.types';
-import { useSlaTimer } from '@/hooks/use-sla-timers';
+import { useSlaTimers } from '@/hooks/use-sla-timers';
 import { SlaTimerBadge } from '@/components/work-orders/SlaTimerBadge';
 import PageHeader from '@/components/common/PageHeader';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -67,7 +67,8 @@ export default function WorkOrderDetailPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   const { data: workOrder, isLoading } = useWorkOrder(id!);
-  const { data: slaTimer } = useSlaTimer(id!);
+  const { data: slaTimers } = useSlaTimers(id!);
+  const { data: feedbackData, isLoading: feedbackLoading } = useWorkOrderFeedback(id!);
   const { data: lineItems, isLoading: lineItemsLoading } = useWorkOrderLineItems(id!);
   const { data: notes, isLoading: notesLoading } = useWorkOrderNotes(id!);
   const { data: attachments, isLoading: attachmentsLoading } = useWorkOrderAttachments(id!);
@@ -579,9 +580,23 @@ export default function WorkOrderDetailPage() {
         </Card>
       )}
 
-      {slaTimer && (
-        <div style={{ marginBottom: 16 }}>
-          <SlaTimerBadge timer={slaTimer} />
+      {slaTimers && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {slaTimers.acceptance && (
+            <SlaTimerBadge timer={slaTimers.acceptance} label="Acceptance SLA" compact={slaTimers.acceptance.status.startsWith('completed')} />
+          )}
+          {slaTimers.travel && (
+            <SlaTimerBadge timer={slaTimers.travel} label="Travel SLA" compact={slaTimers.travel.status.startsWith('completed')} />
+          )}
+          {slaTimers.on_site_prep && (
+            <SlaTimerBadge timer={slaTimers.on_site_prep} label="On-Site Prep SLA" compact={slaTimers.on_site_prep.status.startsWith('completed')} />
+          )}
+          {slaTimers.work_completion && (
+            <SlaTimerBadge timer={slaTimers.work_completion} label="Work Completion SLA" />
+          )}
+          {slaTimers.total_resolution && (
+            <SlaTimerBadge timer={slaTimers.total_resolution} label="Total Resolution SLA" compact={!!slaTimers.work_completion} />
+          )}
         </div>
       )}
 

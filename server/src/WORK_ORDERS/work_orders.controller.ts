@@ -22,6 +22,7 @@ import { Permissions } from '../shared/decorator/permission.decorator';
 import { AutoInvoiceService } from '../INVOICES/auto_invoice.service';
 import { DocumentApprovalsService } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.service';
 import { ApprovalActionEnum } from '../shared/enums/workflow.enum';
+import { WorkOrderTechnicianSessionsService } from '../WORK_ORDER_TECHNICIAN_SESSIONS/work_order_technician_sessions.service';
 
 @ApiTags('Work Orders')
 @ApiBearerAuth()
@@ -31,6 +32,7 @@ export class WorkOrdersController {
     private readonly workOrdersService: WorkOrdersService,
     private readonly autoInvoiceService: AutoInvoiceService,
     private readonly documentApprovalsService: DocumentApprovalsService,
+    private readonly sessionsService: WorkOrderTechnicianSessionsService,
   ) {}
 
   @Get()
@@ -140,6 +142,16 @@ export class WorkOrdersController {
     @Body() dto: UpdateWorkOrderDto,
   ) {
     const workOrder = await this.workOrdersService.update(id, tenantId, dto);
+
+    // When a technician is assigned, create session + start acceptance SLA timer
+    if (dto.assigned_to) {
+      try {
+        await this.sessionsService.getOrCreateSession(tenantId, id, dto.assigned_to);
+      } catch {
+        // Non-fatal — session may already exist
+      }
+    }
+
     return DataResponseDto.success(workOrder, 'Work order updated successfully');
   }
 

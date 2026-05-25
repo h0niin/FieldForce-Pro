@@ -216,6 +216,15 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
         name: 'service_appointments: restore default on status',
         sql: `ALTER TABLE service_appointments ALTER COLUMN status SET DEFAULT 'scheduled';`,
       },
+      // ── SLA Timers: add timer_type column ─────────────────────────────────
+      {
+        name: 'sla_timers: add timer_type column',
+        sql: `ALTER TABLE sla_timers ADD COLUMN IF NOT EXISTS timer_type VARCHAR(20) DEFAULT 'work_completion';`,
+      },
+      {
+        name: 'sla_timers: backfill timer_type for existing rows',
+        sql: `UPDATE sla_timers SET timer_type = 'work_completion' WHERE timer_type IS NULL;`,
+      },
 
       // ── companies: add new columns ─────────────────────────────────────────
       {

@@ -19,6 +19,14 @@ export enum SlaTimerStatus {
   COMPLETED_LATE = 'completed_late',
 }
 
+export enum SlaTimerType {
+  ACCEPTANCE = 'acceptance',
+  TRAVEL = 'travel',
+  ON_SITE_PREP = 'on_site_prep',
+  WORK_COMPLETION = 'work_completion',
+  TOTAL_RESOLUTION = 'total_resolution',
+}
+
 export enum SlaTimerSource {
   HISTORICAL_AVG = 'historical_avg',
   DEFAULT = 'default',
@@ -74,6 +82,13 @@ export class SlaTimer extends Model {
 
   @BelongsTo(() => WorkOrderTechnicianSession)
   session: WorkOrderTechnicianSession;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: false,
+    defaultValue: 'work_completion',
+  })
+  timer_type: string;
 
   @Column({
     type: DataType.STRING(100),

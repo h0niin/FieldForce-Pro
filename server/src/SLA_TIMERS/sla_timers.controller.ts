@@ -29,8 +29,8 @@ export class SlaTimersController {
     @TenantId() tenantId: string,
     @Param('workOrderId') workOrderId: string,
   ) {
-    const timer = await this.slaTimersService.getTimerByWorkOrder(tenantId, workOrderId);
-    return DataResponseDto.success(timer, 'SLA timer retrieved');
+    const timers = await this.slaTimersService.getTimersByWorkOrder(tenantId, workOrderId);
+    return DataResponseDto.success(timers, 'SLA timers retrieved');
   }
 
   @Get('stats')

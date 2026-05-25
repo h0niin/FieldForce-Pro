@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import { useWorkOrders, useDeleteWorkOrder } from '@/hooks/use-work-orders';
 import { useMyPendingApprovals, useProcessApproval } from '@/hooks/use-workflow';
 import { useMyAppointments } from '@/hooks/use-appointments';
-import { useSlaTimer } from '@/hooks/use-sla-timers';
+import { useSlaTimers } from '@/hooks/use-sla-timers';
 import { SlaTimerBadge } from '@/components/work-orders/SlaTimerBadge';
 import FieldWorkflowCard from '@/components/work-orders/FieldWorkflowCard';
 import type { WorkOrder } from '@/types/models.types';
@@ -77,10 +77,36 @@ const approvalStatusLabels: Record<string, string> = {
   SKIPPED: 'Skipped',
 };
 
+const TIMER_PRIORITY: Array<'acceptance' | 'travel' | 'on_site_prep' | 'work_completion'> = [
+  'acceptance', 'travel', 'on_site_prep', 'work_completion',
+];
+
+const TIMER_LABELS: Record<string, string> = {
+  acceptance: 'Acceptance',
+  travel: 'Travel',
+  on_site_prep: 'On-Site Prep',
+  work_completion: 'Work',
+  total_resolution: 'Total',
+};
+
 function SlaTimerCell({ workOrderId }: { workOrderId: string }) {
-  const { data: slaTimer } = useSlaTimer(workOrderId);
-  if (!slaTimer) return <span style={{ color: '#999' }}>-</span>;
-  return <SlaTimerBadge timer={slaTimer} compact />;
+  const { data: slaTimers } = useSlaTimers(workOrderId);
+  if (!slaTimers) return <span style={{ color: '#999' }}>-</span>;
+
+  // Show the first non-completed timer in priority order
+  for (const key of TIMER_PRIORITY) {
+    const timer = slaTimers[key];
+    if (timer && !timer.status.startsWith('completed')) {
+      return <SlaTimerBadge timer={timer} compact label={TIMER_LABELS[key]} />;
+    }
+  }
+
+  // All done — show work_completion result if available
+  if (slaTimers.work_completion) {
+    return <SlaTimerBadge timer={slaTimers.work_completion} compact label="Work" />;
+  }
+
+  return <span style={{ color: '#999' }}>-</span>;
 }
 
 export default function WorkOrderListPage() {
@@ -252,9 +278,11 @@ export default function WorkOrderListPage() {
     },
     {
       title: 'Assigned To',
-      dataIndex: 'assigned_to',
       key: 'assigned_to',
-      render: (assignee: string) => assignee || <span style={{ color: '#999' }}>-</span>,
+      render: (_: unknown, record: WorkOrder) => {
+        const a = (record as any).assignee;
+        return a ? `${a.first_name} ${a.last_name}`.trim() : <span style={{ color: '#999' }}>-</span>;
+      },
     },
     {
       title: 'Created',

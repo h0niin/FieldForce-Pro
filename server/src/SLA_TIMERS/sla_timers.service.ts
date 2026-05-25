@@ -5,7 +5,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { SlaTimer, SlaTimerStatus, SlaTimerSource } from './sla_timers.entity';
+import { SlaTimer, SlaTimerStatus, SlaTimerSource, SlaTimerType } from './sla_timers.entity';
 import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
 import { WorkOrderTechnicianSession } from '../WORK_ORDER_TECHNICIAN_SESSIONS/work_order_technician_sessions.entity';
 import { KEYNAMES } from '../shared/constants/keynames';
@@ -13,6 +13,11 @@ import { Op, Sequelize } from 'sequelize';
 
 /** Default SLA duration: 2 hours in milliseconds */
 const DEFAULT_SLA_MS = 2 * 60 * 60 * 1000;
+
+const DEFAULT_ACCEPTANCE_SLA_MS = 30 * 60 * 1000;      // 30 minutes
+const DEFAULT_TRAVEL_SLA_MS = 45 * 60 * 1000;          // 45 minutes
+const DEFAULT_ON_SITE_PREP_SLA_MS = 15 * 60 * 1000;    // 15 minutes
+const DEFAULT_TOTAL_RESOLUTION_SLA_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 /** Minimum number of historical samples required to use avg instead of default */
 const MIN_SAMPLE_COUNT = 3;
@@ -46,12 +51,12 @@ export class SlaTimersService {
     technicianId: string,
     sessionId: string,
   ): Promise<SlaTimer> {
-    // Check if a timer already exists for this work order
+    // Check if a work_completion timer already exists for this work order
     const existing = await this.slaTimerRepository.findOne({
-      where: { work_order_id: workOrderId, is_deleted: false },
+      where: { work_order_id: workOrderId, timer_type: SlaTimerType.WORK_COMPLETION, is_deleted: false },
     });
     if (existing) {
-      this.logger.warn(`SLA timer already exists for WO ${workOrderId}, skipping creation`);
+      this.logger.warn(`SLA work_completion timer already exists for WO ${workOrderId}, skipping creation`);
       return existing;
     }
 
@@ -81,6 +86,7 @@ export class SlaTimersService {
       work_order_id: workOrderId,
       technician_id: technicianId,
       session_id: sessionId,
+      timer_type: SlaTimerType.WORK_COMPLETION,
       category,
       priority,
       started_at: now,
@@ -203,16 +209,29 @@ export class SlaTimersService {
   }
 
   /**
-   * Get the active SLA timer for a work order.
+   * Get all SLA timers for a work order, grouped by type.
    */
-  async getTimerByWorkOrder(tenantId: string, workOrderId: string): Promise<SlaTimer | null> {
-    return this.slaTimerRepository.findOne({
+  async getTimersByWorkOrder(tenantId: string, workOrderId: string): Promise<{
+    acceptance: SlaTimer | null;
+    travel: SlaTimer | null;
+    on_site_prep: SlaTimer | null;
+    work_completion: SlaTimer | null;
+    total_resolution: SlaTimer | null;
+  }> {
+    const timers = await this.slaTimerRepository.findAll({
       where: {
         tenant_id: tenantId,
         work_order_id: workOrderId,
         is_deleted: false,
       },
     });
+    return {
+      acceptance: timers.find(t => t.timer_type === SlaTimerType.ACCEPTANCE) ?? null,
+      travel: timers.find(t => t.timer_type === SlaTimerType.TRAVEL) ?? null,
+      on_site_prep: timers.find(t => t.timer_type === SlaTimerType.ON_SITE_PREP) ?? null,
+      work_completion: timers.find(t => t.timer_type === SlaTimerType.WORK_COMPLETION) ?? null,
+      total_resolution: timers.find(t => t.timer_type === SlaTimerType.TOTAL_RESOLUTION) ?? null,
+    };
   }
 
   /**
@@ -228,7 +247,7 @@ export class SlaTimersService {
     avg_actual_duration_ms: number;
   }> {
     const all = await this.slaTimerRepository.findAll({
-      where: { tenant_id: tenantId, is_deleted: false },
+      where: { tenant_id: tenantId, timer_type: SlaTimerType.WORK_COMPLETION, is_deleted: false },
       attributes: ['status', 'actual_duration_ms'],
     });
 
@@ -328,12 +347,127 @@ export class SlaTimersService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
+  // Generic timer lifecycle (used by non-work_completion timers)
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  private static readonly TIMER_DEFAULTS: Record<string, number> = {
+    [SlaTimerType.ACCEPTANCE]: DEFAULT_ACCEPTANCE_SLA_MS,
+    [SlaTimerType.TRAVEL]: DEFAULT_TRAVEL_SLA_MS,
+    [SlaTimerType.ON_SITE_PREP]: DEFAULT_ON_SITE_PREP_SLA_MS,
+    [SlaTimerType.TOTAL_RESOLUTION]: DEFAULT_TOTAL_RESOLUTION_SLA_MS,
+    [SlaTimerType.WORK_COMPLETION]: DEFAULT_SLA_MS,
+  };
+
+  async createTimer(
+    tenantId: string,
+    workOrderId: string,
+    technicianId: string,
+    sessionId: string,
+    timerType: SlaTimerType,
+  ): Promise<SlaTimer> {
+    const existing = await this.slaTimerRepository.findOne({
+      where: { work_order_id: workOrderId, timer_type: timerType, is_deleted: false },
+    });
+    if (existing) return existing;
+
+    const durationMs = SlaTimersService.TIMER_DEFAULTS[timerType] ?? DEFAULT_SLA_MS;
+    const now = new Date();
+    const deadlineAt = new Date(now.getTime() + durationMs);
+
+    const timer = await this.slaTimerRepository.create({
+      tenant_id: tenantId,
+      work_order_id: workOrderId,
+      technician_id: technicianId,
+      session_id: sessionId,
+      timer_type: timerType,
+      started_at: now,
+      deadline_at: deadlineAt,
+      sla_duration_ms: durationMs,
+      source: SlaTimerSource.DEFAULT,
+      sample_count: 0,
+      status: SlaTimerStatus.RUNNING,
+    });
+
+    this.logger.log(
+      `SLA ${timerType} timer created for WO ${workOrderId}: ${Math.round(durationMs / 60000)}min`,
+    );
+    return timer;
+  }
+
+  async completeTimerByType(workOrderId: string, timerType: SlaTimerType): Promise<SlaTimer | null> {
+    const timer = await this.slaTimerRepository.findOne({
+      where: { work_order_id: workOrderId, timer_type: timerType, is_deleted: false },
+    });
+    if (!timer) return null;
+    if (['completed_on_time', 'completed_late'].includes(timer.status)) return timer;
+
+    const now = new Date();
+    const totalElapsedMs = now.getTime() - new Date(timer.started_at).getTime();
+    let finalPausedMs = Number(timer.total_paused_ms);
+    if (timer.paused_at) {
+      finalPausedMs += now.getTime() - new Date(timer.paused_at).getTime();
+    }
+    const actualDurationMs = totalElapsedMs - finalPausedMs;
+    const wasOnTime = actualDurationMs <= Number(timer.sla_duration_ms);
+
+    await timer.update({
+      completed_at: now,
+      actual_duration_ms: actualDurationMs,
+      total_paused_ms: finalPausedMs,
+      paused_at: null,
+      status: wasOnTime ? SlaTimerStatus.COMPLETED_ON_TIME : SlaTimerStatus.COMPLETED_LATE,
+    });
+
+    this.logger.log(
+      `SLA ${timerType} timer completed for WO ${workOrderId}: ` +
+      `${Math.round(actualDurationMs / 60000)}min (${wasOnTime ? 'ON TIME' : 'LATE'})`,
+    );
+    return timer.reload();
+  }
+
+  async pauseTimerByType(workOrderId: string, timerType: SlaTimerType): Promise<SlaTimer | null> {
+    const timer = await this.slaTimerRepository.findOne({
+      where: { work_order_id: workOrderId, timer_type: timerType, is_deleted: false },
+    });
+    if (!timer || timer.paused_at || ['completed_on_time', 'completed_late'].includes(timer.status)) {
+      return timer ?? null;
+    }
+    await timer.update({ paused_at: new Date(), status: SlaTimerStatus.PAUSED });
+    return timer.reload();
+  }
+
+  async resumeTimerByType(workOrderId: string, timerType: SlaTimerType): Promise<SlaTimer | null> {
+    const timer = await this.slaTimerRepository.findOne({
+      where: { work_order_id: workOrderId, timer_type: timerType, is_deleted: false },
+    });
+    if (!timer || !timer.paused_at) return timer ?? null;
+
+    const pauseDurationMs = Date.now() - new Date(timer.paused_at).getTime();
+    const newTotalPausedMs = Number(timer.total_paused_ms) + pauseDurationMs;
+    const newDeadline = new Date(new Date(timer.deadline_at).getTime() + pauseDurationMs);
+
+    const elapsedMs = Date.now() - new Date(timer.started_at).getTime() - newTotalPausedMs;
+    const percentUsed = elapsedMs / Number(timer.sla_duration_ms);
+    let newStatus = SlaTimerStatus.RUNNING;
+    if (percentUsed >= 1) newStatus = SlaTimerStatus.BREACHED;
+    else if (percentUsed >= 0.75) newStatus = SlaTimerStatus.WARNING;
+
+    await timer.update({
+      paused_at: null,
+      total_paused_ms: newTotalPausedMs,
+      deadline_at: newDeadline,
+      status: newStatus,
+    });
+    return timer.reload();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
   // Private helpers
   // ──────────────────────────────────────────────────────────────────────────────
 
   private async findActiveTimer(workOrderId: string): Promise<SlaTimer | null> {
     return this.slaTimerRepository.findOne({
-      where: { work_order_id: workOrderId, is_deleted: false },
+      where: { work_order_id: workOrderId, timer_type: SlaTimerType.WORK_COMPLETION, is_deleted: false },
     });
   }
 
@@ -406,7 +540,7 @@ export class SlaTimersService {
 
         // Check if there's an SLA timer for this session to subtract pause time
         const slaTimer = await this.slaTimerRepository.findOne({
-          where: { work_order_id: session.work_order_id, is_deleted: false },
+          where: { work_order_id: session.work_order_id, timer_type: SlaTimerType.WORK_COMPLETION, is_deleted: false },
           attributes: ['total_paused_ms'],
         });
 
@@ -429,9 +563,10 @@ export class SlaTimersService {
       const avgDurationMs = durations.reduce((a, b) => a + b, 0) / durations.length;
       const bufferedDurationMs = Math.round(avgDurationMs * HISTORICAL_BUFFER);
 
-      // Enforce reasonable bounds: minimum 15min, maximum 24hr
+      // Enforce reasonable bounds: minimum 1hr for work completion, maximum 24hr
+      const MIN_WORK_COMPLETION_MS = 60 * 60 * 1000;
       const finalDurationMs = Math.max(
-        15 * 60 * 1000,
+        MIN_WORK_COMPLETION_MS,
         Math.min(bufferedDurationMs, 24 * 60 * 60 * 1000),
       );
 

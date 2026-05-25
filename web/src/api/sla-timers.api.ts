@@ -1,12 +1,15 @@
 import api from './axios-instance';
 import type { ApiResponse } from '@/types/api.types';
 
+export type SlaTimerTypeValue = 'acceptance' | 'travel' | 'on_site_prep' | 'work_completion' | 'total_resolution';
+
 export interface SlaTimerData {
   id: string;
   tenant_id: string;
   work_order_id: string;
   technician_id: string;
   session_id: string;
+  timer_type: SlaTimerTypeValue;
   category: string | null;
   priority: string | null;
   started_at: string;
@@ -26,6 +29,14 @@ export interface SlaTimerData {
   updated_at: string;
 }
 
+export interface SlaTimersByWorkOrder {
+  acceptance: SlaTimerData | null;
+  travel: SlaTimerData | null;
+  on_site_prep: SlaTimerData | null;
+  work_completion: SlaTimerData | null;
+  total_resolution: SlaTimerData | null;
+}
+
 export interface SlaStatsData {
   total_timers: number;
   completed_on_time: number;
@@ -38,7 +49,7 @@ export interface SlaStatsData {
 
 export const slaTimersApi = {
   getByWorkOrder(workOrderId: string) {
-    return api.get<ApiResponse<SlaTimerData | null>>(`/sla-timers/work-order/${workOrderId}`);
+    return api.get<ApiResponse<SlaTimersByWorkOrder>>(`/sla-timers/work-order/${workOrderId}`);
   },
 
   getStats() {

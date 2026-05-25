@@ -48,7 +48,7 @@ import { useWorkOrderLineItems } from '@/hooks/use-work-order-line-items';
 import { ServiceLocationMap } from './ServiceLocationMap';
 import { workOrderAttachmentsApi } from '@/api/work-order-attachments.api';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSlaTimer } from '@/hooks/use-sla-timers';
+import { useSlaTimers } from '@/hooks/use-sla-timers';
 import { SlaTimerBadge } from './SlaTimerBadge';
 
 const { Text, Title } = Typography;
@@ -287,7 +287,7 @@ export function TechnicianWorkflowPanel({ workOrderId, workOrder, session, isLoa
   const markBeforePhotosMutation = useMarkBeforePhotos(workOrderId);
   const finishJobMutation      = useFinishJob(workOrderId);
 
-  const { data: slaTimer } = useSlaTimer(workOrderId);
+  const { data: slaTimers } = useSlaTimers(workOrderId);
 
   // Line items: WO items first, fall back to estimate items
   const { data: woLineItems }       = useWorkOrderLineItems(workOrderId);
@@ -465,9 +465,23 @@ export function TechnicianWorkflowPanel({ workOrderId, workOrder, session, isLoa
     <div>
       {stepHeader}
       
-      {slaTimer && (
-        <div style={{ marginBottom: 16 }}>
-          <SlaTimerBadge timer={slaTimer} />
+      {slaTimers && (
+        <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {slaTimers.acceptance && !slaTimers.acceptance.status.startsWith('completed') && (
+            <SlaTimerBadge timer={slaTimers.acceptance} label="Acceptance SLA" />
+          )}
+          {slaTimers.travel && !slaTimers.travel.status.startsWith('completed') && (
+            <SlaTimerBadge timer={slaTimers.travel} label="Travel SLA" />
+          )}
+          {slaTimers.on_site_prep && !slaTimers.on_site_prep.status.startsWith('completed') && (
+            <SlaTimerBadge timer={slaTimers.on_site_prep} label="On-Site Prep SLA" />
+          )}
+          {slaTimers.work_completion && (
+            <SlaTimerBadge timer={slaTimers.work_completion} label="Work Completion SLA" />
+          )}
+          {slaTimers.total_resolution && (
+            <SlaTimerBadge timer={slaTimers.total_resolution} label="Total Resolution SLA" compact />
+          )}
         </div>
       )}
 

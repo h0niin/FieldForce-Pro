@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { WorkOrderTechnicianSessionsController } from './work_order_technician_sessions.controller';
 import { WorkOrderTechnicianSessionsService } from './work_order_technician_sessions.service';
 import { workOrderTechnicianSessionsProviders } from './work_order_technician_sessions.provider';
@@ -11,7 +11,7 @@ import { TripsModule } from '../TRIPS/trips.module';
 import { SlaTimersModule } from '../SLA_TIMERS/sla_timers.module';
 
 @Module({
-  imports: [DatabaseModule, WorkOrdersModule, NotificationsModule, UsersModule, TripsModule, SlaTimersModule],
+  imports: [DatabaseModule, forwardRef(() => WorkOrdersModule), NotificationsModule, UsersModule, TripsModule, SlaTimersModule],
   controllers: [WorkOrderTechnicianSessionsController],
   providers: [WorkOrderTechnicianSessionsService, ...workOrderTechnicianSessionsProviders, ...serviceAppointmentsProviders],
   exports: [WorkOrderTechnicianSessionsService],

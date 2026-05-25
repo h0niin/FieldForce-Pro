@@ -17,6 +17,7 @@ import { TripsService } from '../TRIPS/trips.service';
 import { CreateTripDto } from '../TRIPS/dto/trips_create.dto';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
 import { SlaTimersService } from '../SLA_TIMERS/sla_timers.service';
+import { SlaTimerType } from '../SLA_TIMERS/sla_timers.entity';
 
 @Injectable()
 export class WorkOrderTechnicianSessionsService {
@@ -51,12 +52,34 @@ export class WorkOrderTechnicianSessionsService {
     const existing = await this.getSession(tenantId, workOrderId);
     if (existing) return existing;
 
-    return this.sessionRepository.create({
+    const session = await this.sessionRepository.create({
       tenant_id: tenantId,
       work_order_id: workOrderId,
       technician_id: technicianId,
       step: 'pending_approval',
     });
+
+    // Set assigned_to on the work order
+    try {
+      const wo = await this.workOrdersService.findById(workOrderId, tenantId);
+      if (!wo.assigned_to) {
+        await wo.update({ assigned_to: technicianId });
+      }
+    } catch (err) {
+      this.logger.error(`[getOrCreateSession] Failed to set assigned_to for WO ${workOrderId}: ${err.message}`);
+    }
+
+    // Start acceptance + total_resolution SLA timers
+    try {
+      await Promise.all([
+        this.slaTimersService.createTimer(tenantId, workOrderId, technicianId, session.id, SlaTimerType.ACCEPTANCE),
+        this.slaTimersService.createTimer(tenantId, workOrderId, technicianId, session.id, SlaTimerType.TOTAL_RESOLUTION),
+      ]);
+    } catch (err) {
+      this.logger.error(`[getOrCreateSession] Failed to create SLA timers for WO ${workOrderId}: ${err.message}`);
+    }
+
+    return session;
   }
 
   private async requireSession(
@@ -92,8 +115,9 @@ export class WorkOrderTechnicianSessionsService {
     const workOrder = await this.workOrdersService.findById(workOrderId, tenantId);
     const technician = await this.usersService.findById(userId);
 
-    // Start SLA timer when technician accepts the job
+    // Complete acceptance SLA timer and start work_completion timer
     try {
+      await this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.ACCEPTANCE);
       await this.slaTimersService.createTimerForSession(
         tenantId,
         workOrderId,
@@ -101,7 +125,7 @@ export class WorkOrderTechnicianSessionsService {
         session.id,
       );
     } catch (err) {
-      this.logger.error(`[approve] Failed to create SLA timer for WO ${workOrderId}: ${err.message}`);
+      this.logger.error(`[approve] Failed to manage SLA timers for WO ${workOrderId}: ${err.message}`);
     }
 
     await this.notifyTenantUsers(tenantId, workOrderId, {
@@ -131,6 +155,16 @@ export class WorkOrderTechnicianSessionsService {
       rejection_reason: reason,
       rejected_at: new Date(),
     });
+
+    // Complete acceptance + total_resolution SLA timers on rejection
+    try {
+      await Promise.all([
+        this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.ACCEPTANCE),
+        this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.TOTAL_RESOLUTION),
+      ]);
+    } catch (err) {
+      this.logger.error(`[reject] Failed to complete SLA timers for WO ${workOrderId}: ${err.message}`);
+    }
 
     // Sync linked appointment(s) to cancelled when technician rejects
     await this.syncAppointmentStatus(tenantId, workOrderId, 'cancelled');
@@ -167,6 +201,13 @@ export class WorkOrderTechnicianSessionsService {
       trip_start_type: dto.trip_start_type || 'manual',
     });
 
+    // Start travel SLA timer
+    try {
+      await this.slaTimersService.createTimer(tenantId, workOrderId, userId, session.id, SlaTimerType.TRAVEL);
+    } catch (err) {
+      this.logger.error(`[startTrip] Failed to create travel SLA timer for WO ${workOrderId}: ${err.message}`);
+    }
+
     // Ensure linked appointment(s) are in_progress (safety net if approve() sync was missed)
     await this.syncAppointmentStatus(tenantId, workOrderId, 'in_progress');
 
@@ -199,6 +240,14 @@ export class WorkOrderTechnicianSessionsService {
     }
 
     await session.update({ step: 'reached', reached_at: new Date() });
+
+    // Complete travel SLA timer, start on_site_prep timer
+    try {
+      await this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.TRAVEL);
+      await this.slaTimersService.createTimer(tenantId, workOrderId, userId, session.id, SlaTimerType.ON_SITE_PREP);
+    } catch (err) {
+      this.logger.error(`[markReached] Failed to manage SLA timers for WO ${workOrderId}: ${err.message}`);
+    }
 
     // End the trips record — technician has arrived at destination
     try {
@@ -263,8 +312,15 @@ export class WorkOrderTechnicianSessionsService {
       before_photos_at: new Date(),
     });
 
+    // Complete on_site_prep SLA timer
     try {
-      await this.workOrdersService.updateStatus(workOrderId, tenantId, { status: 'in_progress' });
+      await this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.ON_SITE_PREP);
+    } catch (err) {
+      this.logger.error(`[startWork] Failed to complete on_site_prep SLA timer for WO ${workOrderId}: ${err.message}`);
+    }
+
+    try {
+      await this.workOrdersService.setStatus(workOrderId, tenantId, 'in_progress');
     } catch {
       // WO status transition may not be allowed — non-fatal
     }
@@ -297,15 +353,18 @@ export class WorkOrderTechnicianSessionsService {
 
     await session.update({ step: 'paused', paused_at: new Date() });
 
-    // Pause the SLA timer
+    // Pause work_completion + total_resolution SLA timers
     try {
-      await this.slaTimersService.pauseTimer(workOrderId);
+      await Promise.all([
+        this.slaTimersService.pauseTimer(workOrderId),
+        this.slaTimersService.pauseTimerByType(workOrderId, SlaTimerType.TOTAL_RESOLUTION),
+      ]);
     } catch (err) {
-      this.logger.error(`[pauseWork] Failed to pause SLA timer for WO ${workOrderId}: ${err.message}`);
+      this.logger.error(`[pauseWork] Failed to pause SLA timers for WO ${workOrderId}: ${err.message}`);
     }
 
     try {
-      await this.workOrdersService.updateStatus(workOrderId, tenantId, { status: 'on_hold' });
+      await this.workOrdersService.setStatus(workOrderId, tenantId, 'on_hold');
     } catch {
       // Non-fatal
     }
@@ -327,15 +386,18 @@ export class WorkOrderTechnicianSessionsService {
 
     await session.update({ step: 'work_started', resumed_at: new Date() });
 
-    // Resume the SLA timer
+    // Resume work_completion + total_resolution SLA timers
     try {
-      await this.slaTimersService.resumeTimer(workOrderId);
+      await Promise.all([
+        this.slaTimersService.resumeTimer(workOrderId),
+        this.slaTimersService.resumeTimerByType(workOrderId, SlaTimerType.TOTAL_RESOLUTION),
+      ]);
     } catch (err) {
-      this.logger.error(`[resumeWork] Failed to resume SLA timer for WO ${workOrderId}: ${err.message}`);
+      this.logger.error(`[resumeWork] Failed to resume SLA timers for WO ${workOrderId}: ${err.message}`);
     }
 
     try {
-      await this.workOrdersService.updateStatus(workOrderId, tenantId, { status: 'in_progress' });
+      await this.workOrdersService.setStatus(workOrderId, tenantId, 'in_progress');
     } catch {
       // Non-fatal
     }
@@ -396,7 +458,7 @@ export class WorkOrderTechnicianSessionsService {
     });
 
     try {
-      await this.workOrdersService.updateStatus(workOrderId, tenantId, { status: 'completed' });
+      await this.workOrdersService.setStatus(workOrderId, tenantId, 'completed');
     } catch {
       // Non-fatal
     }
@@ -404,11 +466,16 @@ export class WorkOrderTechnicianSessionsService {
     // Sync linked appointment(s) to completed
     await this.syncAppointmentStatus(tenantId, workOrderId, 'completed');
 
-    // Complete the SLA timer
+    // Complete ALL SLA timers (safety net for any still running)
     try {
-      await this.slaTimersService.completeTimer(workOrderId);
+      await Promise.all([
+        this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.TRAVEL),
+        this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.ON_SITE_PREP),
+        this.slaTimersService.completeTimer(workOrderId),
+        this.slaTimersService.completeTimerByType(workOrderId, SlaTimerType.TOTAL_RESOLUTION),
+      ]);
     } catch (err) {
-      this.logger.error(`[finish] Failed to complete SLA timer for WO ${workOrderId}: ${err.message}`);
+      this.logger.error(`[finish] Failed to complete SLA timers for WO ${workOrderId}: ${err.message}`);
     }
 
     const workOrder = await this.workOrdersService.findById(workOrderId, tenantId);

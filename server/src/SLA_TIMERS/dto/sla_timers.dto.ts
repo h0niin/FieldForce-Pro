@@ -16,6 +16,9 @@ export class SlaTimerResponseDto {
   @ApiProperty()
   session_id: string;
 
+  @ApiProperty({ enum: ['acceptance', 'travel', 'on_site_prep', 'work_completion', 'total_resolution'] })
+  timer_type: string;
+
   @ApiPropertyOptional()
   category: string;
 

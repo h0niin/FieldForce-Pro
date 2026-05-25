@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException, BadRequestException, Logger } fr
 import { WorkOrder } from './work_orders.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
+import { User } from '../USERS/users.entity';
 import { CreateWorkOrderDto } from './dto/work_orders_create.dto';
 import { UpdateWorkOrderDto } from './dto/work_orders_update.dto';
 import { UpdateWorkOrderStatusDto } from './dto/work_orders_update_status.dto';
@@ -70,6 +71,12 @@ export class WorkOrdersService {
           as: 'location',
           attributes: ['id', 'address', 'lat', 'lng', 'access_notes', 'gate_code'],
         },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'first_name', 'last_name'],
+          required: false,
+        },
       ],
     });
 
@@ -91,6 +98,12 @@ export class WorkOrdersService {
           model: ServiceLocation,
           as: 'location',
           attributes: ['id', 'address', 'lat', 'lng', 'access_notes', 'gate_code'],
+        },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'first_name', 'last_name'],
+          required: false,
         },
       ],
     });
@@ -131,6 +144,12 @@ export class WorkOrdersService {
           model: ServiceLocation,
           as: 'location',
           attributes: ['id', 'address', 'lat', 'lng', 'access_notes', 'gate_code'],
+        },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'first_name', 'last_name'],
+          required: false,
         },
       ],
     });
@@ -200,6 +219,12 @@ export class WorkOrdersService {
           as: 'location',
           attributes: ['id', 'address', 'lat', 'lng', 'access_notes', 'gate_code'],
         },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'first_name', 'last_name'],
+          required: false,
+        },
       ],
       order: [['created_at', pageOptionsDto.order]],
       limit: pageOptionsDto.take,
@@ -223,6 +248,12 @@ export class WorkOrdersService {
           model: ServiceLocation,
           as: 'location',
           attributes: ['id', 'address', 'lat', 'lng', 'access_notes', 'gate_code'],
+        },
+        {
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'first_name', 'last_name'],
+          required: false,
         },
       ],
     });
@@ -274,6 +305,12 @@ export class WorkOrdersService {
     }
 
     await workOrder.update({ status: dto.status });
+    return workOrder;
+  }
+
+  async setStatus(id: string, tenantId: string, status: string): Promise<WorkOrder> {
+    const workOrder = await this.findById(id, tenantId);
+    await workOrder.update({ status });
     return workOrder;
   }
 

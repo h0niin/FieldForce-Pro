@@ -97,6 +97,7 @@ function getStatus(itemStep: string, currentStep: string): 'done' | 'active' | '
   if (currentStep === 'rejected') {
     return itemStep === 'pending_approval' ? 'done' : 'pending';
   }
+  if (currentStep === 'finished') return 'done';
   const itemIdx = EXTENDED_ORDER.indexOf(itemStep);
   const currIdx = EXTENDED_ORDER.indexOf(currentStep);
   if (itemIdx < currIdx) return 'done';

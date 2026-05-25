@@ -1,16 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { slaTimersApi } from '@/api/sla-timers.api';
+import { slaTimersApi, type SlaTimersByWorkOrder } from '@/api/sla-timers.api';
 import { useNotificationStore } from '@/store/notification.store';
 
-export function useSlaTimer(workOrderId: string) {
+const EMPTY_TIMERS: SlaTimersByWorkOrder = {
+  acceptance: null,
+  travel: null,
+  on_site_prep: null,
+  work_completion: null,
+  total_resolution: null,
+};
+
+export function useSlaTimers(workOrderId: string) {
   return useQuery({
-    queryKey: ['sla-timer', workOrderId],
+    queryKey: ['sla-timers', workOrderId],
     queryFn: async () => {
       const response = await slaTimersApi.getByWorkOrder(workOrderId);
-      return response.data.data ?? null;
+      return response.data.data ?? EMPTY_TIMERS;
     },
     enabled: !!workOrderId,
-    refetchInterval: 30_000, // Poll every 30 seconds to keep timer data fresh
+    refetchInterval: 30_000,
   });
 }
 
@@ -31,7 +39,7 @@ export function usePauseSlaTimer() {
   return useMutation({
     mutationFn: (id: string) => slaTimersApi.pauseTimer(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sla-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers'] });
       addNotification({ type: 'success', message: 'SLA timer paused' });
     },
     onError: () => {
@@ -47,7 +55,7 @@ export function useResumeSlaTimer() {
   return useMutation({
     mutationFn: (id: string) => slaTimersApi.resumeTimer(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sla-timer'] });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers'] });
       addNotification({ type: 'success', message: 'SLA timer resumed' });
     },
     onError: () => {

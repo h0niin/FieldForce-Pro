@@ -10,6 +10,7 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
+import { User } from '../USERS/users.entity';
 
 @Table({
   tableName: 'work_orders',
@@ -138,12 +139,16 @@ export class WorkOrder extends Model {
   })
   actual_end: Date;
 
+  @ForeignKey(() => User)
   @Column({
     type: DataType.UUID,
     allowNull: true,
     comment: 'Assigned technician/user UUID',
   })
   assigned_to: string;
+
+  @BelongsTo(() => User, 'assigned_to')
+  assignee: User;
 
   @Column({
     type: DataType.ARRAY(DataType.STRING),

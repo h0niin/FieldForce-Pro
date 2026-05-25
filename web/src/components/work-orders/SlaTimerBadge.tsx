@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Progress, Tag, Typography, Tooltip, Space } from 'antd';
+import { Progress, Tag, Typography, Tooltip, Space, theme } from 'antd';
 import {
   ClockCircleOutlined,
   WarningOutlined,
@@ -11,13 +11,16 @@ import {
 import type { SlaTimerData } from '@/api/sla-timers.api';
 
 const { Text } = Typography;
+const { useToken } = theme;
 
 interface SlaTimerBadgeProps {
   timer: SlaTimerData;
   compact?: boolean;
+  label?: string;
 }
 
-export function SlaTimerBadge({ timer, compact = false }: SlaTimerBadgeProps) {
+export function SlaTimerBadge({ timer, compact = false, label = 'SLA Timer' }: SlaTimerBadgeProps) {
+  const { token } = useToken();
   const [elapsedMs, setElapsedMs] = useState<number>(0);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [percentUsed, setPercentUsed] = useState<number>(0);
@@ -100,9 +103,9 @@ export function SlaTimerBadge({ timer, compact = false }: SlaTimerBadgeProps) {
 
   if (compact) {
     return (
-      <Tooltip title={`${config.label} - ${formatDuration(remainingMs)} remaining`}>
+      <Tooltip title={`${label} — ${config.label} — ${formatDuration(remainingMs)} remaining`}>
         <Tag color={config.color} icon={config.icon}>
-          {formatDuration(remainingMs)}
+          {label}: {formatDuration(remainingMs)}
         </Tag>
       </Tooltip>
     );
@@ -110,10 +113,10 @@ export function SlaTimerBadge({ timer, compact = false }: SlaTimerBadgeProps) {
 
   return (
     <div style={{
-      border: '1px solid #f0f0f0',
+      border: `1px solid ${token.colorBorderSecondary}`,
       borderRadius: '8px',
       padding: '16px',
-      background: '#fff',
+      background: token.colorBgContainer,
       display: 'flex',
       alignItems: 'center',
       gap: '16px',
@@ -135,7 +138,7 @@ export function SlaTimerBadge({ timer, compact = false }: SlaTimerBadgeProps) {
           <Space>
             <FieldTimeOutlined style={{ color: config.color, fontSize: '18px' }} />
             <Text strong style={{ fontSize: '16px' }}>
-              SLA Timer
+              {label}
             </Text>
             <Tag color={config.color} style={{ margin: 0 }}>
               {config.label}

@@ -33,6 +33,7 @@ function useSessionMutation(
     mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY(workOrderId) });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers', workOrderId] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       addNotification({ type: 'success', message: successMessage });
     },
@@ -69,6 +70,7 @@ export function useRejectWorkOrder(workOrderId: string) {
     mutationFn: (reason: string) => workOrderTechnicianApi.reject(workOrderId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY(workOrderId) });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers', workOrderId] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       addNotification({ type: 'info', message: 'Work order rejected' });
     },
@@ -87,6 +89,7 @@ export function useStartTrip(workOrderId: string) {
     mutationFn: (payload: StartTripPayload) => workOrderTechnicianApi.startTrip(workOrderId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY(workOrderId) });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers', workOrderId] });
       addNotification({ type: 'success', message: 'Trip started' });
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
@@ -176,6 +179,7 @@ export function useFinishJob(workOrderId: string) {
     mutationFn: (payload: FinishJobPayload) => workOrderTechnicianApi.finish(workOrderId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY(workOrderId) });
+      queryClient.invalidateQueries({ queryKey: ['sla-timers', workOrderId] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       addNotification({ type: 'success', message: 'Job finished successfully!' });
     },
