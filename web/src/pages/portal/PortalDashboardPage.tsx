@@ -45,6 +45,8 @@ import {
   PauseCircleOutlined,
   PlayCircleOutlined,
   StarFilled,
+  RobotOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { MapContainer, TileLayer, Marker, CircleMarker, Popup, Tooltip, useMap, useMapEvents, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
@@ -1520,6 +1522,57 @@ export default function PortalDashboardPage() {
   const [submittedRequestNumber, setSubmittedRequestNumber] = useState('');
   const [isOutsideService, setIsOutsideService] = useState(false);
 
+  // AI Diagnosis states
+  const [aiDiagnosing, setAiDiagnosing] = useState(false);
+  const [diagnosisResult, setDiagnosisResult] = useState<{
+    category: string;
+    urgency: string;
+    estimated_issue: string;
+    recommended_tools: string[];
+  } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleAiDiagnose = () => {
+    const descValue = form.getFieldValue('description');
+    if (!descValue || descValue.trim().length < 10) {
+      message.warning('Please enter a problem description of at least 10 characters to diagnose with AI.');
+      return;
+    }
+    
+    setAiDiagnosing(true);
+    setAiError(null);
+    
+    api
+      .post('/ai/diagnose', { description: descValue })
+      .then((res) => {
+        setAiDiagnosing(false);
+        const data = res.data?.data;
+        if (data) {
+          setDiagnosisResult(data);
+          
+          // Automatically populate form values
+          form.setFieldsValue({
+            category: data.category,
+            priority: data.urgency.toLowerCase(),
+            subject: data.estimated_issue,
+            custom_fields: {
+              estimated_issue: data.estimated_issue,
+              recommended_tools: data.recommended_tools,
+            }
+          });
+          message.success('AI issue diagnosis completed successfully!');
+        } else {
+          throw new Error('Invalid diagnosis response from backend');
+        }
+      })
+      .catch((err) => {
+        setAiDiagnosing(false);
+        const errMsg = err?.response?.data?.message || 'Failed to complete AI issue diagnosis. You can still fill manually or try again.';
+        setAiError(errMsg);
+        message.error(errMsg);
+      });
+  };
+
   const handleMapChange = useCallback((lat: number, lng: number, address: string) => {
     form.setFieldsValue({ lat, lng, address });
   }, [form]);
@@ -1551,6 +1604,7 @@ export default function PortalDashboardPage() {
           lat: Number(values.lat),
           lng: Number(values.lng),
           address: values.address || '',
+          custom_fields: values.custom_fields || {},
         })
         .then((res) => {
           setSubmitting(false);
@@ -1570,6 +1624,8 @@ export default function PortalDashboardPage() {
     form.resetFields();
     setSubmitted(false);
     setSubmittedRequestNumber('');
+    setDiagnosisResult(null);
+    setAiError(null);
   };
 
   return (
@@ -1636,62 +1692,138 @@ export default function PortalDashboardPage() {
           </Card>
         ) : (
           <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ lat: null, lng: null }}>
-            {/* Service Details */}
-            <Card style={{ marginBottom: 16 }}>
+            {/* Service Details (AI Diagnosis Flow) */}
+            <Card style={{ marginBottom: 16, borderRadius: 12 }}>
               <Form.Item
-                label="Subject"
-                name="subject"
-                rules={[{ required: true, message: 'Please enter a subject' }]}
-              >
-                <Input placeholder="e.g., AC Unit Not Cooling" size="large" />
-              </Form.Item>
-
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Category"
-                    name="category"
-                    rules={[{ required: true, message: 'Please select a category' }]}
-                  >
-                    <Select placeholder="Select a category" size="large">
-                      <Select.Option value="HVAC">HVAC</Select.Option>
-                      <Select.Option value="Plumbing">Plumbing</Select.Option>
-                      <Select.Option value="Electrical">Electrical</Select.Option>
-                      <Select.Option value="Roofing">Roofing</Select.Option>
-                      <Select.Option value="Appliance">Appliance Repair</Select.Option>
-                      <Select.Option value="General">General Maintenance</Select.Option>
-                      <Select.Option value="Other">Other</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Priority"
-                    name="priority"
-                    initialValue="medium"
-                    rules={[{ required: true, message: 'Please select a priority' }]}
-                  >
-                    <Select size="large">
-                      <Select.Option value="low">Low</Select.Option>
-                      <Select.Option value="medium">Medium</Select.Option>
-                      <Select.Option value="high">High</Select.Option>
-                      <Select.Option value="critical">Critical</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item
-                label="Description"
+                label={<Text strong style={{ fontSize: 16, color: '#1a365d' }}>Describe Your Issue</Text>}
                 name="description"
-                rules={[{ required: true, message: 'Please describe the issue' }]}
+                rules={[{ required: true, message: 'Please describe the issue in detail' }]}
+                extra={<span style={{ color: '#718096', fontSize: 13 }}>Describe your problem in detail (symptoms, what's not working, noises, leaks, etc.). Our AI will automatically diagnose and categorize it.</span>}
               >
                 <TextArea
-                  rows={4}
-                  placeholder="Describe the issue in detail..."
+                  rows={5}
+                  placeholder="e.g., My central AC unit keeps shutting off after 5 minutes and is blowing warm air instead of cool. There is a clicking sound coming from the outside compressor unit."
                   size="large"
+                  style={{ borderRadius: 8 }}
                 />
               </Form.Item>
+
+              <div style={{ textAlign: 'right', marginBottom: 20 }}>
+                <Button
+                  type="primary"
+                  icon={<RobotOutlined />}
+                  loading={aiDiagnosing}
+                  onClick={handleAiDiagnose}
+                  style={{
+                    background: 'linear-gradient(135deg, #108ee9 0%, #87d068 100%)',
+                    border: 'none',
+                    height: 44,
+                    borderRadius: 22,
+                    padding: '0 28px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(16, 142, 233, 0.3)',
+                  }}
+                >
+                  Diagnose with AI
+                </Button>
+              </div>
+
+              {aiError && (
+                <div style={{ padding: '8px 12px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8, marginBottom: 16, color: '#ff4d4f' }}>
+                  {aiError}
+                </div>
+              )}
+
+              {/* Hidden inputs populated by AI Diagnosis */}
+              <Form.Item name="subject" hidden rules={[{ required: true, message: 'Diagnosis required to populate issue subject' }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name="category" hidden rules={[{ required: true, message: 'Diagnosis required to populate category' }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name="priority" hidden rules={[{ required: true, message: 'Diagnosis required to populate priority' }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name="custom_fields" hidden>
+                <Input />
+              </Form.Item>
+
+              {/* Diagnosis Report Output */}
+              {diagnosisResult && (
+                <Card
+                  style={{
+                    background: '#f9fbfd',
+                    border: '1px solid #e1ebf6',
+                    borderRadius: 12,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.03)',
+                  }}
+                  title={
+                    <Space>
+                      <ExperimentOutlined style={{ color: '#1890ff', fontSize: 18 }} />
+                      <span style={{ fontWeight: 700, color: '#1a365d', letterSpacing: '0.3px' }}>AI Smart Diagnosis Report</span>
+                    </Space>
+                  }
+                >
+                  <Descriptions column={1} size="small" bordered={false}>
+                    <Descriptions.Item label={<Text strong style={{ color: '#4a5568', fontSize: 13 }}>Estimated Root Cause</Text>}>
+                      <div style={{ fontSize: 14, color: '#2d3748', lineHeight: 1.5, background: '#fff', padding: '12px 16px', borderRadius: 8, border: '1px solid #edf2f7', width: '100%' }}>
+                        {diagnosisResult.estimated_issue}
+                      </div>
+                    </Descriptions.Item>
+                  </Descriptions>
+                  
+                  <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col xs={24} sm={12}>
+                      <div style={{ background: '#fff', padding: '12px 16px', borderRadius: 8, border: '1px solid #edf2f7', height: '100%' }}>
+                        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, fontWeight: 600 }}>DIAGNOSED CATEGORY</Text>
+                        <Tag color="blue" style={{ fontSize: 13, padding: '4px 14px', borderRadius: 6, fontWeight: 600 }}>
+                          {diagnosisResult.category}
+                        </Tag>
+                      </div>
+                    </Col>
+                    
+                    <Col xs={24} sm={12}>
+                      <div style={{ background: '#fff', padding: '12px 16px', borderRadius: 8, border: '1px solid #edf2f7', height: '100%' }}>
+                        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6, fontWeight: 600 }}>ESTIMATED URGENCY</Text>
+                        <Tag
+                          color={
+                            diagnosisResult.urgency.toLowerCase() === 'critical' ? 'red' :
+                            diagnosisResult.urgency.toLowerCase() === 'high' ? 'orange' :
+                            diagnosisResult.urgency.toLowerCase() === 'medium' ? 'blue' : 'green'
+                          }
+                          style={{ fontSize: 13, padding: '4px 14px', borderRadius: 6, fontWeight: 600 }}
+                        >
+                          {diagnosisResult.urgency}
+                        </Tag>
+                      </div>
+                    </Col>
+                  </Row>
+
+                  <div style={{ marginTop: 16, background: '#fff', padding: '16px', borderRadius: 8, border: '1px solid #edf2f7' }}>
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 10, fontWeight: 600 }}>RECOMMENDED TOOLS FOR FIELD TECHNICIAN</Text>
+                    <Space size={[8, 8]} wrap>
+                      {diagnosisResult.recommended_tools.map((tool: string, idx: number) => (
+                        <Tag
+                          key={idx}
+                          color="default"
+                          style={{
+                            fontSize: 12,
+                            padding: '5px 12px',
+                            borderRadius: 6,
+                            border: '1px solid #e2e8f0',
+                            background: '#f8fafc',
+                            color: '#475569',
+                            fontWeight: 500
+                          }}
+                        >
+                          🔧 {tool}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </div>
+                </Card>
+              )}
             </Card>
 
             {/* Contact Information */}
@@ -1751,16 +1883,20 @@ export default function PortalDashboardPage() {
               block
               icon={<SendOutlined />}
               loading={submitting}
-              disabled={isOutsideService}
+              disabled={isOutsideService || !diagnosisResult}
               style={{
                 height: 48,
                 fontSize: 16,
-                ...(!isOutsideService
+                ...(!isOutsideService && diagnosisResult
                   ? { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }
                   : {}),
               }}
             >
-              {isOutsideService ? 'Location Outside Service Area' : 'Submit Service Request'}
+              {!diagnosisResult
+                ? 'Please Diagnose with AI First'
+                : isOutsideService
+                  ? 'Location Outside Service Area'
+                  : 'Submit Service Request'}
             </Button>
           </Form>
         )}

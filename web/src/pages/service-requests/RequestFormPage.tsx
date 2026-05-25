@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, Button, Space, Skeleton, Select, Row, Col, Typography, message, Alert, Divider, AutoComplete, DatePicker } from 'antd';
-import { EnvironmentOutlined, CheckCircleOutlined, WarningOutlined, SaveOutlined, CloseOutlined, AimOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined, CheckCircleOutlined, WarningOutlined, SaveOutlined, CloseOutlined, AimOutlined, LoadingOutlined, PlusOutlined, RobotOutlined } from '@ant-design/icons';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Tooltip, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -12,6 +12,7 @@ import { useAllServiceLocations } from '@/hooks/use-service-locations';
 import PageHeader from '@/components/common/PageHeader';
 import CreateContactModal from '@/components/contacts/CreateContactModal';
 import type { ServiceLocation } from '@/types/models.types';
+import api from '@/api/axios-instance';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -178,6 +179,50 @@ export default function RequestFormPage() {
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boundaryKeyRef = useRef(0);
   const isTypingRef = useRef(false);
+
+  const [aiDiagnosing, setAiDiagnosing] = useState(false);
+
+  const handleAiDiagnose = () => {
+    const descValue = form.getFieldValue('description');
+    if (!descValue || descValue.trim().length < 10) {
+      message.warning('Please enter a description of at least 10 characters to diagnose with AI.');
+      return;
+    }
+
+    setAiDiagnosing(true);
+    api
+      .post('/ai/diagnose', { description: descValue })
+      .then((res) => {
+        setAiDiagnosing(false);
+        const data = res.data?.data;
+        if (data) {
+          // AI urgency: Low, Medium, High, Critical -> priority: low, medium, high, urgent
+          let mappedPriority = data.urgency.toLowerCase();
+          if (mappedPriority === 'critical') {
+            mappedPriority = 'urgent';
+          }
+          
+          form.setFieldsValue({
+            category: data.category,
+            priority: mappedPriority,
+          });
+
+          const appendedText = `\n\n--- AI Diagnosis Report ---\nEstimated Issue: ${data.estimated_issue}\nRecommended Tools: ${data.recommended_tools.join(', ')}`;
+          form.setFieldsValue({
+            description: descValue + appendedText,
+          });
+
+          message.success('AI issue diagnosis completed successfully!');
+        } else {
+          throw new Error('Invalid diagnosis response from backend');
+        }
+      })
+      .catch((err) => {
+        setAiDiagnosing(false);
+        const errMsg = err?.response?.data?.message || 'Failed to complete AI issue diagnosis.';
+        message.error(errMsg);
+      });
+  };
 
   const selectedLocation = (locations || []).find((l) => l.id === selectedLocationId) || null;
 
@@ -471,8 +516,28 @@ export default function RequestFormPage() {
                 <Input placeholder="e.g. AC unit not cooling" />
               </Form.Item>
 
-              <Form.Item name="description" label="Description">
-                <TextArea rows={3} placeholder="Describe the service request in detail..." />
+              <Form.Item label="Description">
+                <Form.Item name="description" noStyle>
+                  <TextArea rows={4} placeholder="Describe the service request in detail..." />
+                </Form.Item>
+                <div style={{ textAlign: 'right', marginTop: 8 }}>
+                  <Button
+                    type="default"
+                    icon={<RobotOutlined />}
+                    loading={aiDiagnosing}
+                    onClick={handleAiDiagnose}
+                    style={{
+                      background: 'linear-gradient(135deg, #108ee9 0%, #87d068 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      fontWeight: 600,
+                      borderRadius: 16,
+                      padding: '0 16px',
+                    }}
+                  >
+                    Diagnose with AI
+                  </Button>
+                </div>
               </Form.Item>
 
               <Form.Item

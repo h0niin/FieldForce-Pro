@@ -846,6 +846,7 @@ export class CustomerPortalService {
       channel: 'portal',
       lat: dto.lat,
       lng: dto.lng,
+      custom_fields: dto.custom_fields || {},
     });
 
     return {

@@ -86,6 +86,10 @@ export class PortalCreateServiceRequestDto {
   @IsUUID()
   @IsOptional()
   location_id?: string;
+
+  @ApiPropertyOptional({ description: 'Custom or AI Diagnosis fields' })
+  @IsOptional()
+  custom_fields?: Record<string, any>;
 }
 
 export class PortalMakePaymentDto {
