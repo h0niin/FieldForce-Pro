@@ -9,6 +9,7 @@ import {
   IsObject,
   IsDateString,
   MaxLength,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateWorkOrderDto {
@@ -115,4 +116,9 @@ export class CreateWorkOrderDto {
   @IsObject()
   @IsOptional()
   custom_fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: 'SLA hours', default: 24 })
+  @IsNumber()
+  @IsOptional()
+  slaHours?: number;
 }

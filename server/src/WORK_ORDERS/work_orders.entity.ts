@@ -173,6 +173,18 @@ export class WorkOrder extends Model {
   custom_fields: Record<string, unknown>;
 
   @Column({
+    type: DataType.INTEGER,
+    defaultValue: 24,
+  })
+  slaHours: number;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  slaBreachAt: Date;
+
+  @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
   })

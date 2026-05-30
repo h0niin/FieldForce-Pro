@@ -241,10 +241,16 @@ export class WorkOrdersService {
     });
     const woNumber = `WO-${String(count + 1).padStart(6, '0')}`;
 
+    const slaHours = dto.slaHours !== undefined ? dto.slaHours : 24;
+    const slaBreachAt = new Date();
+    slaBreachAt.setHours(slaBreachAt.getHours() + slaHours);
+
     const workOrder = await this.workOrderRepository.create({
       tenant_id: tenantId,
       wo_number: woNumber,
       ...dto,
+      slaHours,
+      slaBreachAt,
     });
 
     // Fetch the created work order with includes

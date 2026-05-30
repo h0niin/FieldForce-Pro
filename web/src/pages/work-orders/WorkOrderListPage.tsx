@@ -82,6 +82,81 @@ function SlaTimerCell({ workOrderId }: { workOrderId: string }) {
   if (!slaTimer) return <span style={{ color: '#999' }}>-</span>;
   return <SlaTimerBadge timer={slaTimer} compact />;
 }
+function CountdownCell({
+  createdAt,
+  slaHours,
+  status,
+}: {
+  createdAt: string;
+  slaHours?: number;
+  status?: string;
+}) {
+  const [now, setNow] = React.useState(Date.now());
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 60000); // update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!slaHours || !createdAt) {
+    return <span style={{ color: '#999' }}>-</span>;
+  }
+
+  // Stop showing countdown if WO already accepted/completed
+  const stoppedStatuses = ['accepted', 'completed', 'closed'];
+
+  if (stoppedStatuses.includes(status || '')) {
+    return <span>-</span>;
+  }
+
+  const deadline =
+    new Date(createdAt).getTime() + slaHours * 60 * 60 * 1000;
+
+  const diffMs = deadline - now;
+
+  const formatDuration = (ms: number) => {
+    const totalMinutes = Math.floor(Math.abs(ms) / (1000 * 60));
+
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m`;
+    }
+
+    return `${hours}h ${minutes}m`;
+  };
+
+  // SLA breached
+  if (diffMs < 0) {
+    return (
+      <span
+        style={{
+          color: '#ff4d4f',
+          fontWeight: 600,
+        }}
+      >
+        Overdue: {formatDuration(diffMs)}
+      </span>
+    );
+  }
+
+  // SLA still running
+  return (
+    <span
+      style={{
+        color: '#52c41a',
+        fontWeight: 500,
+      }}
+    >
+      {formatDuration(diffMs)}
+    </span>
+  );
+}
 
 export default function WorkOrderListPage() {
   const { t } = useTranslation();
@@ -266,7 +341,21 @@ export default function WorkOrderListPage() {
     {
       title: 'SLA',
       key: 'sla',
-      render: (_, record) => <SlaTimerCell workOrderId={record.id} />,
+      render: (_, record) => (
+        <span>{record.slaHours ? `${record.slaHours} Hours` : '-'}</span>
+      ),
+    },
+    {
+      title: 'Countdown',
+      key: 'countdown',
+      width: 160,
+      render: (_, record) => (
+        <CountdownCell
+          createdAt={record.created_at}
+          slaHours={record.slaHours}
+          status={record.status}
+        />
+      ),
     },
     {
       title: 'Actions',
