@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "FieldForce Pro",
+    "slug": "fieldforce-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "fieldforce",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B4332"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fieldforce.pro",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to navigate to job sites and track trips.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track trips in the background.",
+        "NSCameraUsageDescription": "We need camera access to capture job site photos.",
+        "NSMicrophoneUsageDescription": "We need microphone access to record voice notes.",
+        "NSPhotoLibraryUsageDescription": "We need photo library access to attach images to work orders.",
+        "NSFaceIDUsageDescription": "Allow FieldForce Pro to use Face ID to sign in securely."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#1B4332"
+      },
+      "package": "com.fieldforce.pro",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow FieldForce Pro to use Face ID to sign in securely."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow FieldForce Pro to use your location to navigate to job sites."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FieldForce Pro to take photos for work orders."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1B4332"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FieldForce Pro to access your photos for work orders."
+        }
+      ],
+      "@stripe/stripe-terminal-react-native",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bd054b07-6cf9-4fa1-845f-4d26966c7dac"
+      }
+    },
+    "owner": "ibairuha"
+  }
+}

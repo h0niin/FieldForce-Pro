@@ -1,0 +1,154 @@
+import { REPOSITORY } from '../shared/constants/keynames';
+import { User } from '../USERS/users.entity';
+import { Tenant } from '../TENANTS/tenants.entity';
+import { Role } from '../ROLES/roles.entity';
+import { Permission } from '../PERMISSIONS/permissions.entity';
+import { RolePermission } from '../ROLE_PERMISSION/role_permission.entity';
+import { UserRole } from '../USER_ROLES/user_roles.entity';
+import { LoginSession } from '../LOGIN_SESSIONS/login_sessions.entity';
+import { UserDocument } from '../USER_DOCUMENTS/user_documents.entity';
+import { Contact } from '../CONTACTS/contacts.entity';
+import { Company } from '../COMPANIES/companies.entity';
+import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
+import { Asset } from '../ASSETS/assets.entity';
+import { AssetMaintenancePlan } from '../ASSET_MAINTENANCE_PLANS/asset_maintenance_plans.entity';
+import { ServicesCatalog } from '../SERVICES_CATALOG/services_catalog.entity';
+import { PartsCatalog } from '../PARTS_CATALOG/parts_catalog.entity';
+import { ServiceRequest } from '../SERVICE_REQUESTS/service_requests.entity';
+import { Estimate } from '../ESTIMATES/estimates.entity';
+import { EstimateLineItem } from '../ESTIMATE_LINE_ITEMS/estimate_line_items.entity';
+import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
+import { WorkOrderLineItem } from '../WORK_ORDER_LINE_ITEMS/work_order_line_items.entity';
+import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
+import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
+import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
+import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
+import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
+import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
+import { Timesheet } from '../TIMESHEETS/timesheets.entity';
+import { Trip } from '../TRIPS/trips.entity';
+import { AgentLocation } from '../AGENT_LOCATIONS/agent_locations.entity';
+import { Invoice } from '../INVOICES/invoices.entity';
+import { InvoiceLineItem } from '../INVOICE_LINE_ITEMS/invoice_line_items.entity';
+import { Payment } from '../PAYMENTS/payments.entity';
+import { PaymentGateway } from '../PAYMENT_GATEWAYS/payment_gateways.entity';
+import { Notification } from '../NOTIFICATIONS/notifications.entity';
+import { Communication } from '../COMMUNICATION/communication.entity';
+import { Webform } from '../WEBFORMS/webforms.entity';
+import { Dashboard } from '../DASHBOARDS/dashboards.entity';
+import { Review } from '../REVIEWS/reviews.entity';
+import { AuditLog } from '../AUDIT_LOGS/audit_logs.entity';
+import { ServiceAgreement } from '../SERVICE_AGREEMENTS/service_agreements.entity';
+import { BlueprintDefinition } from '../BLUEPRINT_DEFINITIONS/blueprint_definitions.entity';
+import { BlueprintState } from '../BLUEPRINT_STATES/blueprint_states.entity';
+import { BlueprintTransition } from '../BLUEPRINT_TRANSITIONS/blueprint_transitions.entity';
+import { Pricebook } from '../PRICEBOOK/pricebook.entity';
+import { Setting } from '../SETTINGS/settings.entity';
+import { CustomField } from '../CUSTOM_FIELDS/custom_fields.entity';
+import { Template } from '../TEMPLATES/templates.entity';
+import { WorkflowRule } from '../WORKFLOW_RULES/workflow_rules.entity';
+import { Webhook } from '../WEBHOOKS/webhooks.entity';
+import { ChatbotSession } from '../CHATBOT_SESSIONS/chatbot_sessions.entity';
+import { ParsedDocument } from '../DOCUMENTS/documents.entity';
+import { WorkflowTemplate } from '../WORKFLOW/WORKFLOW_TEMPLATES/workflow_templates.entity';
+import { WorkflowApprover } from '../WORKFLOW/WORKFLOW_APPROVERS/workflow_approvers.entity';
+import { DocumentApproval } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.entity';
+import { ApprovalHistory } from '../WORKFLOW/WORKFLOW_APPROVAL_HISTORY/approval_history.entity';
+import { SlaTimer } from '../SLA_TIMERS/sla_timers.entity';
+import { RequestAttachment } from '../ATTACHMENTS/request_attachments.entity';
+import { EstimateAttachment } from '../ATTACHMENTS/estimate_attachments.entity';
+import { SubscriptionMagicLink } from '../SUBSCRIPTION_MAGIC_LINKS/subscription_magic_links.entity';
+import { RequestAuditLog } from '../SERVICE_REQUESTS/request_audit_log.entity';
+import { ServiceRequestTechnician } from '../SERVICE_REQUESTS/service_request_technician.entity';
+import { TechnicianFeedback } from '../FEEDBACK/technician_feedback.entity';
+import { CustomerSatisfaction } from '../FEEDBACK/customer_satisfaction.entity';
+import { SuperAdminApiKey } from '../SUPER_ADMIN/SUPER_ADMIN_API_KEYS/super_admin_api_keys.entity';
+import { SuperAdminAuditLog } from '../SUPER_ADMIN/SUPER_ADMIN_AUDIT_LOGS/super_admin_audit_logs.entity';
+import { Category } from '../CATEGORIES/categories.entity';
+import { SubCategory } from '../SUB_CATEGORIES/sub_categories.entity';
+import { Priority } from '../PRIORITIES/priorities.entity';
+import { Location } from '../LOCATIONS/locations.entity';
+import { SlaPolicy } from '../SLA_MODULE/sla_policies.entity';
+import { ServiceRequestSla } from '../SLA_MODULE/service_request_slas.entity';
+import { SlaAuditLog } from '../SLA_MODULE/sla_audit_logs.entity';
+import { WorkingCalendar } from '../SLA_MODULE/working_calendars.entity';
+import { SlaEscalation } from '../SLA_MODULE/sla_escalations.entity';
+import { SlaPauseTrigger } from '../SLA_MODULE/sla_pause_triggers.entity';
+
+export const databaseProviders = [
+  { provide: REPOSITORY.USERS, useValue: User },
+  { provide: REPOSITORY.TENANTS, useValue: Tenant },
+  { provide: REPOSITORY.ROLES, useValue: Role },
+  { provide: REPOSITORY.PERMISSIONS, useValue: Permission },
+  { provide: REPOSITORY.ROLE_PERMISSION, useValue: RolePermission },
+  { provide: REPOSITORY.USER_ROLES, useValue: UserRole },
+  { provide: REPOSITORY.LOGIN_SESSIONS, useValue: LoginSession },
+  { provide: REPOSITORY.USER_DOCUMENTS, useValue: UserDocument },
+  { provide: REPOSITORY.CONTACTS, useValue: Contact },
+  { provide: REPOSITORY.COMPANIES, useValue: Company },
+  { provide: REPOSITORY.SERVICE_LOCATIONS, useValue: ServiceLocation },
+  { provide: REPOSITORY.ASSETS, useValue: Asset },
+  { provide: REPOSITORY.ASSET_MAINTENANCE_PLANS, useValue: AssetMaintenancePlan },
+  { provide: REPOSITORY.SERVICES_CATALOG, useValue: ServicesCatalog },
+  { provide: REPOSITORY.PARTS_CATALOG, useValue: PartsCatalog },
+  { provide: REPOSITORY.SERVICE_REQUESTS, useValue: ServiceRequest },
+  { provide: REPOSITORY.ESTIMATES, useValue: Estimate },
+  { provide: REPOSITORY.ESTIMATE_LINE_ITEMS, useValue: EstimateLineItem },
+  { provide: REPOSITORY.WORK_ORDERS, useValue: WorkOrder },
+  { provide: REPOSITORY.WORK_ORDER_LINE_ITEMS, useValue: WorkOrderLineItem },
+  { provide: REPOSITORY.WORK_ORDER_NOTES, useValue: WorkOrderNote },
+  { provide: REPOSITORY.WORK_ORDER_ATTACHMENTS, useValue: WorkOrderAttachment },
+  { provide: REPOSITORY.SERVICE_APPOINTMENTS, useValue: ServiceAppointment },
+  { provide: REPOSITORY.JOB_SHEET_TEMPLATES, useValue: JobSheetTemplate },
+  { provide: REPOSITORY.JOB_SHEET_INSTANCES, useValue: JobSheetInstance },
+  { provide: REPOSITORY.JOB_SHEET_ITEMS, useValue: JobSheetItem },
+  { provide: REPOSITORY.TIMESHEETS, useValue: Timesheet },
+  { provide: REPOSITORY.TRIPS, useValue: Trip },
+  { provide: REPOSITORY.AGENT_LOCATIONS, useValue: AgentLocation },
+  { provide: REPOSITORY.INVOICES, useValue: Invoice },
+  { provide: REPOSITORY.INVOICE_LINE_ITEMS, useValue: InvoiceLineItem },
+  { provide: REPOSITORY.PAYMENTS, useValue: Payment },
+  { provide: REPOSITORY.PAYMENT_GATEWAYS, useValue: PaymentGateway },
+  { provide: REPOSITORY.NOTIFICATIONS, useValue: Notification },
+  { provide: REPOSITORY.COMMUNICATION, useValue: Communication },
+  { provide: REPOSITORY.WEBFORMS, useValue: Webform },
+  { provide: REPOSITORY.DASHBOARDS, useValue: Dashboard },
+  { provide: REPOSITORY.REVIEWS, useValue: Review },
+  { provide: REPOSITORY.AUDIT_LOGS, useValue: AuditLog },
+  { provide: REPOSITORY.SERVICE_AGREEMENTS, useValue: ServiceAgreement },
+  { provide: REPOSITORY.BLUEPRINT_DEFINITIONS, useValue: BlueprintDefinition },
+  { provide: REPOSITORY.BLUEPRINT_STATES, useValue: BlueprintState },
+  { provide: REPOSITORY.BLUEPRINT_TRANSITIONS, useValue: BlueprintTransition },
+  { provide: REPOSITORY.PRICEBOOK, useValue: Pricebook },
+  { provide: REPOSITORY.SETTINGS, useValue: Setting },
+  { provide: REPOSITORY.CUSTOM_FIELDS, useValue: CustomField },
+  { provide: REPOSITORY.TEMPLATES, useValue: Template },
+  { provide: REPOSITORY.WORKFLOW_RULES, useValue: WorkflowRule },
+  { provide: REPOSITORY.WEBHOOKS, useValue: Webhook },
+  { provide: REPOSITORY.CHATBOT_SESSIONS, useValue: ChatbotSession },
+  { provide: REPOSITORY.DOCUMENTS, useValue: ParsedDocument },
+  { provide: REPOSITORY.WORKFLOW_TEMPLATES, useValue: WorkflowTemplate },
+  { provide: REPOSITORY.WORKFLOW_APPROVERS, useValue: WorkflowApprover },
+  { provide: REPOSITORY.WORKFLOW_DOCUMENT_APPROVALS, useValue: DocumentApproval },
+  { provide: REPOSITORY.WORKFLOW_APPROVAL_HISTORY, useValue: ApprovalHistory },
+  { provide: REPOSITORY.SLA_TIMERS, useValue: SlaTimer },
+  { provide: REPOSITORY.REQUEST_ATTACHMENTS, useValue: RequestAttachment },
+  { provide: REPOSITORY.ESTIMATE_ATTACHMENTS, useValue: EstimateAttachment },
+  { provide: REPOSITORY.SUBSCRIPTION_MAGIC_LINKS, useValue: SubscriptionMagicLink },
+  { provide: REPOSITORY.REQUEST_AUDIT_LOGS, useValue: RequestAuditLog },
+  { provide: REPOSITORY.TECHNICIAN_FEEDBACK, useValue: TechnicianFeedback },
+  { provide: REPOSITORY.CUSTOMER_SATISFACTION, useValue: CustomerSatisfaction },
+  { provide: REPOSITORY.SUPER_ADMIN_API_KEYS, useValue: SuperAdminApiKey },
+  { provide: REPOSITORY.SUPER_ADMIN_AUDIT_LOGS, useValue: SuperAdminAuditLog },
+  { provide: REPOSITORY.SERVICE_REQUEST_TECHNICIANS, useValue: ServiceRequestTechnician },
+  { provide: REPOSITORY.CATEGORIES, useValue: Category },
+  { provide: REPOSITORY.SUB_CATEGORIES, useValue: SubCategory },
+  { provide: REPOSITORY.PRIORITIES, useValue: Priority },
+  { provide: REPOSITORY.LOCATIONS, useValue: Location },
+  { provide: REPOSITORY.SLA_POLICIES, useValue: SlaPolicy },
+  { provide: REPOSITORY.SERVICE_REQUEST_SLAS, useValue: ServiceRequestSla },
+  { provide: REPOSITORY.SLA_AUDIT_LOGS, useValue: SlaAuditLog },
+  { provide: REPOSITORY.WORKING_CALENDARS, useValue: WorkingCalendar },
+  { provide: REPOSITORY.SLA_ESCALATIONS, useValue: SlaEscalation },
+  { provide: REPOSITORY.SLA_PAUSE_TRIGGERS, useValue: SlaPauseTrigger },
+];

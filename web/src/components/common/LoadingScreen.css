@@ -1,0 +1,285 @@
+/* ═══════════════════════════════════════════════════════════════
+   LoadingScreen.css — FieldForce Pro Premium Boot Loader
+   Liquid-fill SVG logo, theme-adaptive, progress-driven
+   Theme: follows OS / browser prefers-color-scheme (not app class)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Overlay ─────────────────────────────────────────────────── */
+.ls-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc; /* light default */
+
+  /* Fade-out transition */
+  opacity: 1;
+  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+/* Light mode explicit bg */
+.ls-overlay.ls-theme-light {
+  background-color: #f8fafc;
+}
+
+/* Dark mode bg */
+.ls-overlay.ls-theme-dark {
+  background-color: #0c1222;
+}
+
+/* System dark override (CSS layer — no JS class needed) */
+@media (prefers-color-scheme: dark) {
+  .ls-overlay {
+    background-color: #0c1222;
+  }
+}
+
+.ls-overlay.ls-is-fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Content wrapper ─────────────────────────────────────────── */
+.ls-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+/* ─── Logo container (holds outline + fill SVG layers) ────────── */
+.ls-logo-wrapper {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+
+/* ─── Both SVGs are stacked absolutely ────────────────────────── */
+.ls-svg-outline,
+.ls-fill-clip-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ─── Outline SVG ─────────────────────────────────────────────── */
+/* Squircle stroke */
+.ls-squircle-outline {
+  fill: none;
+  stroke-width: 3;
+  stroke: #c9d6e8; /* light */
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-squircle-outline {
+    stroke: rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* Bolt stroke */
+.ls-bolt-outline {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke: #b0c0d8; /* light */
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-bolt-outline {
+    stroke: rgba(255, 255, 255, 0.14);
+  }
+}
+
+/* ─── Fill clip wrapper ────────────────────────────────────────── */
+/*
+  The liquid-fill is achieved via CSS clip-path: inset().
+  As progress goes 0→100, the top inset shrinks 100%→0%,
+  revealing the fill layer from the bottom up.
+*/
+.ls-fill-clip-wrapper {
+  /* transition is the key — smooth bottom-to-top reveal */
+  transition: clip-path 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: clip-path;
+  /* clip-path is set inline via React style prop */
+}
+
+/* ─── Filled squircle ─────────────────────────────────────────── */
+.ls-squircle-fill {
+  fill: #2563eb;
+}
+
+/* ─── Filled bolt ─────────────────────────────────────────────── */
+.ls-bolt-fill {
+  fill: #ffffff;
+}
+
+/* ─── Logo drop-shadow glow ───────────────────────────────────── */
+.ls-logo-wrapper {
+  filter: drop-shadow(0 8px 28px rgba(29, 99, 237, 0.2));
+  transition: filter 0.4s ease;
+}
+
+.ls-logo-wrapper.ls-glow-active {
+  filter: drop-shadow(0 12px 40px rgba(29, 99, 237, 0.45));
+}
+
+/* ─── Pulse ring (subtle breathing ring behind the logo) ──────── */
+.ls-pulse-ring {
+  position: absolute;
+  inset: -16px;
+  border-radius: 30%;
+  border: 1.5px solid rgba(29, 99, 237, 0.22);
+  animation: ls-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ls-pulse-ring:nth-child(2) {
+  inset: -28px;
+  border-color: rgba(29, 99, 237, 0.12);
+  animation-delay: 0.6s;
+  border-radius: 35%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-pulse-ring {
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+
+  .ls-pulse-ring:nth-child(2) {
+    border-color: rgba(59, 130, 246, 0.14);
+  }
+}
+
+@keyframes ls-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.3;
+  }
+}
+
+/* ─── Meta text (brand name + tagline) ────────────────────────── */
+.ls-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.ls-brand-name {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1e293b; /* light */
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-brand-name {
+    color: #f1f5f9;
+  }
+}
+
+.ls-tagline {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* ─── Progress row (percentage + dots) ────────────────────────── */
+.ls-progress-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.ls-percentage {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #64748b; /* light */
+  min-width: 40px;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-percentage {
+    color: #94a3b8;
+  }
+}
+
+/* ─── Slim progress bar ───────────────────────────────────────── */
+.ls-bar-track {
+  width: 180px;
+  height: 3px;
+  background: #e2e8f0; /* light */
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ls-bar-track {
+    background: #1e3050;
+  }
+}
+
+.ls-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1d63ed 0%, #3b82f6 50%, #60a5fa 100%);
+  border-radius: 9999px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+
+  /* Subtle shimmer on the fill bar */
+  background-size: 200% 100%;
+  animation: ls-bar-shimmer 2s linear infinite;
+}
+
+@keyframes ls-bar-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ─── Loading status message ─────────────────────────────────── */
+.ls-status-msg {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+  height: 16px;              /* reserve space to prevent layout shift */
+  transition: opacity 0.3s ease;
+}
+
+/* ─── Entrance animation for the whole content block ─────────── */
+@keyframes ls-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ls-content {
+  animation: ls-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

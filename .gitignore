@@ -1,0 +1,19 @@
+docker-compose.override.yml
+
+# Environment secrets
+.env
+.env.docker
+
+# Docker
+.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (root-level Playwright)
+node_modules/
+
+# Test screenshots and verification scripts (session artifacts)
+screenshot-*.png
+verify-*.js

@@ -1,0 +1,64 @@
+[
+  {
+    "error_state": "no active parts found",
+    "user_symptoms": [
+      "it says no active parts",
+      "can't add a line item",
+      "dropdown is empty",
+      "where are my parts"
+    ],
+    "root_cause": "The parts catalog dropdown in the Estimate Builder only displays parts where `is_active` is true. If the inventory database is empty or all parts are inactive, this empty state appears.",
+    "resolution": "To fix this, you need to go to the **Inventory / Parts Catalog** page from the main sidebar. Add a new part to your inventory and ensure the 'Active' toggle is switched on. Alternatively, if you don't track inventory, you can bypass the catalog entirely by selecting the 'Manual Entry' option when adding a line item."
+  },
+  {
+    "error_state": "Only the assigned estimator can create estimates",
+    "user_symptoms": [
+      "I can't create an estimate",
+      "it says only assigned estimator",
+      "getting an error when saving estimate",
+      "save button doesn't work for estimate"
+    ],
+    "root_cause": "The system guards estimate creation. If a service request already has an assigned estimator, only that specific user (or a Super Admin) is allowed to draft the estimate.",
+    "resolution": "It looks like this service request is assigned to another estimator. You either need to ask them to create the estimate, or have an Admin reassign the service request to you before you can build it."
+  },
+  {
+    "error_state": "Please add an initial state first",
+    "user_symptoms": [
+      "can't save blueprint",
+      "blueprint error initial state",
+      "failed to save workflow"
+    ],
+    "root_cause": "In the Blueprint Builder, a state machine must have a defined starting node before it can be serialized and saved.",
+    "resolution": "Before saving your Blueprint, you must have at least one state on the canvas marked as the starting point. Drag a new State onto the canvas and toggle the 'Is Initial State' switch to ON."
+  },
+  {
+    "error_state": "Please select a file to upload",
+    "user_symptoms": [
+      "document upload failed",
+      "clicking upload does nothing",
+      "says please select a file"
+    ],
+    "root_cause": "The user clicked the 'Upload' button in the User Documents section before actually selecting a file in the dropzone input.",
+    "resolution": "You need to select a file first! Click the upload area or drag-and-drop your document into the dashed box, then click the 'Upload' button again to save it."
+  },
+  {
+    "error_state": "Geolocation is not supported by your browser",
+    "user_symptoms": [
+      "can't clock in",
+      "location tracking not working",
+      "browser doesn't support geolocation"
+    ],
+    "root_cause": "The `navigator.geolocation` API is undefined, usually because the user is on an outdated browser or the site is not served over HTTPS (which is required for location APIs).",
+    "resolution": "Your browser doesn't support location tracking, which is required to clock in. Please ensure you are using a modern, up-to-date browser (like Chrome or Safari) and that you are accessing the app over a secure (HTTPS) connection."
+  },
+  {
+    "error_state": "Location permission denied. Please allow location access.",
+    "user_symptoms": [
+      "can't get my location",
+      "permission denied for location",
+      "auto-fill address not working"
+    ],
+    "root_cause": "The user explicitly denied the browser prompt for location access, causing the Geolocation API to throw a permission denied error.",
+    "resolution": "Your browser is blocking FieldForce Pro from seeing your location. Click the small lock icon next to the URL in your browser's address bar, turn on Location permissions, and then refresh the page to try again."
+  }
+]

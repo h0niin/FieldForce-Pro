@@ -1,0 +1,275 @@
+[
+  {
+    "entity_name": "Job Sheet",
+    "definition": "A Job Sheet is a detailed record used by technicians in the field to log the specific tasks completed, materials used, and time spent on a specific Work Order.",
+    "business_value": "It acts as the proof of work and is often required before an Invoice can be generated.",
+    "related_workflows": [
+      "Approve Job Sheet",
+      "Complete Job Sheet",
+      "Create Job Sheet Template"
+    ]
+  },
+  {
+    "entity_name": "Work Order",
+    "definition": "A Work Order is a centralized dispatch record that directs a technician to perform specific services, maintenance, or repairs at a customer location.",
+    "business_value": "It is the core operational unit of the system, acting as the single source of truth for tracking labor, parts, time tracking, and job resolution status.",
+    "related_workflows": [
+      "Create Work Order",
+      "Assign Technician",
+      "Update Work Order Status",
+      "View Work Order Details"
+    ]
+  },
+  {
+    "entity_name": "Estimate",
+    "definition": "An Estimate is a preliminary proposal detailing the expected costs for parts, labor, and custom services before any work begins.",
+    "business_value": "It allows the business to secure customer approval and formalize pricing expectations before committing resources.",
+    "related_workflows": [
+      "Create Estimate",
+      "Add Line Item to Estimate",
+      "Send Estimate for Review",
+      "Approve Estimate"
+    ]
+  },
+  {
+    "entity_name": "Invoice",
+    "definition": "An Invoice is a final commercial document sent to the customer requesting payment for completed services, parts used, and applied taxes.",
+    "business_value": "It drives revenue collection, formalizes the customer's debt, and enables financial reconciliation.",
+    "related_workflows": [
+      "Generate Invoice from Work Order",
+      "Send Invoice to Customer",
+      "Record Payment",
+      "View Invoice"
+    ]
+  },
+  {
+    "entity_name": "Line Item",
+    "definition": "A Line Item is an individual entry on an Estimate or Invoice representing a specific part from the catalog, a labor charge, or a custom service fee.",
+    "business_value": "It provides granular pricing transparency to the customer and allows the system to track exact inventory consumption and labor revenue.",
+    "related_workflows": [
+      "Add Line Item",
+      "Edit Line Item Price",
+      "Apply Discount to Line Item",
+      "Delete Line Item"
+    ]
+  },
+  {
+    "entity_name": "Asset",
+    "definition": "An Asset is a physical piece of equipment or machinery located at a customer's service location that requires installation, maintenance, or repair.",
+    "business_value": "It enables the business to track long-term service history, manage warranties, and offer preventative maintenance contracts.",
+    "related_workflows": [
+      "Create Customer Asset",
+      "View Asset Service History",
+      "Link Asset to Work Order"
+    ]
+  },
+  {
+    "entity_name": "Approval Workflow",
+    "definition": "An Approval Workflow is a structured set of rules that requires certain documents (like Work Orders or Estimates) to be reviewed and approved by designated personnel before they can proceed to the next stage.",
+    "business_value": "It ensures quality control, enforces financial compliance, and prevents unauthorized work from being dispatched or billed.",
+    "related_workflows": [
+      "Approve Work Order",
+      "Reject Work Order",
+      "Create Workflow Template"
+    ]
+  },
+  {
+    "entity_name": "Service Request",
+    "definition": "A Service Request is a formal inquiry or ticket submitted by a customer or internally, asking for a service, repair, or installation at a specific location.",
+    "business_value": "It acts as the initial intake step, allowing dispatchers to triage the issue before committing resources or converting it into a formal Estimate or Work Order.",
+    "related_workflows": [
+      "Create Service Request",
+      "Update Service Request",
+      "Convert Service Request to Work Order"
+    ]
+  },
+  {
+    "entity_name": "Mobile Usage Logs",
+    "definition": "Mobile Usage Logs is an admin dashboard page that displays a chronological audit trail of all actions performed by technicians on the FieldForce Pro mobile app, including login and logout events, work order status changes, clock-in and clock-out events, estimate signatures, and appointment completions.",
+    "business_value": "It gives administrators full visibility into field technician activity, supports compliance auditing, and helps diagnose disputes or incidents by showing exactly what happened, when, and by whom — including the device and IP address used.",
+    "related_workflows": [
+      "View Mobile Usage Logs",
+      "Filter Logs by Action Type",
+      "Filter Logs by Date Range",
+      "Inspect Log Entry Details"
+    ]
+  },
+  {
+    "entity_name": "Dispatch Board",
+    "definition": "The Dispatch Board is the primary scheduling screen displayed as a Gantt-style timeline, showing all technicians as rows and their assigned appointments as color-coded blocks across a time axis, allowing dispatchers to see the entire day's workload at a glance.",
+    "business_value": "It enables dispatchers to assign, reschedule, or reassign jobs in real time by viewing technician availability, eliminating scheduling conflicts and maximizing field utilization.",
+    "related_workflows": [
+      "View Dispatch Board",
+      "Assign Technician from Dispatch Board",
+      "Reschedule Appointment"
+    ]
+  },
+  {
+    "entity_name": "Calendar View",
+    "definition": "Calendar View is a scheduling layout that displays appointments and work orders on a standard calendar grid (day, week, or month), giving teams a familiar time-based interface to review upcoming jobs.",
+    "business_value": "It complements the Dispatch Board by providing a date-centric perspective, making it easy to spot busy periods, gaps in the schedule, or overlapping jobs.",
+    "related_workflows": [
+      "View Schedule in Calendar",
+      "Create Appointment from Calendar"
+    ]
+  },
+  {
+    "entity_name": "Timesheets",
+    "definition": "Timesheets are time tracking records that log the hours a technician worked, captured automatically through clock-in and clock-out events on the mobile app.",
+    "business_value": "They enable accurate payroll calculation, per-job labor cost tracking, and compliance with labor regulations by maintaining a verified, timestamped record of hours worked.",
+    "related_workflows": [
+      "Clock In",
+      "Clock Out",
+      "View Timesheet History",
+      "Export Timesheet Report"
+    ]
+  },
+  {
+    "entity_name": "Trip History",
+    "definition": "Trip History is a record of GPS-tracked journeys made by technicians between job sites, capturing start and end points, distance traveled, and trip duration.",
+    "business_value": "It supports mileage reporting, expense reimbursement calculations, and provides an auditable trail of technician movements for accountability and customer billing.",
+    "related_workflows": [
+      "View Trip History",
+      "Export Trip Report"
+    ]
+  },
+  {
+    "entity_name": "Dashboard",
+    "definition": "The Dashboard is the main home screen of the FieldForce Pro web application, displaying key performance indicators (KPIs), recent activity, and summary widgets covering work orders, service requests, revenue, and technician status in real time.",
+    "business_value": "It gives managers and dispatchers an at-a-glance view of operational health without navigating into individual modules, accelerating decision-making.",
+    "related_workflows": [
+      "View Dashboard",
+      "Monitor Active Work Orders",
+      "Review Pending Service Requests"
+    ]
+  },
+  {
+    "entity_name": "Contacts",
+    "definition": "Contacts are individual customer records — representing homeowners, facility managers, or business points of contact — stored in the platform's built-in CRM.",
+    "business_value": "They link service history, work orders, and invoices to specific people, enabling personalized service and allowing staff to instantly pull up a customer's full relationship with the company.",
+    "related_workflows": [
+      "Create Contact",
+      "View Contact Details",
+      "Link Contact to Work Order"
+    ]
+  },
+  {
+    "entity_name": "Companies",
+    "definition": "Companies (also referred to as Accounts) represent business organizations that are customers, such as a property management firm or commercial client with multiple service locations and contacts.",
+    "business_value": "They group individual contacts and service locations under a single account, simplifying the management of commercial clients and providing a consolidated view of all work done for that organization.",
+    "related_workflows": [
+      "Create Company",
+      "View Company Details",
+      "Associate Contacts with Company"
+    ]
+  },
+  {
+    "entity_name": "Service Locations",
+    "definition": "Service Locations are the physical addresses where work is performed — such as a customer's home, a commercial property, or an equipment installation site — stored with geolocation coordinates and site-specific notes.",
+    "business_value": "They give dispatchers accurate address data for navigation, enable the system to assign the nearest available technician, and allow site history to be tracked independently from the contact.",
+    "related_workflows": [
+      "Create Service Location",
+      "Link Service Location to Work Order",
+      "View Location Service History"
+    ]
+  },
+  {
+    "entity_name": "Payments",
+    "definition": "Payments are financial transaction records that track money received from customers against outstanding invoices, including the payment method, amount, date, and reference number.",
+    "business_value": "They close the revenue cycle by marking invoices as paid, updating accounts receivable, and providing a financial audit trail for accounting purposes.",
+    "related_workflows": [
+      "Record Payment",
+      "View Payment History",
+      "Apply Payment to Invoice"
+    ]
+  },
+  {
+    "entity_name": "Reviews",
+    "definition": "Reviews are customer satisfaction records collected after a job is completed, capturing a star rating and written feedback about the technician's performance and service quality.",
+    "business_value": "They support quality management, identify top-performing technicians, and can be used to generate testimonials for marketing purposes.",
+    "related_workflows": [
+      "Request Customer Review",
+      "View Review Dashboard"
+    ]
+  },
+  {
+    "entity_name": "Reports",
+    "definition": "Reports are analytics and data export tools that aggregate operational data — including work orders, revenue, technician performance, and SLA compliance — into charts, tables, and downloadable files.",
+    "business_value": "They enable data-driven decision-making by surfacing trends in job completion rates, revenue by service type, technician efficiency, and customer satisfaction over any date range.",
+    "related_workflows": [
+      "Generate Work Order Report",
+      "Generate Revenue Report",
+      "Export Report to CSV"
+    ]
+  },
+  {
+    "entity_name": "Services Catalog",
+    "definition": "The Services Catalog is a configurable library of standardized services your business offers (e.g., 'HVAC Tune-Up', 'Electrical Panel Inspection'), each with a preset name, description, and price that technicians and dispatchers can add directly to estimates and invoices.",
+    "business_value": "It standardizes pricing, eliminates manual entry errors, and speeds up estimate creation by letting staff pick from pre-approved services rather than typing descriptions from scratch each time.",
+    "related_workflows": [
+      "Add Service to Catalog",
+      "Edit Service Price",
+      "Add Service as Line Item to Estimate"
+    ]
+  },
+  {
+    "entity_name": "Parts Catalog",
+    "definition": "The Parts Catalog is a searchable inventory of all physical parts and materials used in service jobs (e.g., 'Air Filter 16x20', '20A Circuit Breaker'), tracking quantities and unit costs.",
+    "business_value": "It ensures accurate materials billing, tracks inventory consumption across jobs, and prevents undercharging by standardizing part pricing so every technician uses the same agreed rates.",
+    "related_workflows": [
+      "Add Part to Catalog",
+      "Edit Part Price",
+      "Add Part as Line Item to Work Order"
+    ]
+  },
+  {
+    "entity_name": "Roles and Permissions",
+    "definition": "Roles and Permissions is the access control system where administrators define what actions each user type (e.g., Technician, Dispatcher, Manager) can perform within the platform, including which pages they can see and which data they can edit.",
+    "business_value": "It enforces security and data privacy by ensuring users can only access the modules relevant to their job function, preventing unauthorized data access or accidental changes.",
+    "related_workflows": [
+      "Create Role",
+      "Assign Permissions to Role",
+      "Assign Role to User"
+    ]
+  },
+  {
+    "entity_name": "Workflow Templates",
+    "definition": "Workflow Templates are reusable approval chain definitions that specify who must review and approve a document — for example, a Work Order exceeding a certain cost threshold must be approved by a Manager before a technician can be dispatched.",
+    "business_value": "They automate document routing for review, enforce consistent approval policies across the organization, and eliminate manual hand-offs between team members.",
+    "related_workflows": [
+      "Create Workflow Template",
+      "Edit Workflow Template",
+      "Assign Workflow to Document Type"
+    ]
+  },
+  {
+    "entity_name": "Document Approvals",
+    "definition": "Document Approvals is a review queue showing all Work Orders and Estimates currently pending sign-off by authorized approvers as part of an active Approval Workflow.",
+    "business_value": "It gives approvers a consolidated inbox of items requiring their action, prevents bottlenecks in the approval chain, and ensures no document is accidentally skipped.",
+    "related_workflows": [
+      "Approve Document",
+      "Reject Document",
+      "View Pending Approvals"
+    ]
+  },
+  {
+    "entity_name": "Audit Logs",
+    "definition": "Audit Logs are a chronological, tamper-evident record of all significant system events and user actions performed in the platform — including status changes, document approvals, user logins, and data deletions.",
+    "business_value": "They are essential for security monitoring, compliance auditing, and dispute resolution, providing administrators a detailed trail of who did what, when, and from which device.",
+    "related_workflows": [
+      "View Audit Logs",
+      "Filter Audit Logs by User or Action",
+      "Export Audit Report"
+    ]
+  },
+  {
+    "entity_name": "API Keys",
+    "definition": "API Keys are authentication credentials that allow external systems and third-party integrations to securely connect to the FieldForce Pro API on behalf of your organization.",
+    "business_value": "They enable integration with external tools such as ERP systems, accounting software, or custom automation — without requiring a user to log in interactively each time.",
+    "related_workflows": [
+      "Generate API Key",
+      "Revoke API Key",
+      "View API Usage"
+    ]
+  }
+]

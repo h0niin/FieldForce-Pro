@@ -1,0 +1,11 @@
+﻿app/asset/index.tsx(33,18): error TS2322: Type '"#22c55e"' is not assignable to type '"#ADB5BD"'.
+app/asset/index.tsx(34,23): error TS2322: Type '"#f59e0b"' is not assignable to type '"#ADB5BD"'.
+app/asset/index.tsx(35,10): error TS2322: Type '"#ef4444"' is not assignable to type '"#ADB5BD"'.
+app/invoice/_layout.tsx(10,9): error TS2353: Object literal may only specify known properties, and 'headerBackTitleVisible' does not exist in type 'NativeStackNavigationOptions | ((props: { route: RouteProp<ParamListBase, string>; navigation: NativeStackNavigationProp<ParamListBase, string, undefined>; theme: Theme; }) => NativeStackNavigationOptions)'.
+app/work-order/[id].tsx(29,37): error TS2307: Cannot find module '@/components/WorkOrderToolsModal' or its corresponding type declarations.
+app/work-order/checklist/[id].tsx(535,20): error TS2741: Property 'height' is missing in type '{ onSave: (signature: string) => void; onClear: () => void; }' but required in type 'SignaturePadProps'.
+app/work-order/voice/[id].tsx(14,23): error TS2307: Cannot find module 'expo-av' or its corresponding type declarations.
+app/work-order/voice/[id].tsx(82,13): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/work-order/voice/[id].tsx(138,49): error TS7006: Parameter 'status' implicitly has an 'any' type.
+src/services/trip-auto-log.service.ts(116,13): error TS2353: Object literal may only specify known properties, and 'end_latitude' does not exist in type '{ end_lat?: number | undefined; end_lng?: number | undefined; }'.
+src/services/trip-auto-log.service.ts(185,9): error TS2353: Object literal may only specify known properties, and 'end_latitude' does not exist in type '{ end_lat?: number | undefined; end_lng?: number | undefined; }'.

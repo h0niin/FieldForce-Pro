@@ -1,0 +1,111 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { RolesService } from './roles.service';
+import { CreateRoleDto } from './dto/roles_create.dto';
+import { UpdateRoleDto } from './dto/roles_update.dto';
+import { PageOptionsDto } from '../shared/dto/page-options.dto';
+import { DataResponseDto } from '../shared/dto/data-response.dto';
+import { TenantId } from '../shared/decorator/tenant.decorator';
+import { Permissions } from '../shared/decorator/permission.decorator';
+import { Public } from '../shared/decorator/public.decorator';
+
+@ApiTags('Roles')
+@ApiBearerAuth()
+@Controller('roles')
+@Public() // TEMPORARY: Remove this after initial setup is complete
+export class RolesController {
+  constructor(private readonly rolesService: RolesService) {}
+
+  @Get()
+  @Permissions('roles:read')
+  @ApiOperation({ summary: 'Get all roles (paginated)' })
+  async findAll(@TenantId() tenantId: string, @Query() pageOptionsDto: PageOptionsDto) {
+    const result = await this.rolesService.findAllPaginated(tenantId, pageOptionsDto);
+    return DataResponseDto.success(result.data, 'Roles fetched successfully', {
+      ...result.meta,
+    } as unknown as Record<string, unknown>);
+  }
+
+  @Get('all')
+  @Permissions('roles:read')
+  @ApiOperation({ summary: 'Get all roles (non-paginated)' })
+  async findAllNonPaginated(@TenantId() tenantId: string) {
+    const roles = await this.rolesService.findAll(tenantId);
+    return DataResponseDto.success(roles, 'Roles fetched successfully');
+  }
+
+  @Get(':id')
+  @Permissions('roles:read')
+  @ApiOperation({ summary: 'Get role by ID' })
+  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
+    const role = await this.rolesService.findById(id, tenantId);
+    return DataResponseDto.success(role);
+  }
+
+  @Get(':id/permissions')
+  @Permissions('roles:read')
+  @ApiOperation({ summary: 'Get permissions for a role' })
+  async getPermissions(@Param('id') id: string) {
+    const permissions = await this.rolesService.getPermissions(id);
+    return DataResponseDto.success(permissions);
+  }
+
+  @Post()
+  @Permissions('roles:create')
+  @ApiOperation({ summary: 'Create a new role' })
+  async create(@TenantId() tenantId: string, @Body() dto: CreateRoleDto) {
+    const role = await this.rolesService.create(tenantId, dto);
+    return DataResponseDto.created(role, 'Role created successfully');
+  }
+
+  @Post(':id/permissions')
+  @Permissions('roles:update')
+  @ApiOperation({ summary: 'Assign permissions to a role' })
+  async assignPermissions(
+    @Param('id') id: string,
+    @Body('permission_ids') permissionIds: string[],
+  ) {
+    await this.rolesService.assignPermissions(id, permissionIds);
+    return DataResponseDto.success(null, 'Permissions assigned successfully');
+  }
+
+  @Put(':id')
+  @Permissions('roles:update')
+  @ApiOperation({ summary: 'Update a role' })
+  async update(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @Body() dto: UpdateRoleDto,
+  ) {
+    const role = await this.rolesService.update(id, tenantId, dto);
+    return DataResponseDto.success(role, 'Role updated successfully');
+  }
+
+  @Delete(':id')
+  @Permissions('roles:delete')
+  @ApiOperation({ summary: 'Delete a role' })
+  async remove(@Param('id') id: string, @TenantId() tenantId: string) {
+    await this.rolesService.delete(id, tenantId);
+    return DataResponseDto.success(null, 'Role deleted successfully');
+  }
+
+  @Delete(':id/permissions')
+  @Permissions('roles:update')
+  @ApiOperation({ summary: 'Remove permissions from a role' })
+  async removePermissions(
+    @Param('id') id: string,
+    @Body('permission_ids') permissionIds: string[],
+  ) {
+    await this.rolesService.removePermissions(id, permissionIds);
+    return DataResponseDto.success(null, 'Permissions removed successfully');
+  }
+}
