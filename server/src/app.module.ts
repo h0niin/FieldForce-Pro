@@ -85,6 +85,10 @@ import { WhatsAppChannelsModule } from './WHATSAPP_CHANNELS/whatsapp_channels.mo
 import { SlaModule } from './SLA_MODULE/sla.module';
 import { LookupsModule } from './LOOKUPS/lookups.module';
 import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
+import { TenantModulesModule } from './TENANT_MODULES/tenant_modules.module';
+import { FieldPermissionsModule } from './FIELD_PERMISSIONS/field_permissions.module';
+import { DispatchConsoleLayoutsModule } from './DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.module';
+import { ModuleMappingsModule } from './MODULE_MAPPINGS/module_mappings.module';
 
 @Module({
   imports: [
@@ -170,6 +174,10 @@ import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
     SlaModule,
     LookupsModule,
     EmailChannelsModule,
+    TenantModulesModule,
+    FieldPermissionsModule,
+    DispatchConsoleLayoutsModule,
+    ModuleMappingsModule,
   ],
   providers: [
     {

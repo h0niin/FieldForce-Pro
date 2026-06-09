@@ -5,12 +5,16 @@ import type { Template } from '@/types/models.types';
 export interface CreateTemplatePayload {
   type: string;
   name: string;
+  description?: string;
+  module_name?: string;
   content: Record<string, unknown>;
   is_default?: boolean;
 }
 
 export interface UpdateTemplatePayload {
   name?: string;
+  description?: string;
+  module_name?: string;
   content?: Record<string, unknown>;
   is_default?: boolean;
 }

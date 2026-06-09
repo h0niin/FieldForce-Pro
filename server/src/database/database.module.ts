@@ -88,6 +88,10 @@ import { SlaEscalation } from '../SLA_MODULE/sla_escalations.entity';
 import { SlaPauseTrigger } from '../SLA_MODULE/sla_pause_triggers.entity';
 import { EmailChannel } from '../EMAIL_CHANNELS/email_channels.entity';
 import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
+import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
+import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
+import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
+import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
 
 @Module({
   imports: [
@@ -128,7 +132,8 @@ import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
           Category, SubCategory, Priority, Location,
           SlaPolicy, ServiceRequestSla, SlaAuditLog,
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
-          EmailChannel, EmailThread
+          EmailChannel, EmailThread,
+          TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,
