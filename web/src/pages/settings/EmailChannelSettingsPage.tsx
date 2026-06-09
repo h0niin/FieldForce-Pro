@@ -281,7 +281,7 @@ export default function EmailChannelSettingsPage() {
     <div>
       <PageHeader
         title={t('emailChannel.title')}
-        subtitle={t('emailChannel.subtitle')}
+        subtitle="Configure email integration rules and forwarding endpoints. Enable automated ticket classification, custom auto-replies, allowlist/blocklist senders, and keywords for human support handoff."
       />
 
       <Card

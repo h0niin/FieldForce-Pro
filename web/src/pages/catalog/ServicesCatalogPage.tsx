@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
@@ -51,7 +51,7 @@ export default function ServicesCatalogPage() {
       title: t('servicesCatalog.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => <Link to={`/catalog/services/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
@@ -96,11 +96,6 @@ export default function ServicesCatalogPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="services-catalog:read">
-            <Tooltip title={t('servicesCatalog.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/catalog/services/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="services-catalog:update">
             <Tooltip title={t('servicesCatalog.edit')}>
               <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/catalog/services/${record.id}/edit`)} />

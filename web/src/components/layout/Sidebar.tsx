@@ -82,7 +82,6 @@ const menuSections: MenuSection[] = [
       { key: '/companies', icon: <BankOutlined />, labelKey: 'nav.companies', permission: 'companies:read' },
       { key: '/service-locations', icon: <EnvironmentOutlined />, labelKey: 'nav.serviceLocations', permission: 'service_locations:read' },
       { key: '/assets', icon: <ToolOutlined />, labelKey: 'nav.assets', permission: 'assets:read' },
-
     ],
   },
   {
@@ -205,35 +204,8 @@ const menuSections: MenuSection[] = [
   {
     section: 'sidebar.systemAnalytics',
     items: [
-      { key: '/users', icon: <UserOutlined />, labelKey: 'nav.users', permission: 'users:read' },
       { key: '/reports', icon: <BarChartOutlined />, labelKey: 'nav.reports', permission: 'reports:read' },
-      { key: '/integrations/api-keys', icon: <KeyOutlined />, labelKey: 'sidebar.apiKeys', permission: 'settings:read' },
-      {
-        key: 'settings-submenu',
-        icon: <SettingOutlined />,
-        labelKey: 'nav.settings',
-        permission: 'settings:read',
-        children: [
-          { key: '/settings', labelKey: 'settings.general' },
-          { key: '/settings/roles', labelKey: 'settings.rolesPermissions', permission: 'roles:read' },
-          { key: '/settings/channels/whatsapp', labelKey: 'settings.whatsappChannel', permission: 'settings:read' },
-          { key: '/settings/channels/email', labelKey: 'settings.emailChannel', permission: 'settings:read' },
-          // { key: '/settings/payment-gateways', labelKey: 'Payment Gateways', permission: 'payment_gateways:read' },
-          // { key: '/settings/email-sms-templates', labelKey: 'Email/SMS Templates', permission: 'templates:read' },
-          // { key: '/settings/notifications', labelKey: 'Notifications', permission: 'notifications:read' },
-        ],
-      },
-      { key: '/admin/mobile-logs', icon: <MobileOutlined />, labelKey: 'Mobile Usage Logs', permission: 'audit_logs:read' },
-      {
-        key: 'security-submenu',
-        icon: <SafetyOutlined />,
-        labelKey: 'nav.security',
-        permission: 'audit_logs:read',
-        children: [
-          // { key: '/security/audit-logs', labelKey: 'nav.auditLogs', permission: 'audit_logs:read' },
-          { key: '/security/settings', labelKey: 'sidebar.securitySettings', permission: 'settings:read' },
-        ],
-      },
+      { key: '/settings', icon: <SettingOutlined />, labelKey: 'nav.settings', permission: 'settings:read' },
     ],
   },
 ];

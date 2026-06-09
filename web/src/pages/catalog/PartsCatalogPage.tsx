@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
@@ -51,7 +51,7 @@ export default function PartsCatalogPage() {
       title: t('partsCatalog.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => <Link to={`/catalog/parts/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
@@ -108,19 +108,14 @@ export default function PartsCatalogPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="parts-catalog:read">
-            <Tooltip title={t('partsCatalog.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/catalog/parts/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="parts-catalog:update">
             <Tooltip title={t('partsCatalog.actions.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/catalog/parts/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/catalog/parts/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="parts-catalog:delete">
             <Tooltip title={t('partsCatalog.actions.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -157,6 +152,10 @@ export default function PartsCatalogPage() {
         dataSource={parts}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/catalog/parts/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

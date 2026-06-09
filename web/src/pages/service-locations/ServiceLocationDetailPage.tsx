@@ -1,12 +1,14 @@
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Descriptions, Button, Space, Spin, Tag, Empty, Row, Col } from 'antd';
 import { EditOutlined, DeleteOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PageHeader from '@/components/common/PageHeader';
 import { useServiceLocation, useDeleteServiceLocation } from '@/hooks/use-service-locations';
+import { useSetting } from '@/hooks/use-settings';
 import { formatDateTime } from '@/utils/format-date';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PermissionGuard } from '@/components/permissions';
@@ -25,6 +27,12 @@ export default function ServiceLocationDetailPage() {
   const { id } = useParams();
   const { data: location, isLoading } = useServiceLocation(id || '');
   const deleteServiceLocation = useDeleteServiceLocation();
+
+  // Load territories list to draw background boundaries on map
+  const { data: settingData } = useSetting('territories_settings');
+  const territories = useMemo(() => {
+    return (settingData?.value?.list as any[]) || [];
+  }, [settingData]);
 
   const handleDelete = () => {
     if (!location) return;
@@ -140,7 +148,7 @@ export default function ServiceLocationDetailPage() {
                 <div style={{ height: 250, borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
                   <MapContainer
                     center={[Number(location.lat), Number(location.lng)]}
-                    zoom={15}
+                    zoom={12}
                     style={{ height: '100%', width: '100%' }}
                     scrollWheelZoom={false}
                   >
@@ -148,6 +156,30 @@ export default function ServiceLocationDetailPage() {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
+
+                    {/* Render all defined territory boundaries */}
+                    {territories.map((t: any) => {
+                      if (!t.coordinates || t.coordinates.length < 3) return null;
+                      return (
+                        <Polygon
+                          key={t.id}
+                          positions={t.coordinates}
+                          pathOptions={{
+                            color: t.color || '#3B82F6',
+                            fillColor: t.color || '#3B82F6',
+                            fillOpacity: 0.12,
+                            weight: 2,
+                            dashArray: '3 3',
+                          }}
+                        >
+                          <Popup>
+                            <div style={{ fontWeight: 600 }}>🗺️ {t.name}</div>
+                            {t.description && <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>{t.description}</div>}
+                          </Popup>
+                        </Polygon>
+                      );
+                    })}
+
                     <Marker position={[Number(location.lat), Number(location.lng)]}>
                       <Popup>{location.address}</Popup>
                     </Marker>

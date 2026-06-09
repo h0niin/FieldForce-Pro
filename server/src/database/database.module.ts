@@ -92,6 +92,10 @@ import { EmailChannel } from '../EMAIL_CHANNELS/email_channels.entity';
 import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
 import { Territory } from '../TERRITORIES/territories.entity';
 import { ServiceReport } from '../SERVICE_REPORTS/service_reports.entity';
+import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
+import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
+import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
+import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
 
 @Module({
   imports: [
@@ -132,7 +136,8 @@ import { ServiceReport } from '../SERVICE_REPORTS/service_reports.entity';
           Category, SubCategory, Priority, Location,
           SlaPolicy, ServiceRequestSla, SlaAuditLog,
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
-          EmailChannel, EmailThread, Territory, ServiceReport
+          EmailChannel, EmailThread, Territory, ServiceReport,
+          TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,

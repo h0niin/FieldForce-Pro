@@ -202,7 +202,6 @@ export class PaymentsController {
     });
     return DataResponseDto.created(payment, 'Payment submitted for verification');
   }
-
   @Get(':id')
   @Permissions('payments:read')
   @ApiOperation({ summary: 'Get payment by ID' })
@@ -210,6 +209,7 @@ export class PaymentsController {
     const payment = await this.paymentsService.findById(id, tenantId);
     return DataResponseDto.success(payment);
   }
+
 
   @Patch(':id/confirm')
   @Permissions('payments:update')

@@ -17,3 +17,5 @@ node_modules/
 # Test screenshots and verification scripts (session artifacts)
 screenshot-*.png
 verify-*.js
+web/Dockerfile
+server/Dockerfile

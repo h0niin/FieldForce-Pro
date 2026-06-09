@@ -467,7 +467,7 @@ export default function WhatsAppChannelSettingsPage() {
     <div>
       <PageHeader
         title={t('whatsapp.pageTitle')}
-        subtitle={t('whatsapp.pageSubtitle')}
+        subtitle="Configure WhatsApp Business and Web JS channels. Set up greetings, intake requirements for automated service booking, translation languages, operational office hours, and support handoff routing."
       />
 
       {/* Connection Status Banner */}

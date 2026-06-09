@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Tabs, Alert } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EyeOutlined, InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
@@ -146,14 +146,14 @@ export default function EstimateListPage() {
         title: 'Template Name',
         dataIndex: 'template_name',
         key: 'template_name',
-        render: (name: string) => <span style={{ fontWeight: 500 }}>{name || 'Unnamed Template'}</span>,
+        render: (name: string, record: any) => <Link to={`/estimates/${record.id}`}><span style={{ fontWeight: 500 }}>{name || 'Unnamed Template'}</span></Link>,
       }
     ] : [
       {
         title: t('estimateList.columns.number'),
         dataIndex: 'estimate_number',
         key: 'estimate_number',
-        render: (num: string) => <span style={{ fontWeight: 500 }}>{num || '-'}</span>,
+        render: (num: string, record: any) => <Link to={`/estimates/${record.id}`}><span style={{ fontWeight: 500 }}>{num || '-'}</span></Link>,
       }
     ]),
     {
@@ -168,7 +168,7 @@ export default function EstimateListPage() {
       title: t('estimateList.columns.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {formatStatus(status)}
         </Tag>
@@ -178,33 +178,33 @@ export default function EstimateListPage() {
       title: t('estimateList.columns.subtotal'),
       dataIndex: 'subtotal',
       key: 'subtotal',
-      render: (amount: number) => formatCurrency(amount || 0),
+      render: (amount: number, record: any) => formatCurrency(amount || 0),
       sorter: (a, b) => (a.subtotal || 0) - (b.subtotal || 0),
     },
     {
       title: t('estimateList.columns.tax'),
       dataIndex: 'tax',
       key: 'tax',
-      render: (amount: number) => formatCurrency(amount || 0),
+      render: (amount: number, record: any) => formatCurrency(amount || 0),
     },
     {
       title: t('estimateList.columns.total'),
       dataIndex: 'total',
       key: 'total',
-      render: (amount: number) => <span style={{ fontWeight: 500 }}>{formatCurrency(amount || 0)}</span>,
+      render: (amount: number, record: any) => <span style={{ fontWeight: 500 }}>{formatCurrency(amount || 0)}</span>,
       sorter: (a, b) => (a.total || 0) - (b.total || 0),
     },
     {
       title: t('estimateList.columns.expiryDate'),
       dataIndex: 'expiry_date',
       key: 'expiry_date',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('estimateList.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
   ];
@@ -215,11 +215,7 @@ export default function EstimateListPage() {
     key: 'actions',
     fixed: 'right',
     width: 80,
-    render: (_, record) => (
-      <Tooltip title={t('common.view')}>
-        <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}`)} />
-      </Tooltip>
-    ),
+    render: (_, record) => null,
   };
 
   // Drafts tab actions — View + Create (continue working on draft)
@@ -230,11 +226,8 @@ export default function EstimateListPage() {
     width: 120,
     render: (_, record) => (
       <Space size="small">
-        <Tooltip title={t('common.view')}>
-          <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}`)} />
-        </Tooltip>
         <Tooltip title={t('estimateList.actions.edit')}>
-          <Button type="text" icon={<PlusOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}/edit`)} />
+          <Button type="text" icon={<PlusOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/estimates/${record.id}/edit`); }} />
         </Tooltip>
       </Space>
     ),
@@ -248,17 +241,15 @@ export default function EstimateListPage() {
     width: 200,
     render: (_, record) => (
       <Space size="small">
-        <Tooltip title={t('common.view')}>
-          <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}`)} />
-        </Tooltip>
         <Tooltip title={t('estimateList.actions.edit')}>
-          <Button type="text" icon={<PlusOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}/edit`)} />
+          <Button type="text" icon={<PlusOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/estimates/${record.id}/edit`); }} />
         </Tooltip>
         <Button
           size="small"
           type="primary"
           loading={createFromTemplate.isPending}
-          onClick={async () => {
+          onClick={async (e) => {
+            e.stopPropagation();
             try {
               const res = await createFromTemplate.mutateAsync({ templateId: record.id });
               const newEstimateId = (res.data?.data as { id?: string })?.id;
@@ -284,15 +275,13 @@ export default function EstimateListPage() {
     width: 200,
     render: (_, record) => (
       <Space size="small">
-        <Tooltip title={t('common.view')}>
-          <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}`)} />
-        </Tooltip>
         <Button
           size="small"
           type="primary"
           icon={<CheckCircleOutlined />}
           loading={adminApproveEstimate.isPending}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             showConfirmDialog({
               title: t('estimateList.actions.approve'),
               content: t('estimateList.messages.confirmApprove', { number: record.estimate_number || record.id.slice(0, 8) }),
@@ -307,7 +296,8 @@ export default function EstimateListPage() {
           danger
           icon={<CloseCircleOutlined />}
           loading={adminRejectEstimate.isPending}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             showConfirmDialog({
               title: t('estimateList.actions.reject'),
               content: t('estimateList.messages.confirmReject', { number: record.estimate_number || record.id.slice(0, 8) }),
@@ -427,6 +417,10 @@ export default function EstimateListPage() {
           dataSource={estimates}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => navigate(`/estimates/${record.id}`),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: currentPage,
             pageSize: currentPageSize,

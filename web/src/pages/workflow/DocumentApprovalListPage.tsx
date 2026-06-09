@@ -181,7 +181,7 @@ export default function DocumentApprovalListPage() {
       key: 'order_no',
       width: 70,
       align: 'center',
-      render: (v: number) => `#${v}`,
+      render: (v: number, record: any) => `#${v}`,
     },
     {
       title: t('documentApprovals.columns.approver'),
@@ -196,7 +196,7 @@ export default function DocumentApprovalListPage() {
       dataIndex: 'status',
       key: 'status',
       width: 140,
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>{getTranslatedStatusLabel(status)}</Tag>
       ),
     },
@@ -204,13 +204,13 @@ export default function DocumentApprovalListPage() {
       title: t('documentApprovals.columns.dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
-      render: (date: string) => (date ? formatDateTime(date) : '-'),
+      render: (date: string, record: any) => (date ? formatDateTime(date) : '-'),
     },
     {
       title: t('documentApprovals.columns.actionDate'),
       dataIndex: 'action_date',
       key: 'action_date',
-      render: (date: string) => (date ? formatDateTime(date) : '-'),
+      render: (date: string, record: any) => (date ? formatDateTime(date) : '-'),
     },
     {
       title: t('documentApprovals.columns.actions'),

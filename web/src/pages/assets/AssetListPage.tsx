@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAssets, useDeleteAsset } from '@/hooks/use-assets';
 import type { Asset } from '@/types/models.types';
@@ -68,26 +68,26 @@ export default function AssetListPage() {
       title: t('assets.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/assets/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('assets.columns.serialNumber'),
       dataIndex: 'serial_number',
       key: 'serial_number',
-      render: (sn: string) => sn || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (sn: string, record: any) => sn || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('assets.columns.manufacturer'),
       dataIndex: 'manufacturer',
       key: 'manufacturer',
-      render: (m: string) => m || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (m: string, record: any) => m || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('assets.columns.category'),
       dataIndex: 'product_category',
       key: 'product_category',
-      render: (category: string) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (category: string, record: any) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: 'Status',
@@ -103,7 +103,7 @@ export default function AssetListPage() {
       title: t('assets.columns.health'),
       dataIndex: 'health_score',
       key: 'health_score',
-      render: (score: number | null) => {
+      render: (score: number | null, record: any) => {
         if (score === null || score === undefined) return <span style={{ opacity: 0.5 }}>-</span>;
         const color = score >= 80 ? 'green' : score >= 50 ? 'orange' : 'red';
         return <Tag color={color}>{score}%</Tag>;
@@ -114,7 +114,7 @@ export default function AssetListPage() {
       title: t('assets.columns.warranty'),
       dataIndex: 'warranty_expiry',
       key: 'warranty_expiry',
-      render: (date: string | null) => {
+      render: (date: string | null, record: any) => {
         const status = getWarrantyStatus(date);
         return <Tag color={status.color}>{t(`assets.warrantyStatus.${status.text.toLowerCase().replace(' ', '')}`)}</Tag>;
       },
@@ -131,7 +131,7 @@ export default function AssetListPage() {
       title: t('assets.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -142,9 +142,7 @@ export default function AssetListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="assets:read">
-            <Tooltip title={t('common.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/assets/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="assets:update">
             <Tooltip title={t('common.edit')}>

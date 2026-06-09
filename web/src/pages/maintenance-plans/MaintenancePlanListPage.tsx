@@ -68,7 +68,7 @@ export default function MaintenancePlanListPage() {
       title: t('maintenancePlans.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => (
+      render: (name: string, record: any) => (
         <span style={{ fontWeight: 500 }}>{name}</span>
       ),
     },
@@ -86,7 +86,7 @@ export default function MaintenancePlanListPage() {
       title: t('maintenancePlans.frequency'),
       dataIndex: 'frequency',
       key: 'frequency',
-      render: (frequency: string) => (
+      render: (frequency: string, record: any) => (
         <Tag color={getFrequencyColor(frequency)}>
           {frequency.charAt(0).toUpperCase() + frequency.slice(1)}
         </Tag>
@@ -96,7 +96,7 @@ export default function MaintenancePlanListPage() {
       title: t('maintenancePlans.nextDueDate'),
       dataIndex: 'next_due_date',
       key: 'next_due_date',
-      render: (date: string | null) => {
+      render: (date: string | null, record: any) => {
         if (!date) return <span style={{ color: '#999' }}>{t('maintenancePlans.notScheduled')}</span>;
         const dueDate = new Date(date);
         const today = new Date();
@@ -121,13 +121,13 @@ export default function MaintenancePlanListPage() {
       title: t('maintenancePlans.lastCompleted'),
       dataIndex: 'last_completed_date',
       key: 'last_completed_date',
-      render: (date: string | null) => date ? formatDateTime(date) : <span style={{ color: '#999' }}>{t('maintenancePlans.never')}</span>,
+      render: (date: string | null, record: any) => date ? formatDateTime(date) : <span style={{ color: '#999' }}>{t('maintenancePlans.never')}</span>,
     },
     {
       title: t('maintenancePlans.autoCreateWo'),
       dataIndex: 'auto_create_wo',
       key: 'auto_create_wo',
-      render: (auto: boolean) => (
+      render: (auto: boolean, record: any) => (
         <Badge status={auto ? 'success' : 'default'} text={auto ? t('common.yes') : t('common.no')} />
       ),
     },
@@ -135,7 +135,7 @@ export default function MaintenancePlanListPage() {
       title: t('maintenancePlans.status'),
       dataIndex: 'is_active',
       key: 'is_active',
-      render: (active: boolean) => (
+      render: (active: boolean, record: any) => (
         <Badge status={active ? 'success' : 'warning'} text={active ? t('maintenancePlans.active') : t('maintenancePlans.inactive')} />
       ),
     },

@@ -44,6 +44,18 @@ export class Template extends Model {
   name: string;
 
   @Column({
+    type: DataType.STRING(500),
+    allowNull: true,
+  })
+  description: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  module_name: string;
+
+  @Column({
     type: DataType.JSONB,
     allowNull: false,
   })

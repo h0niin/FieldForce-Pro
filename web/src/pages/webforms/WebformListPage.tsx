@@ -64,20 +64,20 @@ export default function WebformListPage() {
       title: t('webforms.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => <span style={{ fontWeight: 500 }}>{name}</span>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('webforms.description'),
       dataIndex: 'description',
       key: 'description',
-      render: (desc: string) => desc || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (desc: string, record: any) => desc || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('webforms.submissions'),
       dataIndex: 'submission_count',
       key: 'submission_count',
-      render: (count: number) => count || 0,
+      render: (count: number, record: any) => count || 0,
       sorter: (a, b) => (a.submission_count || 0) - (b.submission_count || 0),
     },
     {
@@ -97,7 +97,7 @@ export default function WebformListPage() {
       title: t('webforms.lastUpdated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
     },
     {
@@ -107,11 +107,6 @@ export default function WebformListPage() {
       width: 180,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="webforms:read">
-            <Tooltip title={t('webforms.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/webforms/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="webforms:update">
             <Tooltip title={t('webforms.edit')}>
               <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/webforms/${record.id}/edit`)} />

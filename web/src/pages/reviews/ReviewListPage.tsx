@@ -78,14 +78,14 @@ export default function ReviewListPage() {
       title: t('reviews.columns.rating'),
       dataIndex: 'rating',
       key: 'rating',
-      render: (rating: number) => <Rate disabled value={rating} style={{ fontSize: 16 }} />,
+      render: (rating: number, record: any) => <Rate disabled value={rating} style={{ fontSize: 16 }} />,
       sorter: (a, b) => a.rating - b.rating,
     },
     {
       title: t('reviews.columns.comment'),
       dataIndex: 'comment',
       key: 'comment',
-      render: (comment: string) => (
+      render: (comment: string, record: any) => (
         <div style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {comment || <span style={{ opacity: 0.5 }}>-</span>}
         </div>
@@ -95,7 +95,7 @@ export default function ReviewListPage() {
       title: t('reviews.columns.source'),
       dataIndex: 'source',
       key: 'source',
-      render: (source: string) => (
+      render: (source: string, record: any) => (
         <Tag color={SOURCE_COLORS[source] || 'default'}>
           {source ? source.charAt(0).toUpperCase() + source.slice(1) : '-'}
         </Tag>
@@ -105,7 +105,7 @@ export default function ReviewListPage() {
       title: t('reviews.columns.published'),
       dataIndex: 'is_published',
       key: 'is_published',
-      render: (published: boolean) => (
+      render: (published: boolean, record: any) => (
         <Tag color={published ? 'green' : 'default'}>
           {published ? t('reviews.common.yes') : t('reviews.common.no')}
         </Tag>
@@ -115,7 +115,7 @@ export default function ReviewListPage() {
       title: t('reviews.columns.date'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -125,11 +125,6 @@ export default function ReviewListPage() {
       width: 80,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="reviews:read">
-            <Tooltip title={t('reviews.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/reviews/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
         </Space>
       ),
     },

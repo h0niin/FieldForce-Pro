@@ -90,7 +90,7 @@ export default function WorkflowTemplateListPage() {
       title: t('workflowTemplates.documentType'),
       dataIndex: 'document_type',
       key: 'document_type',
-      render: (type: string) => (
+      render: (type: string, record: any) => (
         type ? <Tag color="blue">{type.replace(/_/g, ' ')}</Tag> : '-'
       ),
     },
@@ -98,7 +98,7 @@ export default function WorkflowTemplateListPage() {
       title: t('workflowTemplates.category'),
       dataIndex: 'document_category',
       key: 'document_category',
-      render: (cat: string) => (
+      render: (cat: string, record: any) => (
         cat ? <Tag color={categoryColors[cat] || 'default'}>{cat}</Tag> : '-'
       ),
     },
@@ -108,7 +108,7 @@ export default function WorkflowTemplateListPage() {
       key: 'version',
       width: 80,
       align: 'center',
-      render: (v: number) => `v${v}`,
+      render: (v: number, record: any) => `v${v}`,
     },
     {
       title: t('workflowTemplates.approvers'),
@@ -122,7 +122,7 @@ export default function WorkflowTemplateListPage() {
       dataIndex: 'is_active',
       key: 'is_active',
       width: 100,
-      render: (active: boolean) => (
+      render: (active: boolean, record: any) => (
         <Tag color={active ? 'green' : 'default'}>{active ? t('workflowTemplates.active') : t('workflowTemplates.inactive')}</Tag>
       ),
     },
@@ -130,7 +130,7 @@ export default function WorkflowTemplateListPage() {
       title: t('workflowTemplates.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
     },
     {
       title: t('workflowTemplates.actions'),

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCommunications } from '@/hooks/use-communications';
 import PageHeader from '@/components/common/PageHeader';
@@ -69,13 +69,13 @@ export default function CommunicationListPage() {
       title: t('communications.columns.type'),
       dataIndex: 'type',
       key: 'type',
-      render: (type: string) => <Tag>{type}</Tag>,
+      render: (type: string, record: any) => (<Link to={`/communications/${record.id}`}><Tag>{type}</Tag></Link>),
     },
     {
       title: t('communications.columns.channel'),
       dataIndex: 'channel',
       key: 'channel',
-      render: (channel: string) => (
+      render: (channel: string, record: any) => (
         <Tag color={CHANNEL_COLORS[channel] || 'default'}>
           {channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : '-'}
         </Tag>
@@ -85,13 +85,13 @@ export default function CommunicationListPage() {
       title: t('communications.columns.subject'),
       dataIndex: 'subject',
       key: 'subject',
-      render: (subject: string) => <span style={{ fontWeight: 500 }}>{subject}</span>,
+      render: (subject: string, record: any) => <span style={{ fontWeight: 500 }}>{subject}</span>,
     },
     {
       title: t('communications.columns.body'),
       dataIndex: 'body',
       key: 'body',
-      render: (body: string) => (
+      render: (body: string, record: any) => (
         <div style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {body || <span style={{ opacity: 0.5 }}>-</span>}
         </div>
@@ -101,7 +101,7 @@ export default function CommunicationListPage() {
       title: t('communications.columns.sentAt'),
       dataIndex: 'sent_at',
       key: 'sent_at',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => {
         if (!a.sent_at) return -1;
         if (!b.sent_at) return 1;
@@ -116,9 +116,7 @@ export default function CommunicationListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="communications:read">
-            <Tooltip title={t('communications.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/communications/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
         </Space>
       ),

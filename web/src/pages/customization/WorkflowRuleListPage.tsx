@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip, Switch } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useWorkflowRules, useDeleteWorkflowRule, useUpdateWorkflowRule } from '@/hooks/use-workflow-rules';
 import PageHeader from '@/components/common/PageHeader';
@@ -66,20 +66,20 @@ export default function WorkflowRuleListPage() {
       title: t('workflowRules.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/customization/workflow-rules/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('workflowRules.entityType'),
       dataIndex: 'entity_type',
       key: 'entity_type',
-      render: (type: string) => <Tag>{type}</Tag>,
+      render: (type: string, record: any) => <Tag>{type}</Tag>,
     },
     {
       title: t('workflowRules.triggerEvent'),
       dataIndex: 'trigger_event',
       key: 'trigger_event',
-      render: (event: string) => <Tag color="blue">{event}</Tag>,
+      render: (event: string, record: any) => <Tag color="blue">{event}</Tag>,
     },
     {
       title: t('workflowRules.status'),
@@ -98,7 +98,7 @@ export default function WorkflowRuleListPage() {
       title: t('workflowRules.lastUpdated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
     },
     {
@@ -109,9 +109,7 @@ export default function WorkflowRuleListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="workflow-rules:read">
-            <Tooltip title={t('workflowRules.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/customization/workflow-rules/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="workflow-rules:update">
             <Tooltip title={t('workflowRules.edit')}>

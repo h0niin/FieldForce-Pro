@@ -84,7 +84,7 @@ export default function InvoiceListPage() {
       title: t('invoiceList.columns.invoiceNumber'),
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      render: (num: string) => <span style={{ fontWeight: 500 }}>{num || '-'}</span>,
+      render: (num: string, record: any) => <span style={{ fontWeight: 500 }}>{num || '-'}</span>,
     },
     {
       title: t('invoiceList.columns.customer'),
@@ -98,7 +98,7 @@ export default function InvoiceListPage() {
       title: t('invoiceList.columns.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {formatStatus(status)}
         </Tag>
@@ -129,7 +129,7 @@ export default function InvoiceListPage() {
       title: t('invoiceList.columns.dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => {
         if (!a.due_date) return 1;
         if (!b.due_date) return -1;
@@ -146,7 +146,7 @@ export default function InvoiceListPage() {
       title: t('invoiceList.columns.currency'),
       dataIndex: 'currency',
       key: 'currency',
-      render: (currency: string) => <Tag>{currency || 'USD'}</Tag>,
+      render: (currency: string, record: any) => <Tag>{currency || 'USD'}</Tag>,
     },
     {
       title: t('invoiceList.columns.actions'),
@@ -155,19 +155,14 @@ export default function InvoiceListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="invoices:read">
-            <Tooltip title={t('common.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/invoices/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="invoices:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/invoices/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="invoices:delete">
             <Tooltip title={t('common.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -204,6 +199,10 @@ export default function InvoiceListPage() {
         rowKey="id"
         loading={isLoading}
         scroll={{ x: 1600 }}
+        onRow={(record) => ({
+          onClick: () => navigate(`/invoices/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

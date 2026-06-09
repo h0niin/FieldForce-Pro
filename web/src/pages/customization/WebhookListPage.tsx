@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip, Switch } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useWebhooks, useDeleteWebhook, useUpdateWebhook } from '@/hooks/use-webhooks';
 import PageHeader from '@/components/common/PageHeader';
@@ -65,14 +65,14 @@ export default function WebhookListPage() {
       title: t('webhooks.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/customization/webhooks/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('webhooks.url'),
       dataIndex: 'url',
       key: 'url',
-      render: (url: string) => (
+      render: (url: string, record: any) => (
         <code style={{ fontSize: '12px', maxWidth: 300, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {url}
         </code>
@@ -82,7 +82,7 @@ export default function WebhookListPage() {
       title: t('webhooks.events'),
       dataIndex: 'events',
       key: 'events',
-      render: (events: string[]) => (
+      render: (events: string[], record: any) => (
         <Space size="small" wrap>
           {events?.slice(0, 3).map((event) => (
             <Tag key={event} color="blue">{event}</Tag>
@@ -108,7 +108,7 @@ export default function WebhookListPage() {
       title: t('webhooks.lastTriggered'),
       dataIndex: 'last_triggered_at',
       key: 'last_triggered_at',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ color: '#999' }}>{t('webhooks.never')}</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ color: '#999' }}>{t('webhooks.never')}</span>,
       sorter: (a, b) => {
         if (!a.last_triggered_at) return -1;
         if (!b.last_triggered_at) return 1;
@@ -123,9 +123,7 @@ export default function WebhookListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="webhooks:read">
-            <Tooltip title={t('webhooks.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/customization/webhooks/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="webhooks:update">
             <Tooltip title={t('webhooks.edit')}>

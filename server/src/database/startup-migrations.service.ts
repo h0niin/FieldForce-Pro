@@ -859,6 +859,62 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
             updated_at TIMESTAMP NOT NULL DEFAULT NOW()
         );`,
       },
+      {
+        name: 'customization: create tenant_modules table',
+        sql: `CREATE TABLE IF NOT EXISTS tenant_modules (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+                module_name VARCHAR(100) NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT true,
+                last_modified_by UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                UNIQUE (tenant_id, module_name)
+              );`,
+      },
+      {
+        name: 'customization: create field_permissions table',
+        sql: `CREATE TABLE IF NOT EXISTS field_permissions (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+                module_name VARCHAR(100) NOT NULL,
+                field_name VARCHAR(100) NOT NULL,
+                role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+                access_level VARCHAR(20) NOT NULL DEFAULT 'read_write',
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                UNIQUE (tenant_id, module_name, field_name, role_id)
+              );`,
+      },
+      {
+        name: 'customization: create dispatch_console_layouts table',
+        sql: `CREATE TABLE IF NOT EXISTS dispatch_console_layouts (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+                view_type VARCHAR(50) NOT NULL,
+                layout_mode VARCHAR(50) NOT NULL DEFAULT 'classic',
+                visible_fields JSONB NOT NULL DEFAULT '[]',
+                last_modified_by UUID REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                UNIQUE (tenant_id, view_type)
+              );`,
+      },
+      {
+        name: 'customization: create module_mappings table',
+        sql: `CREATE TABLE IF NOT EXISTS module_mappings (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+                source_module VARCHAR(100) NOT NULL,
+                target_module VARCHAR(100) NOT NULL,
+                source_field VARCHAR(100) NOT NULL,
+                target_field VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                UNIQUE (tenant_id, source_module, target_module, source_field)
+              );`,
+
+      },
     ];
 
 

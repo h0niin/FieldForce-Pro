@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Button, Card, Space, Row, Col, Spin, Select, AutoComplete, message, Typography } from 'antd';
+import { Form, Input, Button, Card, Space, Row, Col, Spin, Select, AutoComplete, message, Typography, Tag } from 'antd';
 import { EnvironmentOutlined, SaveOutlined, CloseOutlined, AimOutlined, LoadingOutlined } from '@ant-design/icons';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents, GeoJSON, Polygon, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PageHeader from '@/components/common/PageHeader';
 import { useServiceLocation, useCreateServiceLocation, useUpdateServiceLocation } from '@/hooks/use-service-locations';
 import { useContacts } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
+import { useSetting } from '@/hooks/use-settings';
 import type { CreateServiceLocationPayload, UpdateServiceLocationPayload } from '@/api/service-locations.api';
 
 const { TextArea } = Input;
@@ -23,6 +24,20 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// --- Ray casting algorithm for polygon intersection check ---
+function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
+  const x = point[0], y = point[1];
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 // --- Map helper components ---
 
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
@@ -33,6 +48,7 @@ function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+// Map Click Handler Component
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -64,13 +80,13 @@ function DraggableMarker({ lat, lng, onDragEnd }: { lat: number; lng: number; on
   );
 }
 
-// Territory boundary styles
+// Municipal city/district boundary styles (neutral gray)
 const boundaryStyle = {
-  color: '#F59E0B',
-  weight: 3,
-  fillColor: '#FCD34D',
-  fillOpacity: 0.12,
-  dashArray: '6 4',
+  color: '#9E9E9E',
+  weight: 2,
+  fillColor: '#B0BEC5',
+  fillOpacity: 0.08,
+  dashArray: '4 4',
 };
 
 // --- Map Picker Component ---
@@ -92,6 +108,34 @@ function MapPicker({ lat, lng, address, onChange }: MapPickerProps) {
   const [boundaryName, setBoundaryName] = useState('');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boundaryKeyRef = useRef(0);
+
+  // Sync props changes with state (for edit mode initial loading)
+  useEffect(() => {
+    if (lat && lng) {
+      setCoords({ lat, lng });
+    }
+  }, [lat, lng]);
+
+  useEffect(() => {
+    if (address) {
+      setMapAddress(address);
+    }
+  }, [address]);
+
+  // Load territories setting
+  const { data: settingData } = useSetting('territories_settings');
+  const territories = useMemo(() => {
+    return (settingData?.value?.list as any[]) || [];
+  }, [settingData]);
+
+  // Find matched territories based on coordinates
+  const matchedTerritories = useMemo(() => {
+    if (!coords.lat || !coords.lng || !territories.length) return [];
+    return territories.filter((t: any) => {
+      if (!t.coordinates || t.coordinates.length < 3) return false;
+      return isPointInPolygon([coords.lat, coords.lng], t.coordinates);
+    });
+  }, [coords, territories]);
 
   const fetchBoundaryForPoint = useCallback(async (pointLat: number, pointLng: number) => {
     try {
@@ -232,6 +276,29 @@ function MapPicker({ lat, lng, address, onChange }: MapPickerProps) {
           <MapUpdater lat={coords.lat} lng={coords.lng} />
           <MapClickHandler onMapClick={handleMapClick} />
 
+          {/* Render all defined territory boundaries */}
+          {territories.map((t: any) => {
+            if (!t.coordinates || t.coordinates.length < 3) return null;
+            return (
+              <Polygon
+                key={t.id}
+                positions={t.coordinates}
+                pathOptions={{
+                  color: t.color || '#3B82F6',
+                  fillColor: t.color || '#3B82F6',
+                  fillOpacity: 0.12,
+                  weight: 2,
+                  dashArray: '3 3',
+                }}
+              >
+                <Popup>
+                  <div style={{ fontWeight: 600 }}>🗺️ {t.name}</div>
+                  {t.description && <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>{t.description}</div>}
+                </Popup>
+              </Polygon>
+            );
+          })}
+
           {boundaryFeature && (
             <GeoJSON
               key={boundaryKeyRef.current}
@@ -251,11 +318,34 @@ function MapPicker({ lat, lng, address, onChange }: MapPickerProps) {
       </Text>
 
       {coords.lat !== 0 && coords.lng !== 0 && (
-        <div style={{ marginTop: 8, padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
-          <Text strong style={{ fontSize: 12 }}>
-            📍 {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
-            {boundaryName && <Text type="secondary" style={{ marginLeft: 8 }}>({t('serviceLocations.inTerritory', { name: boundaryName })})</Text>}
-          </Text>
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
+            <Text strong style={{ fontSize: 12 }}>
+              📍 {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+              {boundaryName && <Text type="secondary" style={{ marginLeft: 8 }}>({t('serviceLocations.cityDistrict', 'City/District')}: {boundaryName})</Text>}
+            </Text>
+          </div>
+
+          {matchedTerritories.length > 0 ? (
+            <div style={{ padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+              <span style={{ fontWeight: 600, fontSize: 12, color: '#1d4ed8', display: 'block', marginBottom: 4 }}>
+                🗺️ {t('serviceLocations.matchedTerritories', 'Matched Service Territories')}:
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {matchedTerritories.map((t: any) => (
+                  <Tag key={t.id} style={{ border: 'none', color: '#fff', backgroundColor: t.color || '#3B82F6', margin: 0 }}>
+                    {t.name}
+                  </Tag>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '8px 12px', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: 6 }}>
+              <span style={{ fontSize: 12, color: '#c2410c', fontWeight: 500 }}>
+                ⚠️ {t('serviceLocations.noTerritoryMatched', 'Location does not fall inside any defined service territory.')}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </Card>
@@ -278,6 +368,12 @@ export default function ServiceLocationFormPage() {
   const contacts = contactsData?.data || [];
   const companies = companiesData?.data || [];
 
+  // Load territories list to match upon submission
+  const { data: settingData } = useSetting('territories_settings');
+  const territories = useMemo(() => {
+    return (settingData?.value?.list as any[]) || [];
+  }, [settingData]);
+
   useEffect(() => {
     if (location && isEdit) {
       form.setFieldsValue({
@@ -297,15 +393,33 @@ export default function ServiceLocationFormPage() {
       message.warning(t('serviceLocations.locationRequiredWarning'));
       return;
     }
+
+    // Determine matching territories on submit
+    const lat = Number(values.lat);
+    const lng = Number(values.lng);
+    const matched = territories.filter((t: any) => {
+      if (!t.coordinates || t.coordinates.length < 3) return false;
+      return isPointInPolygon([lat, lng], t.coordinates);
+    });
+    const territoryNames = matched.map((t: any) => t.name).join(', ');
+
+    // Add to custom fields so detail pages automatically display it
+    const customFields = {
+      ...(location?.custom_fields || {}),
+      territory: territoryNames || 'Out of Bounds',
+    };
+
     try {
       if (isEdit) {
         const payload: UpdateServiceLocationPayload = {
           ...values,
+          custom_fields: customFields,
         } as UpdateServiceLocationPayload;
         await updateServiceLocation.mutateAsync({ id: id!, ...payload });
       } else {
         const payload: CreateServiceLocationPayload = {
           ...values,
+          custom_fields: customFields,
         } as CreateServiceLocationPayload;
         await createServiceLocation.mutateAsync(payload);
       }

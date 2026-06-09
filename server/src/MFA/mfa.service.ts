@@ -167,9 +167,9 @@ export class MFAService {
 
     const secret = generateSecret();
     const otpauth_url = generateURI({
-      secret,
-      issuer: this.configService.appName,
       label: user.email,
+      issuer: this.configService.appName,
+      secret: secret,
     });
 
     // Store secret but don't enable yet — user must verify first
@@ -190,7 +190,7 @@ export class MFAService {
       throw new BadRequestException('TOTP not configured for this user');
     }
 
-    const result = verifySync({ secret: user.totp_secret, token: code });
+    const result = verifySync({ token: code, secret: user.totp_secret });
     return result.valid;
   }
 
@@ -210,8 +210,8 @@ export class MFAService {
       throw new BadRequestException('TOTP not set up. Call setup-totp first.');
     }
 
-    const { valid: isValid } = verifySync({ secret: user.totp_secret, token: code });
-    if (!isValid) {
+    const result = verifySync({ token: code, secret: user.totp_secret });
+    if (!result.valid) {
       return { success: false };
     }
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip, Select, Switch } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCustomFields, useDeleteCustomField, useUpdateCustomField } from '@/hooks/use-custom-fields';
 import PageHeader from '@/components/common/PageHeader';
@@ -70,32 +70,32 @@ export default function CustomFieldListPage() {
       title: t('customFields.columns.label'),
       dataIndex: 'label',
       key: 'label',
-      render: (label: string) => <span style={{ fontWeight: 500 }}>{label}</span>,
+      render: (label: string, record: any) => (<Link to={`/customization/custom-fields/${record.id}/edit`}><span style={{ fontWeight: 500 }}>{label}</span></Link>),
       sorter: (a, b) => a.label.localeCompare(b.label),
     },
     {
       title: t('customFields.columns.fieldName'),
       dataIndex: 'field_name',
       key: 'field_name',
-      render: (name: string) => <code>{name}</code>,
+      render: (name: string, record: any) => <code>{name}</code>,
     },
     {
       title: t('customFields.columns.entityType'),
       dataIndex: 'entity_type',
       key: 'entity_type',
-      render: (type: string) => <Tag>{type}</Tag>,
+      render: (type: string, record: any) => <Tag>{type}</Tag>,
     },
     {
       title: t('customFields.columns.fieldType'),
       dataIndex: 'field_type',
       key: 'field_type',
-      render: (type: string) => <Tag color="blue">{type}</Tag>,
+      render: (type: string, record: any) => <Tag color="blue">{type}</Tag>,
     },
     {
       title: t('customFields.columns.required'),
       dataIndex: 'is_required',
       key: 'is_required',
-      render: (required: boolean) => (
+      render: (required: boolean, record: any) => (
         <Tag color={required ? 'red' : 'default'}>
           {required ? t('customFields.yes') : t('customFields.no')}
         </Tag>
@@ -122,13 +122,11 @@ export default function CustomFieldListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="custom-fields:read">
-            <Tooltip title={t('common.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/customization/fields/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="custom-fields:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/customization/fields/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/customization/custom-fields/${record.id}/edit`)} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="custom-fields:delete">
@@ -148,7 +146,7 @@ export default function CustomFieldListPage() {
         subtitle={t('customFields.subtitle')}
         extra={
           <PermissionGuard permission="custom-fields:create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/customization/fields/new')}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/customization/custom-fields/new')}>
               {t('customFields.createButton')}
             </Button>
           </PermissionGuard>
