@@ -227,7 +227,7 @@ export default function EstimateListPage() {
     render: (_, record) => (
       <Space size="small">
         <Tooltip title={t('estimateList.actions.edit')}>
-          <Button type="text" icon={<PlusOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}/edit`)} />
+          <Button type="text" icon={<PlusOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/estimates/${record.id}/edit`); }} />
         </Tooltip>
       </Space>
     ),
@@ -242,13 +242,14 @@ export default function EstimateListPage() {
     render: (_, record) => (
       <Space size="small">
         <Tooltip title={t('estimateList.actions.edit')}>
-          <Button type="text" icon={<PlusOutlined />} size="small" onClick={() => navigate(`/estimates/${record.id}/edit`)} />
+          <Button type="text" icon={<PlusOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/estimates/${record.id}/edit`); }} />
         </Tooltip>
         <Button
           size="small"
           type="primary"
           loading={createFromTemplate.isPending}
-          onClick={async () => {
+          onClick={async (e) => {
+            e.stopPropagation();
             try {
               const res = await createFromTemplate.mutateAsync({ templateId: record.id });
               const newEstimateId = (res.data?.data as { id?: string })?.id;
@@ -279,7 +280,8 @@ export default function EstimateListPage() {
           type="primary"
           icon={<CheckCircleOutlined />}
           loading={adminApproveEstimate.isPending}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             showConfirmDialog({
               title: t('estimateList.actions.approve'),
               content: t('estimateList.messages.confirmApprove', { number: record.estimate_number || record.id.slice(0, 8) }),
@@ -294,7 +296,8 @@ export default function EstimateListPage() {
           danger
           icon={<CloseCircleOutlined />}
           loading={adminRejectEstimate.isPending}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             showConfirmDialog({
               title: t('estimateList.actions.reject'),
               content: t('estimateList.messages.confirmReject', { number: record.estimate_number || record.id.slice(0, 8) }),
@@ -414,6 +417,10 @@ export default function EstimateListPage() {
           dataSource={estimates}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => navigate(`/estimates/${record.id}`),
+            style: { cursor: 'pointer' },
+          })}
           pagination={{
             current: currentPage,
             pageSize: currentPageSize,

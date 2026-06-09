@@ -145,7 +145,7 @@ export default function UserListPage() {
             <Button
               type="link"
               icon={<EyeOutlined />}
-              onClick={() => navigate(`/users/${record.id}`)}
+              onClick={(e) => { e.stopPropagation(); navigate(`/users/${record.id}`); }}
             />
           </Tooltip>
           <PermissionGuard permission="users:update">
@@ -153,7 +153,7 @@ export default function UserListPage() {
               <Button
                 type="link"
                 icon={<TeamOutlined />}
-                onClick={() => handleAssignRoles(record.id)}
+                onClick={(e) => { e.stopPropagation(); handleAssignRoles(record.id); }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -163,7 +163,7 @@ export default function UserListPage() {
                 type="link"
                 icon={<ReloadOutlined />}
                 loading={generateLink.isPending}
-                onClick={() => handleResendInvite(record.id)}
+                onClick={(e) => { e.stopPropagation(); handleResendInvite(record.id); }}
               />
             </Tooltip>
           )}
@@ -173,7 +173,7 @@ export default function UserListPage() {
                 type="link"
                 icon={<LinkOutlined />}
                 loading={generateLink.isPending}
-                onClick={() => handleSendMagicLink(record.id)}
+                onClick={(e) => { e.stopPropagation(); handleSendMagicLink(record.id); }}
               />
             </Tooltip>
           )}
@@ -254,6 +254,10 @@ export default function UserListPage() {
         columns={columns}
         dataSource={data?.data || []}
         loading={isLoading}
+        onRow={(record: User) => ({
+          onClick: () => navigate(`/users/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         total={data?.meta?.itemCount}
         page={params.page}
         pageSize={params.take}

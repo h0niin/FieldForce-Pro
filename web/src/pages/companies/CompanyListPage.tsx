@@ -106,7 +106,10 @@ export default function CompanyListPage() {
                 type="text"
                 icon={<EditOutlined />}
                 size="small"
-                onClick={() => navigate(`/companies/${record.id}/edit`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/companies/${record.id}/edit`);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -117,7 +120,10 @@ export default function CompanyListPage() {
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
-                onClick={() => handleDelete(record)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(record);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -159,6 +165,10 @@ export default function CompanyListPage() {
         dataSource={companies}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/companies/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

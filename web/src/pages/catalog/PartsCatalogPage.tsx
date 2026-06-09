@@ -110,12 +110,12 @@ export default function PartsCatalogPage() {
         <Space size="small">
           <PermissionGuard permission="parts-catalog:update">
             <Tooltip title={t('partsCatalog.actions.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/catalog/parts/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/catalog/parts/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="parts-catalog:delete">
             <Tooltip title={t('partsCatalog.actions.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -152,6 +152,10 @@ export default function PartsCatalogPage() {
         dataSource={parts}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/catalog/parts/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

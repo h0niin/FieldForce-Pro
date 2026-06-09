@@ -157,12 +157,12 @@ export default function InvoiceListPage() {
         <Space size="small">
           <PermissionGuard permission="invoices:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/invoices/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="invoices:delete">
             <Tooltip title={t('common.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -199,6 +199,10 @@ export default function InvoiceListPage() {
         rowKey="id"
         loading={isLoading}
         scroll={{ x: 1600 }}
+        onRow={(record) => ({
+          onClick: () => navigate(`/invoices/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

@@ -130,7 +130,10 @@ export default function ContactListPage() {
                 type="text"
                 icon={<EditOutlined />}
                 size="small"
-                onClick={() => navigate(`/contacts/${record.id}/edit`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/contacts/${record.id}/edit`);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -141,7 +144,10 @@ export default function ContactListPage() {
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
-                onClick={() => handleDelete(record)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(record);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -183,6 +189,10 @@ export default function ContactListPage() {
         dataSource={contacts}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/contacts/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

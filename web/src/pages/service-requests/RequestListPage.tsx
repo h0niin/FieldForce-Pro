@@ -321,10 +321,10 @@ export default function RequestListPage() {
           {isAdmin && (
             <>
               <Tooltip title={t('common.edit')}>
-                <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}/edit`)} />
+                <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/service-requests/${record.id}/edit`); }} />
               </Tooltip>
               <Tooltip title={t('common.delete')}>
-                <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+                <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
               </Tooltip>
             </>
           )}
@@ -518,7 +518,7 @@ export default function RequestListPage() {
                   size="small"
                   style={{ color: '#52c41a' }}
                   loading={approveAndConvert.isPending}
-                  onClick={() => handleApproveFromQueue(record)}
+                  onClick={(e) => { e.stopPropagation(); handleApproveFromQueue(record); }}
                 />
               </Tooltip>
               <Tooltip title={t('common.reject')}>
@@ -527,7 +527,7 @@ export default function RequestListPage() {
                   icon={<CloseCircleOutlined />}
                   size="small"
                   danger
-                  onClick={() => handleRejectFromQueue(record)}
+                  onClick={(e) => { e.stopPropagation(); handleRejectFromQueue(record); }}
                 />
               </Tooltip>
             </>
@@ -595,6 +595,10 @@ export default function RequestListPage() {
           scroll={{ x: 1200 }}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => navigate(`/service-requests/${record.id}`),
+            style: { cursor: 'pointer' },
+          })}
         pagination={{
           current: page,
           pageSize,

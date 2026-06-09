@@ -110,12 +110,14 @@ export default function PricebookListPage() {
       dataIndex: 'is_active',
       key: 'is_active',
       render: (isActive: boolean, record) => (
-        <Switch
-          checked={isActive}
-          onChange={(checked) => handleToggleActive(record, checked)}
-          checkedChildren={t('pricebook.statusActive')}
-          unCheckedChildren={t('pricebook.statusInactive')}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={isActive}
+            onChange={(checked) => handleToggleActive(record, checked)}
+            checkedChildren={t('pricebook.statusActive')}
+            unCheckedChildren={t('pricebook.statusInactive')}
+          />
+        </div>
       ),
     },
     {
@@ -127,12 +129,12 @@ export default function PricebookListPage() {
         <Space size="small">
           <PermissionGuard permission="pricebook:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/pricebook/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/pricebook/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="pricebook:delete">
             <Tooltip title={t('common.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -181,6 +183,10 @@ export default function PricebookListPage() {
         dataSource={pricebookItems}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/pricebook/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,
