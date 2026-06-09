@@ -23,10 +23,15 @@ export const MODULE_STANDARD_FIELDS: Record<string, { name: string; label: strin
     { name: 'billing_address', label: 'Billing Address', isCustom: false },
     { name: 'shipping_address', label: 'Shipping Address', isCustom: false },
   ],
-  'Services And Parts': [
+  'Services Catalog': [
     { name: 'name', label: 'Name', isCustom: false },
     { name: 'code', label: 'Code', isCustom: false },
-    { name: 'type', label: 'Type', isCustom: false },
+    { name: 'price', label: 'Price', isCustom: false },
+    { name: 'description', label: 'Description', isCustom: false },
+  ],
+  'Parts Catalog': [
+    { name: 'name', label: 'Name', isCustom: false },
+    { name: 'sku', label: 'SKU/Code', isCustom: false },
     { name: 'price', label: 'Price', isCustom: false },
     { name: 'description', label: 'Description', isCustom: false },
   ],
@@ -37,7 +42,7 @@ export const MODULE_STANDARD_FIELDS: Record<string, { name: string; label: strin
     { name: 'status', label: 'Status', isCustom: false },
     { name: 'installation_date', label: 'Installation Date', isCustom: false },
   ],
-  'Requests': [
+  'Service Requests': [
     { name: 'subject', label: 'Subject', isCustom: false },
     { name: 'description', label: 'Description', isCustom: false },
     { name: 'priority', label: 'Priority', isCustom: false },
@@ -64,32 +69,15 @@ export const MODULE_STANDARD_FIELDS: Record<string, { name: string; label: strin
     { name: 'start_time', label: 'Start Time', isCustom: false },
     { name: 'end_time', label: 'End Time', isCustom: false },
   ],
-  'Service Reports': [
-    { name: 'report_number', label: 'Report Number', isCustom: false },
-    { name: 'summary', label: 'Summary', isCustom: false },
-    { name: 'signed_at', label: 'Signed At', isCustom: false },
-  ],
-  'Time Off': [
-    { name: 'start_date', label: 'Start Date', isCustom: false },
-    { name: 'end_date', label: 'End Date', isCustom: false },
-    { name: 'reason', label: 'Reason', isCustom: false },
-    { name: 'status', label: 'Status', isCustom: false },
+  'Job Sheets': [
+    { name: 'name', label: 'Name', isCustom: false },
+    { name: 'description', label: 'Description', isCustom: false },
   ],
   'Users': [
     { name: 'first_name', label: 'First Name', isCustom: false },
     { name: 'last_name', label: 'Last Name', isCustom: false },
     { name: 'email', label: 'Email', isCustom: false },
     { name: 'is_active', label: 'Status', isCustom: false },
-  ],
-  'Equipment': [
-    { name: 'name', label: 'Name', isCustom: false },
-    { name: 'code', label: 'Code', isCustom: false },
-    { name: 'type', label: 'Type', isCustom: false },
-    { name: 'serial_number', label: 'Serial Number', isCustom: false },
-  ],
-  'Service Resource Skills': [
-    { name: 'name', label: 'Name', isCustom: false },
-    { name: 'description', label: 'Description', isCustom: false },
   ],
   'Invoices': [
     { name: 'invoice_number', label: 'Invoice Number', isCustom: false },

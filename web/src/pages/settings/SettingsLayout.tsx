@@ -20,6 +20,7 @@ import {
   LockOutlined,
   AppstoreOutlined,
   LayoutOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -187,6 +188,12 @@ export default function SettingsLayout() {
           label: t('settings.submodules.dispatchLayouts', 'Dispatch Console Layouts'),
           icon: <LayoutOutlined />,
           path: '/settings/customization/dispatch-layouts',
+        },
+        {
+          key: 'module-mapping',
+          label: t('settings.submodules.moduleMapping', 'Module Mapping'),
+          icon: <SwapOutlined />,
+          path: '/settings/customization/module-mapping',
         },
       ],
     },

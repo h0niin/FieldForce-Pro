@@ -124,6 +124,7 @@ const MobileUsageLogs = lazy(() => import('@/pages/admin/MobileUsageLogs'));
 const ModulesAndFieldsPage = lazy(() => import('@/pages/settings/customization/ModulesAndFieldsPage'));
 const FieldPermissionsPage = lazy(() => import('@/pages/settings/customization/FieldPermissionsPage'));
 const DispatchConsoleLayoutPage = lazy(() => import('@/pages/settings/customization/DispatchConsoleLayoutPage'));
+const ModuleMappingPage = lazy(() => import('@/pages/settings/customization/ModuleMappingPage'));
 const ReportListPage = lazy(() => import('@/pages/reports/ReportListPage'));
 const ReportDetailPage = lazy(() => import('@/pages/reports/ReportDetailPage'));
 const AgentListPage = lazy(() => import('@/pages/workforce/AgentListPage'));
@@ -1614,6 +1615,14 @@ export const routes: RouteObject[] = [
             element: (
               <SuspenseWrapper>
                 <DispatchConsoleLayoutPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/module-mapping',
+            element: (
+              <SuspenseWrapper>
+                <ModuleMappingPage />
               </SuspenseWrapper>
             ),
           },

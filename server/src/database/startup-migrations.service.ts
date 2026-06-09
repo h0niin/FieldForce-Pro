@@ -770,6 +770,20 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
                 UNIQUE (tenant_id, view_type)
               );`,
       },
+      {
+        name: 'customization: create module_mappings table',
+        sql: `CREATE TABLE IF NOT EXISTS module_mappings (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+                source_module VARCHAR(100) NOT NULL,
+                target_module VARCHAR(100) NOT NULL,
+                source_field VARCHAR(100) NOT NULL,
+                target_field VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                UNIQUE (tenant_id, source_module, target_module, source_field)
+              );`,
+      },
     ];
 
 
