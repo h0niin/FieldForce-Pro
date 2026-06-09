@@ -200,6 +200,11 @@ export default function SettingsLayout() {
           icon: <FileTextOutlined />,
           path: '/settings/customization/templates',
         },
+      ],
+    },
+    {
+      title: t('settings.categories.dataAdmin', 'Data administration'),
+      items: [
         {
           key: 'data-export',
           label: t('settings.submodules.dataExport', 'Data Export'),
