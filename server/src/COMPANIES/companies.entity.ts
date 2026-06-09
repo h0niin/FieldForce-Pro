@@ -64,6 +64,54 @@ export class Company extends Model {
   website: string;
 
   @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  tax_registration_number: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  tax_treatment: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  custom_vendor_id: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  billing_street: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_city: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_state: string;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: true,
+  })
+  billing_zip_code: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_country: string;
+
+  @Column({
     type: DataType.TEXT,
     allowNull: true,
   })

@@ -729,6 +729,136 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
               UPDATE subscription_plans SET max_appointments_monthly = 2000, max_total_users = 200 WHERE name = 'Enterprise';
               UPDATE subscription_plans SET max_total_users = 200 WHERE name = 'Custom';`,
       },
+
+      // ── PHASE 1: CRM Restructuring & Enterprise Financials ────────────────
+      {
+        name: 'companies: add tax and billing fields',
+        sql: `
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS tax_registration_number VARCHAR(100);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS tax_treatment VARCHAR(100);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS custom_vendor_id VARCHAR(100);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_street TEXT;
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_city VARCHAR(100);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_state VARCHAR(100);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_zip_code VARCHAR(50);
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS billing_country VARCHAR(100);
+        `,
+      },
+      // ── PHASE 1: Contacts ───────────────────────────────────────────────
+      {
+        name: 'contacts: add company_id, service_address, billing_address',
+        sql: `
+          ALTER TABLE contacts ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id) ON DELETE SET NULL;
+          ALTER TABLE contacts ADD COLUMN IF NOT EXISTS service_address TEXT;
+          ALTER TABLE contacts ADD COLUMN IF NOT EXISTS billing_address TEXT;
+        `,
+      },
+      // ── PHASE 1: Territories ─────────────────────────────────────────────
+      {
+        name: 'territories: create table',
+        sql: `CREATE TABLE IF NOT EXISTS territories (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            name VARCHAR(200) NOT NULL,
+            description TEXT,
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );`,
+      },
+      {
+        name: 'service_locations: add territory_id',
+        sql: `ALTER TABLE service_locations ADD COLUMN IF NOT EXISTS territory_id UUID REFERENCES territories(id) ON DELETE SET NULL;`,
+      },
+      // ── PHASE 1: Asset Management Engine ─────────────────────────────────
+      {
+        name: 'assets: rename location_id to service_location_id',
+        sql: `DO $$ BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'assets' AND column_name = 'location_id'
+                ) THEN
+                  ALTER TABLE assets RENAME COLUMN location_id TO service_location_id;
+                END IF;
+              END $$;`,
+      },
+      {
+        name: 'assets: rename install_date to installation_date',
+        sql: `DO $$ BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'assets' AND column_name = 'install_date'
+                ) THEN
+                  ALTER TABLE assets RENAME COLUMN install_date TO installation_date;
+                END IF;
+              END $$;`,
+      },
+      {
+        name: 'assets: rename category to product_category',
+        sql: `DO $$ BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'assets' AND column_name = 'category'
+                ) THEN
+                  ALTER TABLE assets RENAME COLUMN category TO product_category;
+                END IF;
+              END $$;`,
+      },
+      {
+        name: 'assets: add new fields',
+        sql: `
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id) ON DELETE SET NULL;
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS parent_asset_id UUID REFERENCES assets(id) ON DELETE SET NULL;
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS last_service_date DATE;
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS giai VARCHAR(200);
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS ordered_date DATE;
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchased_date DATE;
+        `,
+      },
+      {
+        name: 'assets: ensure serial_number is unique',
+        sql: `DO $$ BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_class c
+                  JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE c.relname = 'assets_serial_number_key'
+                ) THEN
+                  -- make sure we handle nulls or dupes if any exist. Just adding constraint for now.
+                  ALTER TABLE assets ADD CONSTRAINT assets_serial_number_key UNIQUE (serial_number);
+                END IF;
+              END $$;`,
+      },
+      {
+        name: 'service_requests: add asset_id',
+        sql: `ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS asset_id UUID REFERENCES assets(id) ON DELETE SET NULL;`,
+      },
+      {
+        name: 'estimates: add asset_id',
+        sql: `ALTER TABLE estimates ADD COLUMN IF NOT EXISTS asset_id UUID REFERENCES assets(id) ON DELETE SET NULL;`,
+      },
+      {
+        name: 'service_appointments: add asset_id',
+        sql: `ALTER TABLE service_appointments ADD COLUMN IF NOT EXISTS asset_id UUID REFERENCES assets(id) ON DELETE SET NULL;`,
+      },
+      // ── PHASE 1: Service Reports ────────────────────────────────────────
+      {
+        name: 'service_reports: create table',
+        sql: `CREATE TABLE IF NOT EXISTS service_reports (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            appointment_id UUID NOT NULL REFERENCES service_appointments(id) ON DELETE CASCADE,
+            technician_id UUID REFERENCES users(id) ON DELETE SET NULL,
+            findings TEXT,
+            resolution TEXT,
+            customer_signature TEXT,
+            customer_name_signed VARCHAR(200),
+            signed_at TIMESTAMP,
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );`,
+      },
     ];
 
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, Button, Space, Select, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/use-contacts';
+import { useCompanies } from '@/hooks/use-companies';
 import PageHeader from '@/components/common/PageHeader';
 
 const { TextArea } = Input;
@@ -25,11 +26,16 @@ export default function ContactFormPage() {
         last_name: contact.last_name,
         email: contact.email,
         phone: contact.phone,
-        address: contact.address,
+        service_address: contact.service_address,
+        billing_address: contact.billing_address,
+        company_id: contact.company_id,
         tags: contact.tags || [],
       });
     }
   }, [contact, form]);
+
+  const { data: companiesData } = useCompanies({ take: 100 });
+  const companies = companiesData?.data || [];
 
   const handleSubmit = async (values: any) => {
     try {
@@ -97,8 +103,27 @@ export default function ContactFormPage() {
             <Input placeholder={t('contactForm.phonePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="address" label={t('contactForm.address')}>
-            <TextArea rows={3} placeholder={t('contactForm.addressPlaceholder')} />
+          <Form.Item name="company_id" label="Company" rules={[{ required: true, message: 'Please select a company' }]}>
+            <Select
+              placeholder="Select a company"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+            >
+              {companies.map((company) => (
+                <Select.Option key={company.id} value={company.id}>
+                  {company.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="service_address" label="Service Address">
+            <TextArea rows={2} placeholder="Enter service address" />
+          </Form.Item>
+
+          <Form.Item name="billing_address" label="Billing Address">
+            <TextArea rows={2} placeholder="Enter billing address" />
           </Form.Item>
 
           <Form.Item name="tags" label={t('contactForm.tags')}>

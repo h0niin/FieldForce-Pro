@@ -46,6 +46,13 @@ export class CompaniesController {
     return DataResponseDto.success(company);
   }
 
+  @Get(':id/insights')
+  @ApiOperation({ summary: 'Get company insights' })
+  async getInsights(@Param('id') id: string, @TenantId() tenantId: string) {
+    const insights = await this.companiesService.getInsights(id, tenantId);
+    return DataResponseDto.success(insights, 'Insights fetched successfully');
+  }
+
   @Post()
   @Permissions('companies:create')
   @ApiOperation({ summary: 'Create a new company' })

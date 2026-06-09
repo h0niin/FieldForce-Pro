@@ -11,6 +11,7 @@ import { Contact } from '../CONTACTS/contacts.entity';
 import { Company } from '../COMPANIES/companies.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
 import { Asset } from '../ASSETS/assets.entity';
+import { Territory } from '../TERRITORIES/territories.entity';
 import { AssetMaintenancePlan } from '../ASSET_MAINTENANCE_PLANS/asset_maintenance_plans.entity';
 import { ServicesCatalog } from '../SERVICES_CATALOG/services_catalog.entity';
 import { PartsCatalog } from '../PARTS_CATALOG/parts_catalog.entity';
@@ -22,6 +23,7 @@ import { WorkOrderLineItem } from '../WORK_ORDER_LINE_ITEMS/work_order_line_item
 import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
 import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
+import { ServiceReport } from '../SERVICE_REPORTS/service_reports.entity';
 import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
 import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
 import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
@@ -151,4 +153,6 @@ export const databaseProviders = [
   { provide: REPOSITORY.WORKING_CALENDARS, useValue: WorkingCalendar },
   { provide: REPOSITORY.SLA_ESCALATIONS, useValue: SlaEscalation },
   { provide: REPOSITORY.SLA_PAUSE_TRIGGERS, useValue: SlaPauseTrigger },
+  { provide: REPOSITORY.TERRITORIES, useValue: Territory },
+  { provide: REPOSITORY.SERVICE_REPORTS, useValue: ServiceReport },
 ];

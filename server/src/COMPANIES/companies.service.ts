@@ -7,12 +7,15 @@ import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { KEYNAMES } from '../shared/constants/keynames';
 import { Op } from 'sequelize';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
+import { generateEntityDiff } from '../utils/diff-logger.util';
 
 @Injectable()
 export class CompaniesService {
   constructor(
     @Inject(KEYNAMES.COMPANIES)
     private readonly companyRepository: typeof Company,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -74,10 +77,20 @@ export class CompaniesService {
       throw new ConflictException('Company with this name already exists');
     }
 
-    return this.companyRepository.create({
+    const company = await this.companyRepository.create({
       tenant_id: tenantId,
       ...dto,
     });
+
+    await this.activityLogsService.logActivity(
+      tenantId,
+      'Company',
+      company.id,
+      'CREATED',
+      `Company ${company.name} was created.`,
+    );
+
+    return company;
   }
 
   async update(
@@ -103,12 +116,65 @@ export class CompaniesService {
       }
     }
 
+    const diffArray = generateEntityDiff(company, dto);
+    const diffString = diffArray.join(', ');
+    const description = diffString !== '' 
+      ? diffString
+      : 'Company details were updated.';
+
     await company.update(dto);
+
+    await this.activityLogsService.logActivity(
+      tenantId,
+      'Company',
+      company.id,
+      'UPDATED',
+      description,
+    );
+
     return company;
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
     const company = await this.findById(id, tenantId);
     await company.update({ is_deleted: true });
+  }
+
+  async getInsights(id: string, tenantId: string) {
+    const { Asset } = await import('../ASSETS/assets.entity');
+    const { WorkOrder } = await import('../WORK_ORDERS/work_orders.entity');
+    const { Invoice } = await import('../INVOICES/invoices.entity');
+
+    const activeAssets = await Asset.count({ where: { company_id: id, tenant_id: tenantId, is_deleted: false, status: 'OPERATIONAL' } });
+    
+    const { Contact } = await import('../CONTACTS/contacts.entity');
+    const contacts = await Contact.findAll({ where: { company_id: id, tenant_id: tenantId }, attributes: ['id'] });
+    const assets = await Asset.findAll({ where: { company_id: id, tenant_id: tenantId }, attributes: ['id'] });
+    
+    const contactIds = contacts.map(c => c.id);
+    const assetIds = assets.map(a => a.id);
+    
+    let openWorkOrders = 0;
+    if (contactIds.length > 0 || assetIds.length > 0) {
+      openWorkOrders = await WorkOrder.count({ 
+        where: { 
+          tenant_id: tenantId, 
+          is_deleted: false, 
+          status: { [Op.notIn]: ['completed', 'cancelled', 'closed'] },
+          [Op.or]: [
+            ...(contactIds.length > 0 ? [{ contact_id: { [Op.in]: contactIds } }] : []),
+            ...(assetIds.length > 0 ? [{ asset_id: { [Op.in]: assetIds } }] : [])
+          ]
+        } 
+      });
+    }
+
+    const unpaidInvoices = await Invoice.count({ where: { company_id: id, tenant_id: tenantId, is_deleted: false, status: { [Op.notIn]: ['paid', 'void', 'draft'] } } });
+
+    return {
+      activeAssets,
+      openWorkOrders,
+      unpaidInvoices,
+    };
   }
 }

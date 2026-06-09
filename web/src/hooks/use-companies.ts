@@ -37,6 +37,17 @@ export function useCompany(id: string) {
   });
 }
 
+export function useCompanyInsights(id: string) {
+  return useQuery({
+    queryKey: ['companies', id, 'insights'],
+    queryFn: async () => {
+      const response = await companiesApi.getInsights(id);
+      return response.data.data!;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateCompany() {
   const queryClient = useQueryClient();
   const addNotification = useNotificationStore((s) => s.add);

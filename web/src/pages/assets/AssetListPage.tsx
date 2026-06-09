@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Table, Space, Tooltip, Tag } from 'antd';
+import { Button, Table, Space, Tooltip, Tag, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import { showConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PermissionGuard } from '@/components/permissions';
 import { formatDateTime } from '@/utils/format-date';
 import SearchFilter from '@/components/common/SearchFilter';
+import { formatEnumText } from '@/utils/string';
 
 function getWarrantyStatus(warrantyExpiry: string | null): { color: string; text: string } {
   if (!warrantyExpiry) return { color: 'default', text: 'N/A' };
@@ -29,12 +30,19 @@ export default function AssetListPage() {
   const [pageSize, setPageSize] = useState(10);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
+  // Note: Assuming `useAssets` API is updated to handle `status` in backend, or we filter locally.
+  // For now, we will pass it if useAssets supports it, else we filter locally.
   const { data, isLoading } = useAssets({ page, take: pageSize, search });
   const deleteAsset = useDeleteAsset();
 
   const assets = data?.data || [];
   const meta = data?.meta;
+
+  const filteredAssets = statusFilter 
+    ? assets.filter(a => a.status === statusFilter)
+    : assets;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -77,9 +85,19 @@ export default function AssetListPage() {
     },
     {
       title: t('assets.columns.category'),
-      dataIndex: 'category',
-      key: 'category',
+      dataIndex: 'product_category',
+      key: 'product_category',
       render: (category: string) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'OPERATIONAL' ? 'success' : status === 'NEEDS_REPAIR' ? 'warning' : status === 'IN_REPAIR' ? 'processing' : 'default'}>
+          {status ? formatEnumText(status) : 'Operational'}
+        </Tag>
+      ),
     },
     {
       title: t('assets.columns.health'),
@@ -157,19 +175,32 @@ export default function AssetListPage() {
         }
       />
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: '16px' }}>
         <SearchFilter
           placeholder={t('assets.searchPlaceholder')}
           allowClear
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={{ width: 500 }}
+          style={{ width: 400 }}
+        />
+        <Select
+          placeholder="Filter by Status"
+          allowClear
+          style={{ width: 200 }}
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value)}
+          options={[
+            { value: 'OPERATIONAL', label: 'Operational' },
+            { value: 'NEEDS_REPAIR', label: 'Needs Repair' },
+            { value: 'IN_REPAIR', label: 'In Repair' },
+            { value: 'DECOMMISSIONED', label: 'Decommissioned' },
+          ]}
         />
       </div>
 
       <Table
         columns={columns}
-        dataSource={assets}
+        dataSource={filteredAssets}
         rowKey="id"
         loading={isLoading}
         pagination={{

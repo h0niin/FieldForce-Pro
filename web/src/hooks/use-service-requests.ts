@@ -3,7 +3,7 @@ import { serviceRequestsApi, CreateServiceRequestPayload, UpdateServiceRequestPa
 import type { PageOptions } from '@/types/api.types';
 import { useNotificationStore } from '@/store/notification.store';
 
-export function useServiceRequests(params?: PageOptions & { status?: string }, enabled = true) {
+export function useServiceRequests(params?: PageOptions & { status?: string, contact_id?: string, company_id?: string, asset_id?: string }, enabled = true) {
   return useQuery({
     queryKey: ['service-requests', params],
     queryFn: async () => {

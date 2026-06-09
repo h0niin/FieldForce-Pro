@@ -83,7 +83,7 @@ api.interceptors.response.use(
         if (refreshError?.response?.status === 401 || refreshError?.response?.status === 400) {
           // Refresh token is expired, invalid, or missing - user needs to login again
           useAuthStore.getState().logout();
-          window.location.href = '/login';
+          window.location.href = window.location.origin + '/login';
         } else {
           // Network error, server error, or other issue
           // Don't force logout - user may still have valid session

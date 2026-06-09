@@ -27,6 +27,16 @@ export interface User {
   permissions?: string[];      // Flat array of permission strings from JWT
 }
 
+export interface Territory {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string | null;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -88,7 +98,8 @@ export interface Contact {
   last_name: string;
   email: string | null;
   phone: string | null;
-  address: string | null;
+  service_address: string | null;
+  billing_address: string | null;
   tags: string[];
   custom_fields: Record<string, unknown>;
   is_deleted: boolean;
@@ -100,6 +111,7 @@ export interface Company {
   id: string;
   tenant_id: string;
   name: string;
+  phone?: string;
   industry: string | null;
   billing_address: string | null;
   tax_id: string | null;
@@ -131,22 +143,30 @@ export interface Asset {
   id: string;
   tenant_id: string;
   contact_id: string | null;
-  location_id: string | null;
+  company_id: string | null;
+  service_location_id: string | null;
+  parent_asset_id: string | null;
   name: string;
   model: string | null;
   serial_number: string | null;
   manufacturer: string | null;
-  install_date: string | null;
+  installation_date: string | null;
+  last_service_date: string | null;
   warranty_expiry: string | null;
-  health_score: number | null;
-  category: string | null;
+  product_category?: string;
   notes: string | null;
+  giai: string | null;
+  ordered_date: string | null;
+  purchased_date: string | null;
   custom_fields: Record<string, unknown>;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+  status?: string;
   contact?: Contact;
+  company?: Company;
   location?: ServiceLocation;
+  parent_asset?: Asset;
 }
 
 export interface AssetMaintenancePlan {
@@ -519,6 +539,7 @@ export interface Invoice {
   work_order_id: string | null;
   estimate_id: string | null;
   contact_id: string | null;
+  company_id: string | null;
   invoice_number: string | null;
   status: 'draft' | 'sent' | 'viewed' | 'partially_paid' | 'paid' | 'overdue' | 'void';
   subtotal: number;

@@ -31,6 +31,7 @@ import { Invoice } from '../INVOICES/invoices.entity';
 import { InvoiceLineItem } from '../INVOICE_LINE_ITEMS/invoice_line_items.entity';
 import { SlaService } from '../SLA_MODULE/sla.service';
 import { WhatsAppWebJsService } from '../WHATSAPP_CHANNELS/whatsapp_webjs.service';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ['sent', 'pending_approval'],
@@ -65,6 +66,7 @@ export class EstimatesService {
     @Inject(KEYNAMES.USERS) @Optional() private readonly userRepository: typeof User,
     private readonly slaService: SlaService,
     private readonly whatsappWebJsService: WhatsAppWebJsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -79,6 +81,10 @@ export class EstimatesService {
       tenant_id: tenantId,
       is_deleted: false,
     };
+
+    if ((pageOptionsDto as any).asset_id) {
+      where.asset_id = (pageOptionsDto as any).asset_id;
+    }
 
     if (isTemplate !== undefined) {
       where.is_template = isTemplate;
@@ -306,6 +312,34 @@ export class EstimatesService {
       this.logger.error(`Failed to attach SLA for Estimate ${estimate.id}: ${(error as Error).message}`);
     }
 
+    if (estimate.contact_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Contact',
+          estimate.contact_id,
+          'CREATED',
+          `Estimate #${estimate.estimate_number} was generated.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Contact: ${(err as Error).message}`);
+      }
+    }
+
+    if (estimate.asset_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          estimate.asset_id,
+          'CREATED',
+          `Estimate #${estimate.estimate_number} was generated for this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Asset: ${(err as Error).message}`);
+      }
+    }
+
     return estimate;
   }
 
@@ -434,7 +468,31 @@ export class EstimatesService {
     userId?: string,
   ): Promise<Estimate> {
     const estimate = await this.findById(id, tenantId);
+    
+    // Check if asset_id changed or is present
+    const oldAssetId = estimate.asset_id;
+
     await estimate.update(dto);
+
+    if (dto.asset_id && dto.asset_id !== oldAssetId) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          dto.asset_id,
+          'UPDATED',
+          `Estimate #${estimate.estimate_number} was assigned to this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Asset: ${(err as Error).message}`);
+      }
+    } else if (estimate.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', estimate.asset_id, 'UPDATED', `Estimate #${estimate.estimate_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
+
+    if (estimate.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', estimate.contact_id, 'UPDATED', `Estimate #${estimate.estimate_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
 
     // Auto-complete any ESTIMATE type approvals (the "create estimate" task)
     // so it shows as completed in Document Approvals page
@@ -1213,6 +1271,15 @@ export class EstimatesService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const estimate = await this.findById(id, tenantId);
+
+    // Global Pre-Delete Logging
+    if (estimate.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', estimate.contact_id, 'DELETED', `Estimate #${estimate.estimate_number || id} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+    if (estimate.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', estimate.asset_id, 'DELETED', `Estimate #${estimate.estimate_number || id} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+
     await estimate.update({ is_deleted: true });
   }
 }

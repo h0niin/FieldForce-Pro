@@ -28,6 +28,13 @@ export class UpdateEstimateDto {
   contact_id?: string;
 
   @ApiPropertyOptional({
+    description: 'Asset ID',
+  })
+  @IsUUID()
+  @IsOptional()
+  asset_id?: string;
+
+  @ApiPropertyOptional({
     description: 'Estimate number',
     example: 'EST-2024-001',
   })

@@ -9,6 +9,7 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
 import { User } from '../USERS/users.entity';
+import { Asset } from '../ASSETS/assets.entity';
 
 @Table({
   tableName: 'service_appointments',
@@ -61,6 +62,16 @@ export class ServiceAppointment extends Model {
     comment: 'FK to crews',
   })
   crew_id: string;
+
+  @ForeignKey(() => Asset)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  asset_id: string;
+
+  @BelongsTo(() => Asset)
+  asset: Asset;
 
   @Column({
     type: DataType.STRING(50),

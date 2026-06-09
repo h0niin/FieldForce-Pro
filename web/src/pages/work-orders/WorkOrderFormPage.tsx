@@ -51,7 +51,9 @@ export default function WorkOrderFormPage() {
 
     try {
       if (isEdit) {
-        await updateWorkOrder.mutateAsync({ id: id!, ...payload });
+        // Strip slaHours from update payload because backend does not accept it for updates
+        const { slaHours, ...updatePayload } = payload;
+        await updateWorkOrder.mutateAsync({ id: id!, ...updatePayload });
       } else {
         await createWorkOrder.mutateAsync(payload as Record<string, unknown> & { summary: string });
       }

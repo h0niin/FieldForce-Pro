@@ -69,7 +69,13 @@ export class Contact extends Model {
     type: DataType.TEXT,
     allowNull: true,
   })
-  address: string;
+  service_address: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  billing_address: string;
 
   @Column({
     type: DataType.ARRAY(DataType.STRING),

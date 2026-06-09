@@ -85,9 +85,10 @@ export class SlaMonitorService {
         ) {
           if (record.response_status === 'PENDING') {
             await record.update({ response_status: 'BREACHED' });
+
             await this.auditLogRepo.create({
               tenant_id: record.tenant_id,
-              service_request_id: record.service_request_id || null,
+              service_request_id: record.service_request_id || record.work_order_id || record.estimate_id,
               action: 'RESPONSE_BREACHED',
               details: { 
                 deadline: record.response_deadline,
@@ -110,9 +111,10 @@ export class SlaMonitorService {
         ) {
           if (record.resolution_status === 'PENDING') {
             await record.update({ resolution_status: 'BREACHED' });
+
             await this.auditLogRepo.create({
               tenant_id: record.tenant_id,
-              service_request_id: record.service_request_id || null,
+              service_request_id: record.service_request_id || record.work_order_id || record.estimate_id,
               action: 'RESOLUTION_BREACHED',
               details: { 
                 deadline: record.resolution_deadline,

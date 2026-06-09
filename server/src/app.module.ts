@@ -85,6 +85,10 @@ import { WhatsAppChannelsModule } from './WHATSAPP_CHANNELS/whatsapp_channels.mo
 import { SlaModule } from './SLA_MODULE/sla.module';
 import { LookupsModule } from './LOOKUPS/lookups.module';
 import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
+import { TerritoriesModule } from './TERRITORIES/territories.module';
+import { ServiceReportsModule } from './SERVICE_REPORTS/service_reports.module';
+import { ActivityLogsModule } from './ACTIVITY_LOGS/activity_logs.module';
+import { NotesModule } from './NOTES/notes.module';
 
 @Module({
   imports: [
@@ -92,6 +96,7 @@ import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
     ScheduleModule.forRoot(),
     SharedModule,
     EmailModule,
@@ -106,6 +111,8 @@ import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
     RolesModule,
     RolePermissionModule,
     UserDocumentsModule,
+    ActivityLogsModule,
+    NotesModule,
     ContactsModule,
     CompaniesModule,
     ServiceLocationsModule,
@@ -170,6 +177,8 @@ import { EmailChannelsModule } from './EMAIL_CHANNELS/email_channels.module';
     SlaModule,
     LookupsModule,
     EmailChannelsModule,
+    TerritoriesModule,
+    ServiceReportsModule,
   ],
   providers: [
     {

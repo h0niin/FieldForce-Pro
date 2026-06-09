@@ -5,7 +5,7 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package.json package-lock.json* ./
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
@@ -15,7 +15,7 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package.json package-lock.json* ./
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 COPY . .
@@ -33,7 +33,7 @@ RUN apk add --no-cache \
     ca-certificates \
     ttf-freefont
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app

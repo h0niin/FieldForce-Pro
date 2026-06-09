@@ -1,10 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 import { PageOptionsDto } from '../../shared/dto/page-options.dto';
 
 export class InvoiceQueryDto extends PageOptionsDto {
-  @ApiPropertyOptional({ description: 'Filter by status (e.g. draft, sent, viewed, paid, overdue, void)' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Filter by company ID' })
+  @IsUUID()
   @IsOptional()
-  readonly status?: string;
+  readonly company_id?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by contact ID' })
+  @IsUUID()
+  @IsOptional()
+  readonly contact_id?: string;
 }

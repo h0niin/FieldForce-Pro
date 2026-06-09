@@ -2,7 +2,7 @@ import {
   Injectable, Inject, NotFoundException, BadRequestException, GoneException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { REPOSITORY } from '../shared/constants/keynames';
 import { SubscriptionMagicLink } from './subscription_magic_links.entity';
 import { SubscriptionPlan } from '../SUBSCRIPTION_PLANS/subscription_plans.entity';

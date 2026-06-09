@@ -10,6 +10,7 @@ import { ServiceRequest } from './service_requests.entity';
 import { CreateServiceRequestDto } from './dto/service_requests_create.dto';
 import { UpdateServiceRequestDto } from './dto/service_requests_update.dto';
 import { TriageServiceRequestDto } from './dto/service_requests_triage.dto';
+import { ServiceRequestQueryDto } from './dto/service_requests_query.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
@@ -29,6 +30,7 @@ import axios from 'axios';
 import { SlaService } from '../SLA_MODULE/sla.service';
 import { ServiceRequestSla } from '../SLA_MODULE/service_request_slas.entity';
 import { UsersService } from '../USERS/users.service';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   new: ['triaged', 'rejected', 'closed', 'spam'],
@@ -60,11 +62,12 @@ export class ServiceRequestsService {
     private readonly notificationsService: NotificationsService,
     private readonly slaService: SlaService,
     private readonly usersService: UsersService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
     tenantId: string,
-    pageOptionsDto: PageOptionsDto,
+    pageOptionsDto: ServiceRequestQueryDto,
     status?: string,
   ): Promise<PageDto<ServiceRequest>> {
     const where: Record<string, unknown> = {
@@ -72,17 +75,50 @@ export class ServiceRequestsService {
       is_deleted: false,
     };
 
+    if (pageOptionsDto.asset_id) {
+      where.asset_id = pageOptionsDto.asset_id;
+    }
+    if (pageOptionsDto.contact_id) {
+      where.contact_id = pageOptionsDto.contact_id;
+    }
     if (status) {
       where.status = status;
     }
 
+    const andConditions: any[] = [];
+
+    if (pageOptionsDto.company_id) {
+      const { Contact } = await import('../CONTACTS/contacts.entity');
+      const { Asset } = await import('../ASSETS/assets.entity');
+      const contacts = await Contact.findAll({ where: { company_id: pageOptionsDto.company_id, tenant_id: tenantId }, attributes: ['id'] });
+      const assets = await Asset.findAll({ where: { company_id: pageOptionsDto.company_id, tenant_id: tenantId }, attributes: ['id'] });
+      
+      const contactIds = contacts.map(c => c.id);
+      const assetIds = assets.map(a => a.id);
+      
+      andConditions.push({
+        [Op.or]: [
+          ...(contactIds.length > 0 ? [{ contact_id: { [Op.in]: contactIds } }] : []),
+          ...(assetIds.length > 0 ? [{ asset_id: { [Op.in]: assetIds } }] : []),
+          // If no contacts or assets exist, we ensure the query returns empty by setting an impossible condition
+          ...(contactIds.length === 0 && assetIds.length === 0 ? [{ id: null }] : [])
+        ]
+      });
+    }
+
     if (pageOptionsDto.search) {
-      where[Op.or as unknown as string] = [
-        { request_number: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { subject: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { description: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { category: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-      ];
+      andConditions.push({
+        [Op.or]: [
+          { request_number: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { subject: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { description: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { category: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where[Op.and as unknown as string] = andConditions;
     }
 
     const { count, rows } = await this.serviceRequestRepository.findAndCountAll({
@@ -336,6 +372,34 @@ export class ServiceRequestsService {
       this.logger.error(`Failed to attach SLA for SR ${serviceRequest.id}: ${(error as Error).message}`);
     }
 
+    if (serviceRequest.contact_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Contact',
+          serviceRequest.contact_id,
+          'CREATED',
+          `Service Request #${serviceRequest.request_number} was generated.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log SR to Contact: ${(err as Error).message}`);
+      }
+    }
+
+    if (serviceRequest.asset_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          serviceRequest.asset_id,
+          'CREATED',
+          `Service Request #${serviceRequest.request_number} was assigned to this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log SR to Asset: ${(err as Error).message}`);
+      }
+    }
+
     return this.findById(serviceRequest.id, tenantId);
   }
 
@@ -406,6 +470,26 @@ export class ServiceRequestsService {
       await serviceRequest.$set('technicians', technicianIds, { through: { tenant_id: tenantId } });
     } else if (updateDto.assigned_to !== undefined) {
       await serviceRequest.$set('technicians', updateDto.assigned_to ? [updateDto.assigned_to] : [], { through: { tenant_id: tenantId } });
+    }
+
+    if (updateDto.asset_id && updateDto.asset_id !== serviceRequest.asset_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          updateDto.asset_id,
+          'UPDATED',
+          `Service Request #${serviceRequest.request_number} was assigned to this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log SR to Asset: ${(err as Error).message}`);
+      }
+    } else if (serviceRequest.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', serviceRequest.asset_id, 'UPDATED', `Service Request #${serviceRequest.request_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
+
+    if (serviceRequest.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', serviceRequest.contact_id, 'UPDATED', `Service Request #${serviceRequest.request_number} was updated.`).catch(err => this.logger.warn(err.message));
     }
 
     return serviceRequest;
@@ -567,6 +651,15 @@ export class ServiceRequestsService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const serviceRequest = await this.findById(id, tenantId);
+    
+    // Global Pre-Delete Logging
+    if (serviceRequest.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', serviceRequest.contact_id, 'DELETED', `Service Request #${serviceRequest.request_number} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+    if (serviceRequest.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', serviceRequest.asset_id, 'DELETED', `Service Request #${serviceRequest.request_number} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+
     await serviceRequest.update({ is_deleted: true });
   }
 

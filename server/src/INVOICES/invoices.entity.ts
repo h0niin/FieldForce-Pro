@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
+import { Company } from '../COMPANIES/companies.entity';
 
 @Table({
   tableName: 'invoices',
@@ -63,6 +64,17 @@ export class Invoice extends Model {
 
   @BelongsTo(() => Contact)
   contact: Contact;
+
+  @ForeignKey(() => Company)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+    comment: 'Reference to companies',
+  })
+  company_id: string;
+
+  @BelongsTo(() => Company)
+  company: Company;
 
   @Column({
     type: DataType.STRING(50),

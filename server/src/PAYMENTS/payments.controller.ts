@@ -171,14 +171,6 @@ export class PaymentsController {
     return DataResponseDto.success(payments, 'Payments fetched successfully');
   }
 
-  @Get(':id')
-  @Permissions('payments:read')
-  @ApiOperation({ summary: 'Get payment by ID' })
-  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-    const payment = await this.paymentsService.findById(id, tenantId);
-    return DataResponseDto.success(payment);
-  }
-
   // ── Pending verification endpoints ───────────────────────────────────────
 
   @Get('pending-verification')
@@ -187,6 +179,36 @@ export class PaymentsController {
   async getPendingVerification(@TenantId() tenantId: string) {
     const payments = await this.paymentsService.getPendingVerification(tenantId);
     return DataResponseDto.success(payments);
+  }
+
+  @Public()
+  @Post('portal')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Customer submits payment notification from portal (no auth)' })
+  async createFromPortal(@Body() body: {
+    invoice_token: string;
+    amount: number;
+    method: string;
+    reference?: string;
+    notes?: string;
+    screenshot_url?: string;
+  }) {
+    const payment = await this.paymentsService.createFromPortal(body.invoice_token, {
+      amount: body.amount,
+      method: body.method,
+      reference: body.reference,
+      notes: body.notes,
+      screenshot_url: body.screenshot_url,
+    });
+    return DataResponseDto.created(payment, 'Payment submitted for verification');
+  }
+
+  @Get(':id')
+  @Permissions('payments:read')
+  @ApiOperation({ summary: 'Get payment by ID' })
+  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
+    const payment = await this.paymentsService.findById(id, tenantId);
+    return DataResponseDto.success(payment);
   }
 
   @Patch(':id/confirm')
@@ -212,28 +234,6 @@ export class PaymentsController {
   ) {
     const payment = await this.paymentsService.rejectPayment(id, tenantId, body.reason || '');
     return DataResponseDto.success(payment, 'Payment rejected');
-  }
-
-  @Public()
-  @Post('portal')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Customer submits payment notification from portal (no auth)' })
-  async createFromPortal(@Body() body: {
-    invoice_token: string;
-    amount: number;
-    method: string;
-    reference?: string;
-    notes?: string;
-    screenshot_url?: string;
-  }) {
-    const payment = await this.paymentsService.createFromPortal(body.invoice_token, {
-      amount: body.amount,
-      method: body.method,
-      reference: body.reference,
-      notes: body.notes,
-      screenshot_url: body.screenshot_url,
-    });
-    return DataResponseDto.created(payment, 'Payment submitted for verification');
   }
 
   @Post()

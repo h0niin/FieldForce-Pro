@@ -29,6 +29,11 @@ export class PageOptionsDto {
   @IsOptional()
   readonly search?: string;
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  readonly company_id?: string;
+
   get skip(): number {
     return (this.page - 1) * this.take;
   }

@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
 import { REPOSITORY } from '../shared/constants/keynames';
 import { Tenant } from '../TENANTS/tenants.entity';

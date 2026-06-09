@@ -10,6 +10,7 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { EstimateLineItem } from '../ESTIMATE_LINE_ITEMS/estimate_line_items.entity';
+import { Asset } from '../ASSETS/assets.entity';
 
 @Table({
   tableName: 'estimates',
@@ -50,6 +51,16 @@ export class Estimate extends Model {
 
   @BelongsTo(() => Contact)
   contact: Contact;
+
+  @ForeignKey(() => Asset)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  asset_id: string;
+
+  @BelongsTo(() => Asset)
+  asset: Asset;
 
   @Column({
     type: DataType.STRING(50),

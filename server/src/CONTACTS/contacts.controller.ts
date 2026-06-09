@@ -34,8 +34,8 @@ export class ContactsController {
 
   @Get('all')
   @ApiOperation({ summary: 'Get all contacts (non-paginated)' })
-  async findAllNonPaginated(@TenantId() tenantId: string) {
-    const contacts = await this.contactsService.findAll(tenantId);
+  async findAllNonPaginated(@TenantId() tenantId: string, @Query('company_id') companyId?: string) {
+    const contacts = await this.contactsService.findAll(tenantId, companyId);
     return DataResponseDto.success(contacts, 'Contacts fetched successfully');
   }
 
@@ -44,6 +44,13 @@ export class ContactsController {
   async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
     const contact = await this.contactsService.findById(id, tenantId);
     return DataResponseDto.success(contact);
+  }
+
+  @Get(':id/insights')
+  @ApiOperation({ summary: 'Get contact insights' })
+  async getInsights(@Param('id') id: string, @TenantId() tenantId: string) {
+    const insights = await this.contactsService.getInsights(id, tenantId);
+    return DataResponseDto.success(insights, 'Insights fetched successfully');
   }
 
   @Post()

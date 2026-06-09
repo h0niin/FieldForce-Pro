@@ -12,6 +12,11 @@ export class CreateServiceRequestDto {
   @IsOptional()
   location_id?: string;
 
+  @ApiPropertyOptional({ description: 'Asset ID', example: 'uuid' })
+  @IsUUID()
+  @IsOptional()
+  asset_id?: string;
+
   @ApiProperty({ description: 'Subject of the service request', example: 'AC not cooling' })
   @IsString()
   subject: string;

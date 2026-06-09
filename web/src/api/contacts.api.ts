@@ -8,7 +8,8 @@ export interface CreateContactPayload {
   last_name: string;
   email?: string;
   phone?: string;
-  address?: string;
+  service_address?: string;
+  billing_address?: string;
   tags?: string[];
   custom_fields?: Record<string, unknown>;
 }
@@ -19,7 +20,8 @@ export interface UpdateContactPayload {
   last_name?: string;
   email?: string;
   phone?: string;
-  address?: string;
+  service_address?: string;
+  billing_address?: string;
   tags?: string[];
   custom_fields?: Record<string, unknown>;
 }
@@ -33,8 +35,16 @@ export const contactsApi = {
     return api.get<ApiResponse<Contact[]>>('/contacts/all');
   },
 
+  getByCompany(companyId: string) {
+    return api.get<ApiResponse<Contact[]>>(`/contacts/all`, { params: { company_id: companyId } });
+  },
+
   getById(id: string) {
     return api.get<ApiResponse<Contact>>(`/contacts/${id}`);
+  },
+
+  getInsights(id: string) {
+    return api.get<ApiResponse<{ activeAssets: number; openWorkOrders: number; unpaidInvoices: number }>>(`/contacts/${id}/insights`);
   },
 
   create(payload: CreateContactPayload) {

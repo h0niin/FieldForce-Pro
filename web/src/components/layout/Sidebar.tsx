@@ -81,6 +81,8 @@ const menuSections: MenuSection[] = [
       { key: '/contacts', icon: <ContactsOutlined />, labelKey: 'nav.contacts', permission: 'contacts:read' },
       { key: '/companies', icon: <BankOutlined />, labelKey: 'nav.companies', permission: 'companies:read' },
       { key: '/service-locations', icon: <EnvironmentOutlined />, labelKey: 'nav.serviceLocations', permission: 'service_locations:read' },
+      { key: '/assets', icon: <ToolOutlined />, labelKey: 'nav.assets', permission: 'assets:read' },
+
     ],
   },
   {
@@ -90,8 +92,6 @@ const menuSections: MenuSection[] = [
       { key: '/estimates', icon: <CalculatorOutlined />, labelKey: 'nav.estimates', permission: 'estimates:read' },
       { key: '/work-orders', icon: <ScheduleOutlined />, labelKey: 'nav.workOrders', permission: 'work_orders:read' },
       { key: '/slas', icon: <ClockCircleOutlined />, labelKey: 'nav.slaPolicies', permission: 'settings:read' },
-      // { key: '/assets', icon: <ToolOutlined />, labelKey: 'nav.assets', permission: 'assets:read' },
-      // { key: '/maintenance-plans', icon: <CalendarOutlined />, labelKey: 'nav.maintenancePlans', permission: 'asset_maintenance_plans:read' },
     ],
   },
   {
@@ -106,6 +106,7 @@ const menuSections: MenuSection[] = [
           { key: '/scheduling', labelKey: 'sidebar.dispatchBoard' },
           { key: '/scheduling/calendar', labelKey: 'sidebar.calendarView' },
           { key: '/scheduling/map', labelKey: 'sidebar.mapView' },
+          { key: '/scheduling/territories', labelKey: 'Territories' },
         ],
       },
       { key: '/job-sheets', icon: <FormOutlined />, labelKey: 'nav.jobSheets', permission: 'job_sheets:read' },

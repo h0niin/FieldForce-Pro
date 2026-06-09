@@ -30,6 +30,10 @@ export interface PageOptions {
   take?: number;
   order?: Order;
   search?: string;
+  company_id?: string;
+  service_location_id?: string;
+  contact_id?: string;
+  asset_id?: string;
 }
 
 export interface AuthTokens {

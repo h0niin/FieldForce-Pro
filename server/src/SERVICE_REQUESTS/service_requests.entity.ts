@@ -11,6 +11,7 @@ import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
 import { User } from '../USERS/users.entity';
+import { Asset } from '../ASSETS/assets.entity';
 import { ServiceRequestTechnician } from './service_request_technician.entity';
 import { Category } from '../CATEGORIES/categories.entity';
 import { SubCategory } from '../SUB_CATEGORIES/sub_categories.entity';
@@ -60,6 +61,16 @@ export class ServiceRequest extends Model {
 
   @BelongsTo(() => ServiceLocation)
   location: ServiceLocation;
+
+  @ForeignKey(() => Asset)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  asset_id: string;
+
+  @BelongsTo(() => Asset)
+  asset: Asset;
 
   @Column({
     type: DataType.STRING(50),

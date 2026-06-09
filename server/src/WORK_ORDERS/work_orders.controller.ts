@@ -16,6 +16,7 @@ import { CreateWorkOrderDto } from './dto/work_orders_create.dto';
 import { UpdateWorkOrderDto } from './dto/work_orders_update.dto';
 import { UpdateWorkOrderStatusDto } from './dto/work_orders_update_status.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
+import { WorkOrderQueryDto } from './dto/work_orders_query.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
 import { UserId } from '../shared/decorator/user.decorator';
@@ -37,7 +38,7 @@ export class WorkOrdersController {
   @Get()
   @Permissions('work_orders:read')
   @ApiOperation({ summary: 'Get all work orders (paginated)' })
-  async findAll(@TenantId() tenantId: string, @Query() pageOptionsDto: PageOptionsDto) {
+  async findAll(@TenantId() tenantId: string, @Query() pageOptionsDto: WorkOrderQueryDto) {
     const result = await this.workOrdersService.findAllPaginated(tenantId, pageOptionsDto);
     return DataResponseDto.success(result.data, 'Work orders fetched successfully', {
       ...result.meta,

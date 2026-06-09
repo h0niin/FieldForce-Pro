@@ -9,6 +9,7 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { Company } from '../COMPANIES/companies.entity';
+import { Territory } from '../TERRITORIES/territories.entity';
 
 @Table({
   tableName: 'service_locations',
@@ -52,6 +53,16 @@ export class ServiceLocation extends Model {
 
   @BelongsTo(() => Company)
   company: Company;
+
+  @ForeignKey(() => Territory)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  territory_id: string;
+
+  @BelongsTo(() => Territory)
+  territory: Territory;
 
   @Column({
     type: DataType.TEXT,

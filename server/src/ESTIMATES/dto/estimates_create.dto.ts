@@ -36,6 +36,13 @@ export class CreateEstimateDto {
   contact_id?: string;
 
   @ApiPropertyOptional({
+    description: 'Asset ID',
+  })
+  @IsUUID()
+  @IsOptional()
+  asset_id?: string;
+
+  @ApiPropertyOptional({
     description: 'Estimate number (auto-generated if not provided)',
     example: 'EST-2024-001',
   })

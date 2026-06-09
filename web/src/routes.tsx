@@ -49,6 +49,7 @@ const WorkOrderDetailPage = lazy(() => import('@/pages/work-orders/WorkOrderDeta
 const WorkOrderFormPage = lazy(() => import('@/pages/work-orders/WorkOrderFormPage'));
 const DispatchBoardPage = lazy(() => import('@/pages/scheduling/DispatchBoardPage'));
 const AppointmentFormPage = lazy(() => import('@/pages/scheduling/AppointmentFormPage'));
+const AppointmentDetailPage = lazy(() => import('@/pages/scheduling/AppointmentDetailPage'));
 const JobSheetTemplateListPage = lazy(() => import('@/pages/job-sheets/JobSheetTemplateListPage'));
 const JobSheetBuilderPage = lazy(() => import('@/pages/job-sheets/JobSheetBuilderPage'));
 const JobSheetDashboardPage = lazy(() => import('@/pages/job-sheets/JobSheetDashboardPage'));
@@ -62,6 +63,7 @@ const LiveAgentTrackingPage = lazy(() => import('@/pages/tracking/LiveAgentTrack
 const InvoiceListPage = lazy(() => import('@/pages/invoices/InvoiceListPage'));
 const InvoiceDetailPage = lazy(() => import('@/pages/invoices/InvoiceDetailPage'));
 const InvoiceFormPage = lazy(() => import('@/pages/invoices/InvoiceFormPage'));
+const ServiceReportViewer = lazy(() => import('@/pages/service-reports/ServiceReportViewer'));
 const PaymentListPage = lazy(() => import('@/pages/payments/PaymentListPage'));
 const PaymentDetailPage = lazy(() => import('@/pages/payments/PaymentDetailPage'));
 const PaymentFormPage = lazy(() => import('@/pages/payments/PaymentFormPage'));
@@ -135,6 +137,7 @@ const NotificationsPage = lazy(() => import('@/pages/notifications/Notifications
 const WhatsAppChannelSettingsPage = lazy(() => import('@/pages/settings/WhatsAppChannelSettingsPage'));
 const SlaConfigPage = lazy(() => import('@/pages/slas/SlaConfigPage'));
 const EmailChannelSettingsPage = lazy(() => import('@/pages/settings/EmailChannelSettingsPage'));
+const TerritoriesListPage = lazy(() => import('@/pages/territories/TerritoriesList'));
 
 function SuspenseWrapper({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>;
@@ -690,6 +693,14 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        path: 'scheduling/:id',
+        element: (
+          <SuspenseWrapper>
+            <AppointmentDetailPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
         path: 'scheduling/:id/edit',
         element: (
           <SuspenseWrapper>
@@ -713,12 +724,29 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
+      {
+        path: 'scheduling/territories',
+        element: (
+          <SuspenseWrapper>
+            <TerritoriesListPage />
+          </SuspenseWrapper>
+        ),
+      },
       // Predictive Maintenance
       {
         path: 'maintenance/health-dashboard',
         element: (
           <SuspenseWrapper>
             <EquipmentHealthDashboardPage />
+          </SuspenseWrapper>
+        ),
+      },
+      // Service Reports
+      {
+        path: 'service-reports/:id/viewer',
+        element: (
+          <SuspenseWrapper>
+            <ServiceReportViewer />
           </SuspenseWrapper>
         ),
       },

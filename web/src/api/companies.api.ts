@@ -35,6 +35,10 @@ export const companiesApi = {
     return api.get<ApiResponse<Company>>(`/companies/${id}`);
   },
 
+  getInsights(id: string) {
+    return api.get<ApiResponse<{ activeAssets: number; openWorkOrders: number; unpaidInvoices: number }>>(`/companies/${id}/insights`);
+  },
+
   create(payload: CreateCompanyPayload) {
     return api.post<ApiResponse<Company>>('/companies', payload);
   },

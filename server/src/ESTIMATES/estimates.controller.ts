@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { EstimatesService } from './estimates.service';
 import { CreateEstimateDto } from './dto/estimates_create.dto';
@@ -58,6 +58,11 @@ export class EstimatePageOptionsDto extends PageOptionsDto {
   @ApiPropertyOptional({ description: 'Filter by is_template flag' })
   @IsOptional()
   readonly isTemplate?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by asset ID' })
+  @IsUUID()
+  @IsOptional()
+  readonly asset_id?: string;
 }
 
 @ApiTags('Estimates')

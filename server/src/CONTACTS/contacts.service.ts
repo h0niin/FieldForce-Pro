@@ -6,19 +6,22 @@ import {
 } from '@nestjs/common';
 import { Op } from 'sequelize';
 import { REPOSITORY } from '../shared/constants/keynames';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 import { Contact } from './contacts.entity';
 import { CreateContactDto } from './dto/contacts_create.dto';
 import { UpdateContactDto } from './dto/contacts_update.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { PageDto } from '../shared/dto/page.dto';
+import { generateEntityDiff } from '../utils/diff-logger.util';
 
 @Injectable()
 export class ContactsService {
   constructor(
     @Inject(REPOSITORY.CONTACTS)
     private readonly contactRepository: typeof Contact,
-  ) {}
+    private readonly activityLogsService: ActivityLogsService,
+  ) { }
 
   async findAllPaginated(
     tenantId: string,
@@ -28,6 +31,10 @@ export class ContactsService {
       tenant_id: tenantId,
       is_deleted: false,
     };
+
+    if (pageOptionsDto.company_id) {
+      where.company_id = pageOptionsDto.company_id;
+    }
 
     if (pageOptionsDto.search) {
       where[Op.or as unknown as string] = [
@@ -49,9 +56,13 @@ export class ContactsService {
     return new PageDto(rows, meta);
   }
 
-  async findAll(tenantId: string): Promise<Contact[]> {
+  async findAll(tenantId: string, companyId?: string): Promise<Contact[]> {
+    const where: any = { tenant_id: tenantId, is_deleted: false };
+    if (companyId) {
+      where.company_id = companyId;
+    }
     return this.contactRepository.findAll({
-      where: { tenant_id: tenantId, is_deleted: false },
+      where,
       order: [['first_name', 'ASC'], ['last_name', 'ASC']],
     });
   }
@@ -86,6 +97,14 @@ export class ContactsService {
       ...dto,
     });
 
+    await this.activityLogsService.logActivity(
+      tenantId,
+      'Contact',
+      contact.id,
+      'CREATED',
+      `Contact ${contact.first_name} ${contact.last_name} was created.`,
+    );
+
     return this.findById(contact.id, tenantId);
   }
 
@@ -116,7 +135,22 @@ export class ContactsService {
       }
     }
 
+    const diffArray = generateEntityDiff(contact, dto);
+    const diffString = diffArray.join(', ');
+    const description = diffString !== ''
+      ? diffString
+      : 'Contact details were updated.';
+
     await contact.update(dto);
+
+    await this.activityLogsService.logActivity(
+      tenantId,
+      'Contact',
+      contact.id,
+      'UPDATED',
+      description,
+    );
+
     return this.findById(contact.id, tenantId);
   }
 
@@ -130,5 +164,21 @@ export class ContactsService {
 
     // Soft delete
     await contact.update({ is_deleted: true });
+  }
+
+  async getInsights(id: string, tenantId: string) {
+    const { Asset } = await import('../ASSETS/assets.entity');
+    const { WorkOrder } = await import('../WORK_ORDERS/work_orders.entity');
+    const { Invoice } = await import('../INVOICES/invoices.entity');
+
+    const activeAssets = await Asset.count({ where: { contact_id: id, tenant_id: tenantId, is_deleted: false, status: 'OPERATIONAL' } });
+    const openWorkOrders = await WorkOrder.count({ where: { contact_id: id, tenant_id: tenantId, is_deleted: false, status: { [Op.notIn]: ['completed', 'cancelled'] } } });
+    const unpaidInvoices = await Invoice.count({ where: { contact_id: id, tenant_id: tenantId, is_deleted: false, status: { [Op.notIn]: ['paid', 'void', 'draft'] } } });
+
+    return {
+      activeAssets,
+      openWorkOrders,
+      unpaidInvoices,
+    };
   }
 }
