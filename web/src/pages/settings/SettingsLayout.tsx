@@ -21,6 +21,9 @@ import {
   AppstoreOutlined,
   LayoutOutlined,
   SwapOutlined,
+  FileTextOutlined,
+  DatabaseOutlined,
+  CloudServerOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -163,17 +166,7 @@ export default function SettingsLayout() {
         },
       ],
     },
-    {
-      title: t('settings.categories.dataAdmin', 'Data Administration'),
-      items: [
-        {
-          key: 'export',
-          label: t('settings.submodules.dataExport', 'Data Export'),
-          icon: <DownloadOutlined />,
-          path: '/settings/export',
-        },
-      ],
-    },
+
     {
       title: t('settings.categories.customization', 'Customization'),
       items: [
@@ -185,7 +178,7 @@ export default function SettingsLayout() {
         },
         {
           key: 'dispatch-layouts',
-          label: t('settings.submodules.dispatchLayouts', 'Dispatch Console Layouts'),
+          label: t('settings.submodules.dispatchLayouts', 'Dispatch Console'),
           icon: <LayoutOutlined />,
           path: '/settings/customization/dispatch-layouts',
         },
@@ -194,6 +187,30 @@ export default function SettingsLayout() {
           label: t('settings.submodules.moduleMapping', 'Module Mapping'),
           icon: <SwapOutlined />,
           path: '/settings/customization/module-mapping',
+        },
+        {
+          key: 'job-sheets',
+          label: t('settings.submodules.jobSheets', 'Job Sheets'),
+          icon: <AuditOutlined />,
+          path: '/settings/customization/job-sheets',
+        },
+        {
+          key: 'templates',
+          label: t('settings.submodules.templates', 'Templates'),
+          icon: <FileTextOutlined />,
+          path: '/settings/customization/templates',
+        },
+        {
+          key: 'data-export',
+          label: t('settings.submodules.dataExport', 'Data Export'),
+          icon: <DatabaseOutlined />,
+          path: '/settings/export',
+        },
+        {
+          key: 'file-storage',
+          label: t('settings.submodules.fileStorage', 'File Storage'),
+          icon: <CloudServerOutlined />,
+          path: '/settings/file-storage',
         },
       ],
     },
@@ -228,6 +245,8 @@ export default function SettingsLayout() {
           top: 100,
           borderRadius: 16,
           boxShadow: 'var(--shadow-sm)',
+          maxHeight: 'calc(100vh - 120px)',
+          overflowY: 'auto',
         }}
         bodyStyle={{ padding: 0 }}
       >

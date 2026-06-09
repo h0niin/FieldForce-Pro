@@ -23,6 +23,18 @@ export class UpdateTemplateDto {
   @IsOptional()
   name?: string;
 
+  @ApiPropertyOptional({ description: 'Template description' })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Associated module name' })
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  module_name?: string;
+
   @ApiPropertyOptional({
     description: 'Template content (JSONB)',
     example: { header: 'Invoice', body: '<html>...</html>', styles: {} },

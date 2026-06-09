@@ -1,66 +1,47 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-} from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Req, Query } from '@nestjs/common';
 import { ModuleMappingsService } from './module_mappings.service';
-import { SaveModuleMappingsDto } from './dto/module_mappings.dto';
-import { TenantId } from '../shared/decorator/tenant.decorator';
-import { DataResponseDto } from '../shared/dto/data-response.dto';
+import { ModuleMapping } from './module_mappings.entity';
 
-@ApiTags('Module Mappings')
-@ApiBearerAuth()
 @Controller('module-mappings')
 export class ModuleMappingsController {
   constructor(private readonly moduleMappingsService: ModuleMappingsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get field mappings for a source and target module pair' })
   async getMappings(
-    @TenantId() tenantId: string,
+    @Req() req: any,
     @Query('sourceModule') sourceModule: string,
-    @Query('targetModule') targetModule: string,
+    @Query('targetModule') targetModule: string
   ) {
-    const mappings = await this.moduleMappingsService.getMappings(tenantId, sourceModule, targetModule);
-    return DataResponseDto.success(mappings, 'Mappings retrieved successfully');
+    const tenantId = req.user.tenant_id;
+    return this.moduleMappingsService.getMappings(tenantId, sourceModule, targetModule);
   }
 
   @Get('fields')
-  @ApiOperation({ summary: 'Get available fields (standard + custom) for source and target modules' })
   async getFields(
-    @TenantId() tenantId: string,
+    @Req() req: any,
     @Query('sourceModule') sourceModule: string,
-    @Query('targetModule') targetModule: string,
+    @Query('targetModule') targetModule: string
   ) {
-    const sourceFields = await this.moduleMappingsService.getFieldsForModule(tenantId, sourceModule);
-    const targetFields = await this.moduleMappingsService.getFieldsForModule(tenantId, targetModule);
-    return DataResponseDto.success(
-      { sourceFields, targetFields },
-      'Module fields retrieved successfully',
-    );
+    const tenantId = req.user.tenant_id;
+    return this.moduleMappingsService.getFields(tenantId, sourceModule, targetModule);
   }
 
   @Post('save')
-  @ApiOperation({ summary: 'Save field mappings' })
-  async saveMappings(
-    @TenantId() tenantId: string,
-    @Body() dto: SaveModuleMappingsDto,
+  async save(
+    @Req() req: any,
+    @Body() data: { sourceModule: string; targetModule: string; mappings: any[] }
   ) {
-    const mappings = await this.moduleMappingsService.saveMappings(tenantId, dto);
-    return DataResponseDto.success(mappings, 'Mappings saved successfully');
+    const tenantId = req.user.tenant_id;
+    const userId = req.user.id;
+    return this.moduleMappingsService.save(tenantId, data.sourceModule, data.targetModule, data.mappings, userId);
   }
 
   @Post('reset')
-  @ApiOperation({ summary: 'Reset field mappings to defaults' })
-  async resetMappings(
-    @TenantId() tenantId: string,
-    @Body('sourceModule') sourceModule: string,
-    @Body('targetModule') targetModule: string,
+  async reset(
+    @Req() req: any,
+    @Body() data: { sourceModule: string; targetModule: string }
   ) {
-    const mappings = await this.moduleMappingsService.resetMappings(tenantId, sourceModule, targetModule);
-    return DataResponseDto.success(mappings, 'Mappings reset successfully');
+    const tenantId = req.user.tenant_id;
+    return this.moduleMappingsService.reset(tenantId, data.sourceModule, data.targetModule);
   }
 }

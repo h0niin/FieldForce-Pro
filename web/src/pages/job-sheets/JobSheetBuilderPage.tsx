@@ -98,9 +98,9 @@ export default function JobSheetBuilderPage() {
         category: template.category,
         is_active: template.is_active,
       });
-      // Parse items from template metadata if exists
-      if (template.metadata && typeof template.metadata === 'object' && 'items' in template.metadata) {
-        setItems((template.metadata as { items: JobSheetItem[] }).items || []);
+      // Parse items from template items if exists
+      if (template.items && Array.isArray(template.items)) {
+        setItems(template.items as JobSheetItem[]);
       }
     }
   }, [template, form]);
@@ -113,7 +113,7 @@ export default function JobSheetBuilderPage() {
 
     const payload = {
       ...values,
-      metadata: { items },
+      items,
     };
 
     try {
@@ -122,7 +122,7 @@ export default function JobSheetBuilderPage() {
       } else {
         await createTemplate.mutateAsync(payload as Record<string, unknown> & { name: string });
       }
-      navigate('/job-sheets/templates');
+      navigate('/settings/customization/job-sheets');
     } catch {
       // Error handled by mutation hooks
     }
@@ -207,7 +207,7 @@ export default function JobSheetBuilderPage() {
       <PageHeader
         title={isEdit ? t('jobSheetsBuilder.editTitle') : t('jobSheetsBuilder.createTitle')}
         subtitle={t('jobSheetsBuilder.subtitle')}
-        onBack={() => navigate('/job-sheets/templates')}
+        onBack={() => navigate('/settings/customization/job-sheets')}
       />
 
       <Form
@@ -507,7 +507,7 @@ export default function JobSheetBuilderPage() {
                   >
                     {isEdit ? t('jobSheetsBuilder.updateTemplate') : t('jobSheetsBuilder.createTemplate')}
                   </Button>
-                  <Button onClick={() => navigate('/job-sheets/templates')} size="large">
+                  <Button onClick={() => navigate('/settings/customization/job-sheets')} size="large">
                     {t('jobSheetsBuilder.cancel')}
                   </Button>
                 </Space>
