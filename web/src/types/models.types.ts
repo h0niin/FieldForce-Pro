@@ -819,3 +819,15 @@ export interface AuditLog {
   user_agent: string | null;
   created_at: string;
 }
+
+// Customization — Tenant Modules
+export interface TenantModule {
+  id: string;
+  tenant_id: string;
+  module_name: string;
+  is_active: boolean;
+  last_modified_by: string | null;
+  modifier?: Pick<User, 'id' | 'first_name' | 'last_name' | 'email'> | null;
+  created_at: string;
+  updated_at: string;
+}

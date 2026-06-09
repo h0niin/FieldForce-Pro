@@ -18,6 +18,8 @@ import {
   MobileOutlined,
   KeyOutlined,
   LockOutlined,
+  AppstoreOutlined,
+  LayoutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -168,6 +170,23 @@ export default function SettingsLayout() {
           label: t('settings.submodules.dataExport', 'Data Export'),
           icon: <DownloadOutlined />,
           path: '/settings/export',
+        },
+      ],
+    },
+    {
+      title: t('settings.categories.customization', 'Customization'),
+      items: [
+        {
+          key: 'modules-fields',
+          label: t('settings.submodules.modulesFields', 'Modules & Fields'),
+          icon: <AppstoreOutlined />,
+          path: '/settings/customization/modules',
+        },
+        {
+          key: 'dispatch-layouts',
+          label: t('settings.submodules.dispatchLayouts', 'Dispatch Console Layouts'),
+          icon: <LayoutOutlined />,
+          path: '/settings/customization/dispatch-layouts',
         },
       ],
     },

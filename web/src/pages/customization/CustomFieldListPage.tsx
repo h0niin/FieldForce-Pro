@@ -70,7 +70,7 @@ export default function CustomFieldListPage() {
       title: t('customFields.columns.label'),
       dataIndex: 'label',
       key: 'label',
-      render: (label: string, record: any) => (<Link to={`/customization/fields/${record.id}`}><span style={{ fontWeight: 500 }}>{label}</span></Link>),
+      render: (label: string, record: any) => (<Link to={`/customization/custom-fields/${record.id}/edit`}><span style={{ fontWeight: 500 }}>{label}</span></Link>),
       sorter: (a, b) => a.label.localeCompare(b.label),
     },
     {
@@ -126,7 +126,7 @@ export default function CustomFieldListPage() {
           </PermissionGuard>
           <PermissionGuard permission="custom-fields:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/customization/fields/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/customization/custom-fields/${record.id}/edit`)} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="custom-fields:delete">
@@ -146,7 +146,7 @@ export default function CustomFieldListPage() {
         subtitle={t('customFields.subtitle')}
         extra={
           <PermissionGuard permission="custom-fields:create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/customization/fields/new')}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/customization/custom-fields/new')}>
               {t('customFields.createButton')}
             </Button>
           </PermissionGuard>

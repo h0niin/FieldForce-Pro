@@ -1,10 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+
+// expo-server-sdk v6+ is ESM-only; use a lazy dynamic import so NestJS
+// CommonJS output doesn't try to require() it at module load time.
+type ExpoType = import('expo-server-sdk').default;
+type ExpoPushMessage = import('expo-server-sdk').ExpoPushMessage;
+type ExpoPushTicket = import('expo-server-sdk').ExpoPushTicket;
 
 @Injectable()
 export class PushNotificationService {
   private readonly logger = new Logger(PushNotificationService.name);
-  private readonly expo = new Expo();
+  private expoInstance: ExpoType | null = null;
+
+  private async getExpo(): Promise<ExpoType> {
+    if (!this.expoInstance) {
+      const { default: Expo } = await import('expo-server-sdk');
+      this.expoInstance = new Expo();
+    }
+    return this.expoInstance;
+  }
 
   /**
    * Send a push notification to one or more Expo push tokens.
@@ -16,6 +29,8 @@ export class PushNotificationService {
     body: string,
     data?: Record<string, unknown>,
   ): Promise<void> {
+    const { default: Expo } = await import('expo-server-sdk');
+
     // Filter to valid Expo push tokens only
     const validTokens = pushTokens.filter((token) => Expo.isExpoPushToken(token));
 
@@ -23,6 +38,8 @@ export class PushNotificationService {
       this.logger.debug('No valid Expo push tokens to send to');
       return;
     }
+
+    const expo = await this.getExpo();
 
     const messages: ExpoPushMessage[] = validTokens.map((token) => ({
       to: token,
@@ -32,11 +49,11 @@ export class PushNotificationService {
       data: data ?? {},
     }));
 
-    const chunks = this.expo.chunkPushNotifications(messages);
+    const chunks = expo.chunkPushNotifications(messages);
 
     for (const chunk of chunks) {
       try {
-        const tickets: ExpoPushTicket[] = await this.expo.sendPushNotificationsAsync(chunk);
+        const tickets: ExpoPushTicket[] = await expo.sendPushNotificationsAsync(chunk);
 
         for (const ticket of tickets) {
           if (ticket.status === 'error') {

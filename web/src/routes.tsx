@@ -121,6 +121,9 @@ const WorkflowRuleFormPage = lazy(() => import('@/pages/customization/WorkflowRu
 const WebhookFormPage = lazy(() => import('@/pages/customization/WebhookFormPage'));
 const AuditLogListPage = lazy(() => import('@/pages/security/AuditLogListPage'));
 const MobileUsageLogs = lazy(() => import('@/pages/admin/MobileUsageLogs'));
+const ModulesAndFieldsPage = lazy(() => import('@/pages/settings/customization/ModulesAndFieldsPage'));
+const FieldPermissionsPage = lazy(() => import('@/pages/settings/customization/FieldPermissionsPage'));
+const DispatchConsoleLayoutPage = lazy(() => import('@/pages/settings/customization/DispatchConsoleLayoutPage'));
 const ReportListPage = lazy(() => import('@/pages/reports/ReportListPage'));
 const ReportDetailPage = lazy(() => import('@/pages/reports/ReportDetailPage'));
 const AgentListPage = lazy(() => import('@/pages/workforce/AgentListPage'));
@@ -1587,6 +1590,30 @@ export const routes: RouteObject[] = [
             element: (
               <SuspenseWrapper>
                 <ApiKeysPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/modules',
+            element: (
+              <SuspenseWrapper>
+                <ModulesAndFieldsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/modules/:moduleName/permissions',
+            element: (
+              <SuspenseWrapper>
+                <FieldPermissionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/dispatch-layouts',
+            element: (
+              <SuspenseWrapper>
+                <DispatchConsoleLayoutPage />
               </SuspenseWrapper>
             ),
           },
