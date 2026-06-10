@@ -50,4 +50,26 @@ export const companiesApi = {
   delete(id: string) {
     return api.delete<ApiResponse<null>>(`/companies/${id}`);
   },
+
+  importCsv(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<{ imported: number; failed: number; total: number }>>('/companies/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  exportCsv(recordIds?: string[]) {
+    return api.post('/companies/export/csv', { recordIds }, { responseType: 'blob' });
+  },
+
+  changeOwner(recordIds: string[], newOwnerId: string) {
+    return api.put<ApiResponse<null>>('/companies/bulk/change-owner', { recordIds, newOwnerId });
+  },
+
+  merge(masterRecordId: string, duplicateRecordId: string) {
+    return api.post<ApiResponse<null>>('/companies/bulk/merge', { masterRecordId, duplicateRecordId });
+  },
 };

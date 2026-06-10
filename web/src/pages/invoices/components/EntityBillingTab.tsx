@@ -4,6 +4,7 @@ import { PlusOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { invoicesApi } from '@/api/invoices.api';
+import { paymentsApi } from '@/api/payments.api';
 import { formatCurrency } from '@/utils/format-currency';
 import { formatDateTime } from '@/utils/format-date';
 
@@ -81,30 +82,106 @@ export const EntityBillingTab: React.FC<EntityBillingTabProps> = ({ companyId, c
     },
   ];
 
+  const { data: payments, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['payments', { companyId, contactId }],
+    queryFn: async () => {
+      const response = await paymentsApi.getAll({ company_id: companyId, contact_id: contactId } as any);
+      return response.data.data;
+    },
+    enabled: !!companyId || !!contactId,
+  });
+
+  const paymentColumns = [
+    {
+      title: 'Payment #',
+      dataIndex: 'id',
+      key: 'id',
+      render: (id: string) => <a onClick={() => navigate(`/payments/${id}`)}>{id.substring(0, 8)}</a>,
+    },
+    {
+      title: 'Method',
+      dataIndex: 'method',
+      key: 'method',
+      render: (m: string) => <Tag>{m}</Tag>,
+    },
+    {
+      title: 'Amount',
+      dataIndex: 'amount',
+      key: 'amount',
+      render: (amount: number, record: any) => formatCurrency(amount, record.currency || 'USD'),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'default';
+        if (status === 'completed' || status === 'confirmed') color = 'success';
+        if (status === 'pending') color = 'warning';
+        if (status === 'failed' || status === 'rejected') color = 'error';
+        return <Tag color={color}>{status?.toUpperCase()}</Tag>;
+      },
+    },
+    {
+      title: 'Date',
+      dataIndex: 'paid_at',
+      key: 'paid_at',
+      render: (date: string) => formatDateTime(date),
+    },
+  ];
+
   return (
-    <Card
-      title="Billing & Invoices"
-      extra={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            const params = new URLSearchParams();
-            if (companyId) params.append('company_id', companyId);
-            if (contactId) params.append('contact_id', contactId);
-            navigate(`/invoices/new?${params.toString()}`);
-          }}
-        >
-          Create Invoice
-        </Button>
-      }
-    >
+    <Card title="Billing">
       <Table
         dataSource={invoices}
         columns={columns}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 5 }}
+        title={() => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold' }}>Invoices</span>
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (companyId) params.append('company_id', companyId);
+                if (contactId) params.append('contact_id', contactId);
+                navigate(`/invoices/new?${params.toString()}`);
+              }}
+            >
+              Create Invoice
+            </Button>
+          </div>
+        )}
+        style={{ marginBottom: 24 }}
+      />
+
+      <Table
+        dataSource={payments}
+        columns={paymentColumns}
+        rowKey="id"
+        loading={paymentsLoading}
+        pagination={{ pageSize: 5 }}
+        title={() => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold' }}>Payments</span>
+            <Button
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (companyId) params.append('company_id', companyId);
+                if (contactId) params.append('contact_id', contactId);
+                navigate(`/payments/new?${params.toString()}`);
+              }}
+            >
+              Record Payment
+            </Button>
+          </div>
+        )}
       />
     </Card>
   );

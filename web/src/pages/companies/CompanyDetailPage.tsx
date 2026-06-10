@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, Descriptions, Button, Space, Skeleton, Tabs } from 'antd';
-import { EditOutlined, DeleteOutlined, GlobalOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, GlobalOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { useCompany, useDeleteCompany } from '@/hooks/use-companies';
 import PageHeader from '@/components/common/PageHeader';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -12,7 +13,14 @@ import { EntityInsightsTab } from '@/components/common/EntityInsightsTab';
 import { EntityBillingTab } from '@/pages/invoices/components/EntityBillingTab';
 import { EntityNotesTab } from '@/components/common/EntityNotesTab';
 import { EntityAttachmentsTab } from '@/components/common/EntityAttachmentsTab';
-import { EntityRelatedWorkOrdersTab, EntityRelatedServiceRequestsTab } from '@/components/common/EntityRelatedLists';
+import { CompanyChangeOwnerModal } from './components/CompanyBulkModals';
+import { 
+  EntityRelatedWorkOrdersTab, 
+  EntityRelatedServiceRequestsTab,
+  EntityRelatedEstimatesTab,
+  EntityRelatedAppointmentsTab,
+  EntityRelatedMaintenancePlansTab
+} from '@/components/common/EntityRelatedLists';
 
 import CompanyContactsTab from './components/CompanyContactsTab';
 import CompanyLocationsTab from './components/CompanyLocationsTab';
@@ -24,6 +32,7 @@ export default function CompanyDetailPage() {
   const navigate = useNavigate();
   const { data: company, isLoading } = useCompany(id!);
   const deleteCompany = useDeleteCompany();
+  const [isChangeOwnerModalOpen, setIsChangeOwnerModalOpen] = useState(false);
 
   const handleDelete = () => {
     if (!company) return;
@@ -103,11 +112,26 @@ export default function CompanyDetailPage() {
                 {company.notes || <span style={{ opacity: 0.5 }}>-</span>}
               </Descriptions.Item>
 
+              <Descriptions.Item label="Created by">
+                {company.creator ? (
+                  <span>
+                    {company.creator.first_name} {company.creator.last_name} (
+                    <a href={`mailto:${company.creator.email}`}>{company.creator.email}</a>
+                    )
+                  </span>
+                ) : (
+                  <span style={{ opacity: 0.5 }}>-</span>
+                )}
+              </Descriptions.Item>
+
               <Descriptions.Item label={t('companies.createdAt')}>
                 {formatDateTime(company.created_at)}
               </Descriptions.Item>
               <Descriptions.Item label={t('companies.updatedAt')}>
                 {formatDateTime(company.updated_at)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Updated by">
+                {company.updater ? `${company.updater.first_name} ${company.updater.last_name}` : <span style={{ opacity: 0.5 }}>-</span>}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -182,11 +206,20 @@ export default function CompanyDetailPage() {
           <Card title="Related Assets">
             <CompanyAssetsTab companyId={company.id} />
           </Card>
+          <Card title="Related Estimates">
+            <EntityRelatedEstimatesTab companyId={company.id} />
+          </Card>
+          <Card title="Related Service Appointments">
+            <EntityRelatedAppointmentsTab companyId={company.id} />
+          </Card>
           <Card title="Related Work Orders">
             <EntityRelatedWorkOrdersTab companyId={company.id} />
           </Card>
           <Card title="Related Service Requests">
             <EntityRelatedServiceRequestsTab companyId={company.id} />
+          </Card>
+          <Card title="Scheduled Maintenance Plans">
+            <EntityRelatedMaintenancePlansTab companyId={company.id} />
           </Card>
         </Space>
       ),
@@ -206,6 +239,11 @@ export default function CompanyDetailPage() {
         extra={
           <Space>
             <PermissionGuard permission="companies:update">
+              <Button icon={<UserSwitchOutlined />} onClick={() => setIsChangeOwnerModalOpen(true)}>
+                Change Owner
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="companies:update">
               <Button
                 icon={<EditOutlined />}
                 onClick={() => navigate(`/companies/${company.id}/edit`)}
@@ -222,6 +260,11 @@ export default function CompanyDetailPage() {
         }
       />
       <Tabs defaultActiveKey="details" items={items} />
+      <CompanyChangeOwnerModal 
+        open={isChangeOwnerModalOpen} 
+        onClose={() => setIsChangeOwnerModalOpen(false)} 
+        selectedIds={[company.id]} 
+      />
     </div>
   );
 }

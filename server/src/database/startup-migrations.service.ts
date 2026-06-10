@@ -913,7 +913,28 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
                 updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
                 UNIQUE (tenant_id, source_module, target_module, source_field)
               );`,
-
+      },
+      // ── ADD created_by and updated_by fields to core entities ────────────
+      {
+        name: 'companies: add created_by and updated_by',
+        sql: `
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id) ON DELETE SET NULL;
+          ALTER TABLE companies ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES users(id) ON DELETE SET NULL;
+        `,
+      },
+      {
+        name: 'contacts: add created_by and updated_by',
+        sql: `
+          ALTER TABLE contacts ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id) ON DELETE SET NULL;
+          ALTER TABLE contacts ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES users(id) ON DELETE SET NULL;
+        `,
+      },
+      {
+        name: 'assets: add created_by and updated_by',
+        sql: `
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id) ON DELETE SET NULL;
+          ALTER TABLE assets ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES users(id) ON DELETE SET NULL;
+        `,
       },
     ];
 

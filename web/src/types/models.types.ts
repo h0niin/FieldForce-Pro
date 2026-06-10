@@ -121,6 +121,8 @@ export interface Company {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+  creator?: User;
+  updater?: User;
 }
 
 export interface ServiceLocation {

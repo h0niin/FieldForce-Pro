@@ -1,9 +1,10 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Button, Space, Skeleton, Tag, Table, Tabs, Typography, Row, Col, Empty, Divider } from 'antd';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Card, Descriptions, Button, Space, Skeleton, Tag, Table, Tabs, Typography, Row, Col, Empty, Divider, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, MailOutlined, MoreOutlined, CopyOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAsset, useDeleteAsset, useAssets } from '@/hooks/use-assets';
+import { useAsset, useDeleteAsset, useAssets, useCloneAsset } from '@/hooks/use-assets';
 import { useAssetMaintenancePlans } from '@/hooks/use-maintenance-plans';
 import { useWorkOrders } from '@/hooks/use-work-orders';
 import { useServiceRequests } from '@/hooks/use-service-requests';
@@ -15,6 +16,11 @@ import { PermissionGuard } from '@/components/permissions';
 import { formatDateTime } from '@/utils/format-date';
 import { formatEnumText } from '@/utils/string';
 import { EntityTimelineTab } from '@/components/common/EntityTimelineTab';
+import { EntityNotesTab } from '@/components/common/EntityNotesTab';
+import { EntityAttachmentsTab } from '@/components/common/EntityAttachmentsTab';
+import { EntityRelatedWorkOrdersTab, EntityRelatedAppointmentsTab } from '@/components/common/EntityRelatedLists';
+import { AssetChangeOwnerModal } from './components/AssetBulkModals';
+import { useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -31,6 +37,8 @@ export default function AssetDetailPage() {
   const { data: estimatesData, isLoading: estLoading } = useEstimates({ asset_id: id } as any);
   const { data: childAssetsData, isLoading: childAssetsLoading } = useAssets({ parent_asset_id: id } as any);
 
+  const [isChangeOwnerModalVisible, setIsChangeOwnerModalVisible] = useState(false);
+  const cloneAsset = useCloneAsset();
   const deleteAsset = useDeleteAsset();
 
   const handleDelete = () => {
@@ -44,6 +52,16 @@ export default function AssetDetailPage() {
       },
       danger: true,
     });
+  };
+
+  const handleCloneAsset = async () => {
+    if (!asset) return;
+    try {
+      const result = await cloneAsset.mutateAsync(asset.id);
+      navigate(`/assets/${result.data.data.id}`);
+    } catch (e) {
+      // Notification is handled by the hook
+    }
   };
 
   if (assetQuery.isLoading) {
@@ -118,6 +136,26 @@ export default function AssetDetailPage() {
             <PermissionGuard permission="assets:delete">
               <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>Delete</Button>
             </PermissionGuard>
+            <Dropdown
+              key="more-actions"
+              menu={{
+                items: [
+                  {
+                    key: 'clone',
+                    label: 'Clone Asset',
+                    onClick: handleCloneAsset, // Ensure this function is bound properly
+                  },
+                  {
+                    key: 'changeOwner',
+                    label: 'Change Owner',
+                    onClick: () => setIsChangeOwnerModalVisible(true), // Ensure state triggers
+                  }
+                ]
+              }}
+              placement="bottomRight"
+            >
+              <Button icon={<MoreOutlined />} />
+            </Dropdown>
           </Space>
         }
       />
@@ -160,15 +198,19 @@ export default function AssetDetailPage() {
                   </div>
                 </div>
 
-                {asset.parent_asset && (
-                  <>
-                    <Divider style={{ margin: '12px 0' }} />
-                    <div>
-                      <Text type="secondary">Parent Asset</Text>
-                      <div><a onClick={() => navigate(`/assets/${asset.parent_asset!.id}`)}>{asset.parent_asset!.name}</a></div>
-                    </div>
-                  </>
-                )}
+                <Divider style={{ margin: '12px 0' }} />
+                <div>
+                  <Text type="secondary">Parent Asset</Text>
+                  <div>
+                    {asset.parent_asset ? (
+                      <Link to={`/assets/${asset.parent_asset.id}`}>
+                        {asset.parent_asset.name}
+                      </Link>
+                    ) : (
+                      '-'
+                    )}
+                  </div>
+                </div>
               </Space>
             </Card>
 
@@ -178,6 +220,7 @@ export default function AssetDetailPage() {
                   <>
                     <div><Text type="secondary">Company</Text><div><a onClick={() => navigate(`/companies/${asset.company!.id}`)}>{asset.company!.name}</a></div></div>
                     {asset.company.phone && <div><Text type="secondary">Company Phone</Text><div>{asset.company.phone}</div></div>}
+                    {asset.company.website && <div><Text type="secondary">Company Website</Text><div><a href={asset.company.website} target="_blank" rel="noopener noreferrer">{asset.company.website}</a></div></div>}
                   </>
                 ) : <div><Text type="secondary">Company</Text><div>-</div></div>}
 
@@ -186,7 +229,16 @@ export default function AssetDetailPage() {
                 {asset.contact ? (
                   <>
                     <div><Text type="secondary">Contact Name</Text><div><a onClick={() => navigate(`/contacts/${asset.contact!.id}`)}>{asset.contact!.first_name} {asset.contact!.last_name}</a></div></div>
-                    {asset.contact.email && <div><Text type="secondary">Email</Text><div>{asset.contact.email}</div></div>}
+                    <div>
+                      <Text type="secondary">Email</Text>
+                      <div>
+                        {asset.contact.email ? (
+                          <a href={`mailto:${asset.contact.email}`}>{asset.contact.email}</a>
+                        ) : (
+                          '-'
+                        )}
+                      </div>
+                    </div>
                     {asset.contact.phone && <div><Text type="secondary">Phone</Text><div>{asset.contact.phone}</div></div>}
                   </>
                 ) : <div><Text type="secondary">Contact</Text><div>-</div></div>}
@@ -195,8 +247,23 @@ export default function AssetDetailPage() {
 
             <Card title="System Info" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
+                <div>
+                  <Text type="secondary">Created by</Text>
+                  <div>
+                    {asset.creator ? (
+                      <span>
+                        {asset.creator.first_name} {asset.creator.last_name} (
+                        <a href={`mailto:${asset.creator.email}`}>{asset.creator.email}</a>
+                        )
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </div>
+                </div>
                 <div><Text type="secondary">Created At</Text><div>{formatDateTime(asset.created_at)}</div></div>
                 <div><Text type="secondary">Updated At</Text><div>{formatDateTime(asset.updated_at)}</div></div>
+                <div><Text type="secondary">Updated by</Text><div>{asset.updater ? `${asset.updater.first_name} ${asset.updater.last_name}` : '-'}</div></div>
               </Space>
             </Card>
 
@@ -214,14 +281,12 @@ export default function AssetDetailPage() {
                 </div>
               </Tabs.TabPane>
 
-              <Tabs.TabPane tab="Notes & Attachments" key="notes">
+              <Tabs.TabPane tab="Notes" key="notes">
                 <div style={{ paddingTop: 16 }}>
-                  <Card title="Notes" size="small" style={{ marginBottom: 16 }}>
-                    {asset.notes ? <Text>{asset.notes}</Text> : <Empty description="No notes available" />}
-                  </Card>
+                  <EntityNotesTab entityType="Asset" entityId={asset.id} />
                   
                   {asset.custom_fields && Object.keys(asset.custom_fields).length > 0 && (
-                    <Card title="Custom Fields" size="small">
+                    <Card title="Custom Fields" size="small" style={{ marginTop: 16 }}>
                       <Descriptions column={2} bordered size="small">
                         {Object.entries(asset.custom_fields).map(([key, value]) => (
                           <Descriptions.Item key={key} label={key}>{JSON.stringify(value)}</Descriptions.Item>
@@ -229,6 +294,12 @@ export default function AssetDetailPage() {
                       </Descriptions>
                     </Card>
                   )}
+                </div>
+              </Tabs.TabPane>
+              
+              <Tabs.TabPane tab="Attachments" key="attachments">
+                <div style={{ paddingTop: 16 }}>
+                  <EntityAttachmentsTab entityType="Asset" entityId={asset.id} />
                 </div>
               </Tabs.TabPane>
 
@@ -265,11 +336,19 @@ export default function AssetDetailPage() {
 
                     {/* Work Orders */}
                     <Card 
-                      title="Service Appointments / Work Orders" 
+                      title="Work Orders" 
                       size="small"
                       extra={<Button size="small" type="dashed" icon={<PlusOutlined />} onClick={() => navigate(`/work-orders/new?asset_id=${asset.id}`)}>Create Work Order</Button>}
                     >
-                      <Table columns={woColumns} dataSource={workOrders} rowKey="id" pagination={false} loading={woLoading} size="small" locale={{ emptyText: 'No work orders' }} />
+                      <EntityRelatedWorkOrdersTab assetId={asset.id} />
+                    </Card>
+                    
+                    {/* Service Appointments */}
+                    <Card 
+                      title="Service Appointments" 
+                      size="small"
+                    >
+                      <EntityRelatedAppointmentsTab assetId={asset.id} />
                     </Card>
 
                     {/* Maintenance Plans */}
@@ -293,6 +372,14 @@ export default function AssetDetailPage() {
           </Card>
         </Col>
       </Row>
+
+      {isChangeOwnerModalVisible && (
+        <AssetChangeOwnerModal
+          open={isChangeOwnerModalVisible}
+          onClose={() => setIsChangeOwnerModalVisible(false)}
+          selectedIds={[asset.id]}
+        />
+      )}
     </div>
   );
 }

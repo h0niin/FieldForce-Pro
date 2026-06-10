@@ -66,4 +66,26 @@ export const assetsApi = {
   delete(id: string) {
     return api.delete<ApiResponse<null>>(`/assets/${id}`);
   },
+
+  importCsv(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<{ imported: number; failed: number; total: number }>>('/assets/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  exportCsv(recordIds?: string[]) {
+    return api.post('/assets/export/csv', { recordIds }, { responseType: 'blob' });
+  },
+
+  changeOwner(recordIds: string[], newOwnerId: string) {
+    return api.put<ApiResponse<null>>('/assets/bulk/change-owner', { recordIds, newOwnerId });
+  },
+
+  clone(id: string) {
+    return api.post<ApiResponse<Asset>>(`/assets/${id}/clone`);
+  },
 };

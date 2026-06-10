@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, Descriptions, Tag, Button, Space, Skeleton, Tabs, Table } from 'antd';
-import { EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { useContact, useDeleteContact } from '@/hooks/use-contacts';
 import { useCompany } from '@/hooks/use-companies';
 import PageHeader from '@/components/common/PageHeader';
@@ -13,7 +14,15 @@ import { EntityInsightsTab } from '@/components/common/EntityInsightsTab';
 import { EntityBillingTab } from '@/pages/invoices/components/EntityBillingTab';
 import { EntityNotesTab } from '@/components/common/EntityNotesTab';
 import { EntityAttachmentsTab } from '@/components/common/EntityAttachmentsTab';
-import { EntityRelatedWorkOrdersTab, EntityRelatedServiceRequestsTab } from '@/components/common/EntityRelatedLists';
+import { ContactChangeOwnerModal } from './components/ContactBulkModals';
+import { 
+  EntityRelatedWorkOrdersTab, 
+  EntityRelatedServiceRequestsTab,
+  EntityRelatedEstimatesTab,
+  EntityRelatedAppointmentsTab,
+  EntityRelatedMaintenancePlansTab,
+  EntityRelatedAssetsTab
+} from '@/components/common/EntityRelatedLists';
 import ContactLocationsTab from './components/ContactLocationsTab';
 
 export default function ContactDetailPage() {
@@ -23,6 +32,7 @@ export default function ContactDetailPage() {
   const { data: contact, isLoading } = useContact(id!);
   const { data: company } = useCompany(contact?.company_id || '');
   const deleteContact = useDeleteContact();
+  const [isChangeOwnerModalOpen, setIsChangeOwnerModalOpen] = useState(false);
 
   const handleDelete = () => {
     if (!contact) return;
@@ -133,11 +143,26 @@ export default function ContactDetailPage() {
                 )}
               </Descriptions.Item>
 
+              <Descriptions.Item label="Created by" span={2}>
+                {contact.creator ? (
+                  <span>
+                    {contact.creator.first_name} {contact.creator.last_name} (
+                    <a href={`mailto:${contact.creator.email}`}>{contact.creator.email}</a>
+                    )
+                  </span>
+                ) : (
+                  <span style={{ opacity: 0.5 }}>-</span>
+                )}
+              </Descriptions.Item>
+
               <Descriptions.Item label={t('contactDetail.createdAt')}>
                 {formatDateTime(contact.created_at)}
               </Descriptions.Item>
               <Descriptions.Item label={t('contactDetail.updatedAt')}>
                 {formatDateTime(contact.updated_at)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Updated by" span={2}>
+                {contact.updater ? `${contact.updater.first_name} ${contact.updater.last_name}` : <span style={{ opacity: 0.5 }}>-</span>}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -193,8 +218,20 @@ export default function ContactDetailPage() {
           <Card title="Related Service Requests">
             <EntityRelatedServiceRequestsTab contactId={contact.id} />
           </Card>
+          <Card title="Related Estimates">
+            <EntityRelatedEstimatesTab contactId={contact.id} />
+          </Card>
+          <Card title="Related Service Appointments">
+            <EntityRelatedAppointmentsTab contactId={contact.id} />
+          </Card>
           <Card title="Related Work Orders">
             <EntityRelatedWorkOrdersTab contactId={contact.id} />
+          </Card>
+          <Card title="Related Assets">
+            <EntityRelatedAssetsTab contactId={contact.id} />
+          </Card>
+          <Card title="Scheduled Maintenance Plans">
+            <EntityRelatedMaintenancePlansTab contactId={contact.id} />
           </Card>
         </Space>
       ),
@@ -214,6 +251,11 @@ export default function ContactDetailPage() {
         extra={
           <Space>
             <PermissionGuard permission="contacts:update">
+              <Button icon={<UserSwitchOutlined />} onClick={() => setIsChangeOwnerModalOpen(true)}>
+                Change Owner
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="contacts:update">
               <Button
                 icon={<EditOutlined />}
                 onClick={() => navigate(`/contacts/${contact.id}/edit`)}
@@ -230,6 +272,11 @@ export default function ContactDetailPage() {
         }
       />
       <Tabs defaultActiveKey="details" items={items} />
+      <ContactChangeOwnerModal 
+        open={isChangeOwnerModalOpen} 
+        onClose={() => setIsChangeOwnerModalOpen(false)} 
+        selectedIds={[contact.id]} 
+      />
     </div>
   );
 }

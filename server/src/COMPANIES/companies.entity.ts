@@ -9,6 +9,7 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
+import { User } from '../USERS/users.entity';
 
 @Table({
   tableName: 'companies',
@@ -143,6 +144,26 @@ export class Company extends Model {
     defaultValue: DataType.NOW,
   })
   updated_at: Date;
+
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  created_by: string;
+
+  @BelongsTo(() => User, { foreignKey: 'created_by', as: 'creator' })
+  creator: User;
+
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  updated_by: string;
+
+  @BelongsTo(() => User, { foreignKey: 'updated_by', as: 'updater' })
+  updater: User;
 
   // Associations
   @HasMany(() => Contact)

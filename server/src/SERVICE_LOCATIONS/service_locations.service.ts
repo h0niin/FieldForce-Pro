@@ -7,12 +7,14 @@ import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { KEYNAMES } from '../shared/constants/keynames';
 import { Op } from 'sequelize';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 @Injectable()
 export class ServiceLocationsService {
   constructor(
     @Inject(KEYNAMES.SERVICE_LOCATIONS)
     private readonly serviceLocationRepository: typeof ServiceLocation,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -83,10 +85,19 @@ export class ServiceLocationsService {
   }
 
   async create(tenantId: string, dto: CreateServiceLocationDto): Promise<ServiceLocation> {
-    return this.serviceLocationRepository.create({
+    const location = await this.serviceLocationRepository.create({
       tenant_id: tenantId,
       ...dto,
     });
+    
+    if (location.contact_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Contact', location.contact_id, 'LOCATION_ADDED', 'A new service location was added.');
+    }
+    if (location.company_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Company', location.company_id, 'LOCATION_ADDED', 'A new service location was added.');
+    }
+
+    return location;
   }
 
   async update(
@@ -96,6 +107,14 @@ export class ServiceLocationsService {
   ): Promise<ServiceLocation> {
     const serviceLocation = await this.findById(id, tenantId);
     await serviceLocation.update(dto);
+
+    if (serviceLocation.contact_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Contact', serviceLocation.contact_id, 'UPDATED', 'A service location was updated.');
+    }
+    if (serviceLocation.company_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Company', serviceLocation.company_id, 'UPDATED', 'A service location was updated.');
+    }
+
     return serviceLocation;
   }
 

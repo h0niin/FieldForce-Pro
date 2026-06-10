@@ -11,6 +11,9 @@ import { showConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PermissionGuard } from '@/components/permissions';
 import { formatDateTime } from '@/utils/format-date';
 import SearchFilter from '@/components/common/SearchFilter';
+import { UploadOutlined, DownloadOutlined, UserSwitchOutlined, MergeCellsOutlined } from '@ant-design/icons';
+import { ContactImportModal, ContactChangeOwnerModal, ContactMergeModal } from './components/ContactBulkModals';
+import { contactsApi } from '@/api/contacts.api';
 
 export default function ContactListPage() {
   const { t } = useTranslation();
@@ -25,6 +28,28 @@ export default function ContactListPage() {
 
   const contacts = data?.data || [];
   const meta = data?.meta;
+
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<Contact[]>([]);
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isChangeOwnerModalOpen, setIsChangeOwnerModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+
+  const handleExport = async (ids?: string[]) => {
+    try {
+      const response = await contactsApi.exportCsv(ids);
+      const url = window.URL.createObjectURL(new Blob([response.data as any]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contacts.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Failed to export', error);
+    }
+  };
 
   // Debounce search input
   useEffect(() => {
@@ -123,7 +148,19 @@ export default function ContactListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          {/* Removed view button */}
+          <PermissionGuard permission="contacts:read">
+            <Tooltip title={t('common.view') || 'View'}>
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/contacts/${record.id}`);
+                }}
+              />
+            </Tooltip>
+          </PermissionGuard>
           <PermissionGuard permission="contacts:update">
             <Tooltip title={t('contactList.edit')}>
               <Button
@@ -162,15 +199,27 @@ export default function ContactListPage() {
         title={t('nav.contacts')}
         subtitle={t('contactList.subtitle')}
         extra={
-          <PermissionGuard permission="contacts:create">
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/contacts/new')}
-            >
-              {t('contactList.addContact')}
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <PermissionGuard permission="contacts:create">
+              <Button icon={<DownloadOutlined />} onClick={() => setIsImportModalOpen(true)}>
+                Import
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="contacts:read">
+              <Button icon={<UploadOutlined />} onClick={() => handleExport()}>
+                Export
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="contacts:create">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate('/contacts/new')}
+              >
+                {t('contactList.addContact')}
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -184,11 +233,44 @@ export default function ContactListPage() {
         />
       </div>
 
+      {selectedRowKeys.length > 0 && (
+        <div style={{ marginBottom: 16, padding: '8px 16px', background: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: 4 }}>
+          <Space>
+            <span style={{ marginRight: 8 }}>{selectedRowKeys.length} items selected</span>
+            <PermissionGuard permission="contacts:update">
+              <Button size="small" icon={<UserSwitchOutlined />} onClick={() => setIsChangeOwnerModalOpen(true)}>
+                Change Owner
+              </Button>
+            </PermissionGuard>
+            {selectedRowKeys.length === 2 && (
+              <PermissionGuard permission="contacts:delete">
+                <Button size="small" type="primary" danger icon={<MergeCellsOutlined />} onClick={() => setIsMergeModalOpen(true)}>
+                  Merge Records
+                </Button>
+              </PermissionGuard>
+            )}
+            <PermissionGuard permission="contacts:read">
+              <Button size="small" icon={<UploadOutlined />} onClick={() => handleExport(selectedRowKeys as string[])}>
+                Export Selected
+              </Button>
+            </PermissionGuard>
+            <Button size="small" onClick={() => { setSelectedRowKeys([]); setSelectedRecords([]); }}>Clear</Button>
+          </Space>
+        </div>
+      )}
+
       <Table
         columns={columns}
         dataSource={contacts}
         rowKey="id"
         loading={isLoading}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (newSelectedRowKeys, newSelectedRecords) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+            setSelectedRecords(newSelectedRecords as Contact[]);
+          },
+        }}
         onRow={(record) => ({
           onClick: () => navigate(`/contacts/${record.id}`),
           style: { cursor: 'pointer' },
@@ -204,6 +286,18 @@ export default function ContactListPage() {
             setPageSize(newPageSize);
           },
         }}
+      />
+
+      <ContactImportModal open={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
+      <ContactChangeOwnerModal 
+        open={isChangeOwnerModalOpen} 
+        onClose={() => { setIsChangeOwnerModalOpen(false); setSelectedRowKeys([]); setSelectedRecords([]); }} 
+        selectedIds={selectedRowKeys as string[]} 
+      />
+      <ContactMergeModal 
+        open={isMergeModalOpen} 
+        onClose={() => { setIsMergeModalOpen(false); setSelectedRowKeys([]); setSelectedRecords([]); }} 
+        selectedRecords={selectedRecords} 
       />
     </div>
   );

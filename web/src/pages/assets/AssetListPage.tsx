@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAssets, useDeleteAsset } from '@/hooks/use-assets';
 import type { Asset } from '@/types/models.types';
@@ -12,6 +12,9 @@ import { PermissionGuard } from '@/components/permissions';
 import { formatDateTime } from '@/utils/format-date';
 import SearchFilter from '@/components/common/SearchFilter';
 import { formatEnumText } from '@/utils/string';
+import { UploadOutlined, DownloadOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { AssetImportModal, AssetChangeOwnerModal } from './components/AssetBulkModals';
+import { assetsApi } from '@/api/assets.api';
 
 function getWarrantyStatus(warrantyExpiry: string | null): { color: string; text: string } {
   if (!warrantyExpiry) return { color: 'default', text: 'N/A' };
@@ -43,6 +46,27 @@ export default function AssetListPage() {
   const filteredAssets = statusFilter 
     ? assets.filter(a => a.status === statusFilter)
     : assets;
+
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<Asset[]>([]);
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isChangeOwnerModalOpen, setIsChangeOwnerModalOpen] = useState(false);
+
+  const handleExport = async (ids?: string[]) => {
+    try {
+      const response = await assetsApi.exportCsv(ids);
+      const url = window.URL.createObjectURL(new Blob([response.data as any]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'assets.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Failed to export', error);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -99,17 +123,7 @@ export default function AssetListPage() {
         </Tag>
       ),
     },
-    {
-      title: t('assets.columns.health'),
-      dataIndex: 'health_score',
-      key: 'health_score',
-      render: (score: number | null, record: any) => {
-        if (score === null || score === undefined) return <span style={{ opacity: 0.5 }}>-</span>;
-        const color = score >= 80 ? 'green' : score >= 50 ? 'orange' : 'red';
-        return <Tag color={color}>{score}%</Tag>;
-      },
-      sorter: (a, b) => (a.health_score || 0) - (b.health_score || 0),
-    },
+
     {
       title: t('assets.columns.warranty'),
       dataIndex: 'warranty_expiry',
@@ -142,7 +156,17 @@ export default function AssetListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="assets:read">
-            
+            <Tooltip title={t('common.view') || 'View'}>
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/assets/${record.id}`);
+                }}
+              />
+            </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="assets:update">
             <Tooltip title={t('common.edit')}>
@@ -165,11 +189,23 @@ export default function AssetListPage() {
         title={t('nav.assets')}
         subtitle={t('assets.pageSubtitle')}
         extra={
-          <PermissionGuard permission="assets:create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/assets/new')}>
-              {t('assets.addAsset')}
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <PermissionGuard permission="assets:create">
+              <Button icon={<DownloadOutlined />} onClick={() => setIsImportModalOpen(true)}>
+                Import
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="assets:read">
+              <Button icon={<UploadOutlined />} onClick={() => handleExport()}>
+                Export
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="assets:create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/assets/new')}>
+                {t('assets.addAsset')}
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -196,11 +232,37 @@ export default function AssetListPage() {
         />
       </div>
 
+      {selectedRowKeys.length > 0 && (
+        <div style={{ marginBottom: 16, padding: '8px 16px', background: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: 4 }}>
+          <Space>
+            <span style={{ marginRight: 8 }}>{selectedRowKeys.length} items selected</span>
+            <PermissionGuard permission="assets:update">
+              <Button size="small" icon={<UserSwitchOutlined />} onClick={() => setIsChangeOwnerModalOpen(true)}>
+                Change Owner
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permission="assets:read">
+              <Button size="small" icon={<UploadOutlined />} onClick={() => handleExport(selectedRowKeys as string[])}>
+                Export Selected
+              </Button>
+            </PermissionGuard>
+            <Button size="small" onClick={() => { setSelectedRowKeys([]); setSelectedRecords([]); }}>Clear</Button>
+          </Space>
+        </div>
+      )}
+
       <Table
         columns={columns}
         dataSource={filteredAssets}
         rowKey="id"
         loading={isLoading}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (newSelectedRowKeys, newSelectedRecords) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+            setSelectedRecords(newSelectedRecords as Asset[]);
+          },
+        }}
         pagination={{
           current: page,
           pageSize,
@@ -213,6 +275,25 @@ export default function AssetListPage() {
           },
         }}
       />
+
+      {isImportModalOpen && (
+        <AssetImportModal
+          open={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+        />
+      )}
+
+      {isChangeOwnerModalOpen && (
+        <AssetChangeOwnerModal
+          open={isChangeOwnerModalOpen}
+          onClose={() => {
+            setIsChangeOwnerModalOpen(false);
+            setSelectedRowKeys([]);
+            setSelectedRecords([]);
+          }}
+          selectedIds={selectedRowKeys as string[]}
+        />
+      )}
     </div>
   );
 }

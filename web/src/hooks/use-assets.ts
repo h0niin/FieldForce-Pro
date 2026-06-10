@@ -85,3 +85,51 @@ export function useDeleteAsset() {
     },
   });
 }
+
+export function useImportAssets() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: (file: File) => assetsApi.importCsv(file),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      addNotification({ type: 'success', message: `Imported ${res.data.data?.imported} assets. Failed: ${res.data.data?.failed}` });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to import assets' });
+    },
+  });
+}
+
+export function useChangeAssetOwner() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: ({ recordIds, newOwnerId }: { recordIds: string[], newOwnerId: string }) => assetsApi.changeOwner(recordIds, newOwnerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      addNotification({ type: 'success', message: 'Owner changed successfully' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to change owner' });
+    },
+  });
+}
+
+export function useCloneAsset() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: (id: string) => assetsApi.clone(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      addNotification({ type: 'success', message: 'Asset cloned successfully' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to clone asset' });
+    },
+  });
+}

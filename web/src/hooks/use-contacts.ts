@@ -107,3 +107,52 @@ export function useDeleteContact() {
     },
   });
 }
+
+export function useImportContacts() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: (file: File) => contactsApi.importCsv(file),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      const { imported, failed } = response.data.data!;
+      addNotification({ type: 'success', message: `Import complete: ${imported} imported, ${failed} failed` });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to import contacts' });
+    },
+  });
+}
+
+export function useChangeContactOwner() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: ({ recordIds, newOwnerId }: { recordIds: string[], newOwnerId: string }) => contactsApi.changeOwner(recordIds, newOwnerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      addNotification({ type: 'success', message: 'Owner changed successfully' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to change owner' });
+    },
+  });
+}
+
+export function useMergeContacts() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: ({ masterRecordId, duplicateRecordId }: { masterRecordId: string, duplicateRecordId: string }) => contactsApi.merge(masterRecordId, duplicateRecordId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      addNotification({ type: 'success', message: 'Contacts merged successfully' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to merge contacts' });
+    },
+  });
+}
