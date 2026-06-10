@@ -4,6 +4,7 @@ import type { WorkflowRule } from '@/types/models.types';
 
 export interface CreateWorkflowRulePayload {
   name: string;
+  description?: string;
   module: string;
   trigger_event: string;
   conditions?: Record<string, unknown>;
@@ -13,6 +14,7 @@ export interface CreateWorkflowRulePayload {
 
 export interface UpdateWorkflowRulePayload {
   name?: string;
+  description?: string;
   module?: string;
   trigger_event?: string;
   conditions?: Record<string, unknown>;

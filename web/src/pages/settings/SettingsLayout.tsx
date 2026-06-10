@@ -24,6 +24,11 @@ import {
   FileTextOutlined,
   DatabaseOutlined,
   CloudServerOutlined,
+  ThunderboltOutlined,
+  ScheduleOutlined,
+  BulbOutlined,
+  FieldTimeOutlined,
+  LockOutlined as LockFilledOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -32,6 +37,7 @@ interface SettingSubmodule {
   label: string;
   icon: JSX.Element;
   path: string;
+  badge?: string;
 }
 
 interface SettingCategory {
@@ -200,6 +206,41 @@ export default function SettingsLayout() {
           icon: <FileTextOutlined />,
           path: '/settings/customization/templates',
         },
+        {
+          key: 'field-level-permissions',
+          label: t('settings.submodules.fieldLevelPermissions', 'Field Level Permissions'),
+          icon: <LockFilledOutlined />,
+          path: '/settings/customization/field-permissions',
+        },
+      ],
+    },
+    {
+      title: t('settings.categories.automation', 'Automation'),
+      items: [
+        {
+          key: 'workflow-rules',
+          label: t('settings.submodules.workflowRules', 'Workflow rules'),
+          icon: <ThunderboltOutlined />,
+          path: '/settings/automation/workflow-rules',
+        },
+        {
+          key: 'time-based-rules',
+          label: t('settings.submodules.timeBasedRules', 'Time Based Rules'),
+          icon: <FieldTimeOutlined />,
+          path: '/settings/automation/time-based-rules',
+        },
+        {
+          key: 'actions',
+          label: t('settings.submodules.automationActions', 'Actions'),
+          icon: <BulbOutlined />,
+          path: '/settings/automation/actions',
+        },
+        {
+          key: 'scheduled-reports',
+          label: t('settings.submodules.scheduledReports', 'Scheduled Report'),
+          icon: <ScheduleOutlined />,
+          path: '/settings/automation/scheduled-reports',
+        },
       ],
     },
     {
@@ -317,7 +358,25 @@ export default function SettingsLayout() {
                       <span style={{ fontSize: 16, display: 'flex', alignItems: 'center' }}>
                         {item.icon}
                       </span>
-                      <span>{item.label}</span>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {item.badge && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            background: 'linear-gradient(135deg, #00a86b, #00c87a)',
+                            color: '#fff',
+                            padding: '2px 6px',
+                            borderRadius: 10,
+                            lineHeight: '14px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                     </div>
                   );
                 })}

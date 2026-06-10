@@ -129,6 +129,11 @@ const FieldPermissionsPage = lazy(() => import('@/pages/settings/customization/F
 const DispatchConsoleLayoutPage = lazy(() => import('@/pages/settings/customization/DispatchConsoleLayoutPage'));
 const TemplatesPage = lazy(() => import('@/pages/settings/customization/TemplatesPage'));
 const ModuleMappingPage = lazy(() => import('@/pages/settings/customization/ModuleMappingPage'));
+const FieldLevelPermissionsPage = lazy(() => import('@/pages/settings/customization/FieldLevelPermissionsPage'));
+const WorkflowRulesSettingsPage = lazy(() => import('@/pages/settings/automation/WorkflowRulesSettingsPage'));
+const TimeBasedRulesPage = lazy(() => import('@/pages/settings/automation/TimeBasedRulesPage'));
+const AutomationActionsPage = lazy(() => import('@/pages/settings/automation/AutomationActionsPage'));
+const ScheduledReportsPage = lazy(() => import('@/pages/settings/automation/ScheduledReportsPage'));
 const ReportListPage = lazy(() => import('@/pages/reports/ReportListPage'));
 const ReportDetailPage = lazy(() => import('@/pages/reports/ReportDetailPage'));
 const AgentListPage = lazy(() => import('@/pages/workforce/AgentListPage'));
@@ -1670,6 +1675,46 @@ export const routes: RouteObject[] = [
             element: (
               <SuspenseWrapper>
                 <JobSheetBuilderPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/field-permissions',
+            element: (
+              <SuspenseWrapper>
+                <FieldLevelPermissionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'automation/workflow-rules',
+            element: (
+              <SuspenseWrapper>
+                <WorkflowRulesSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'automation/time-based-rules',
+            element: (
+              <SuspenseWrapper>
+                <TimeBasedRulesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'automation/actions',
+            element: (
+              <SuspenseWrapper>
+                <AutomationActionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'automation/scheduled-reports',
+            element: (
+              <SuspenseWrapper>
+                <ScheduledReportsPage />
               </SuspenseWrapper>
             ),
           },

@@ -14,6 +14,11 @@ export class UpdateWorkflowRuleDto {
   @IsOptional()
   name?: string;
 
+  @ApiPropertyOptional({ description: 'Rule description' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
   @ApiPropertyOptional({ description: 'Module this rule applies to', example: 'work_orders' })
   @IsString()
   @MaxLength(50)

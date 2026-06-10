@@ -38,6 +38,12 @@ export class WorkflowRule extends Model {
   name: string;
 
   @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  description: string | null;
+
+  @Column({
     type: DataType.STRING(50),
     allowNull: false,
   })

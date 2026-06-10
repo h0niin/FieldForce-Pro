@@ -96,6 +96,9 @@ import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
 import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
 import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
 import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
+import { TimeBasedRule } from '../TIME_BASED_RULES/time_based_rules.entity';
+import { AutomationAction } from '../AUTOMATION_ACTIONS/automation_actions.entity';
+import { ScheduledReport } from '../SCHEDULED_REPORTS/scheduled_reports.entity';
 
 @Module({
   imports: [
@@ -138,6 +141,7 @@ import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
           EmailChannel, EmailThread, Territory, ServiceReport,
           TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
+          TimeBasedRule, AutomationAction, ScheduledReport,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,

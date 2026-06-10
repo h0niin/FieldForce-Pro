@@ -775,6 +775,7 @@ export interface WorkflowRule {
   id: string;
   tenant_id: string;
   name: string;
+  description: string | null;
   module: string;
   trigger_event: string;
   conditions: Record<string, unknown>;
@@ -850,5 +851,45 @@ export interface TenantModule {
   last_modified_by: string | null;
   modifier?: Pick<User, 'id' | 'first_name' | 'last_name' | 'email'> | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface TimeBasedRule {
+  id: string;
+  name: string;
+  description?: string;
+  module: string;
+  date_field: string;
+  offset_direction: 'before' | 'after' | 'on';
+  offset_value: number;
+  offset_unit: 'days' | 'hours' | 'weeks';
+  conditions?: Record<string, unknown>;
+  actions?: Record<string, unknown>;
+  is_active: boolean;
+  updated_at: string;
+}
+
+export interface AutomationAction {
+  id: string;
+  name: string;
+  description: string;
+  type: 'email' | 'update_field' | 'create_record' | 'notification' | 'webhook';
+  config: Record<string, unknown>;
+  is_enabled: boolean;
+  usages: number;
+  updated_at: string;
+}
+
+export interface ScheduledReport {
+  id: string;
+  report_name: string;
+  recipients: string[];
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  day_of_week?: string;
+  day_of_month?: number;
+  send_time: string;
+  format: 'pdf' | 'xlsx' | 'csv';
+  is_active: boolean;
+  next_run?: string;
   updated_at: string;
 }
