@@ -1,5 +1,6 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { Company } from './companies.entity';
+import { CompanyType } from '../COMPANY_TYPES/company_types.entity';
 import { CreateCompanyDto } from './dto/companies_create.dto';
 import { UpdateCompanyDto } from './dto/companies_update.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
@@ -16,6 +17,8 @@ export class CompaniesService {
     @Inject(KEYNAMES.COMPANIES)
     private readonly companyRepository: typeof Company,
     private readonly activityLogsService: ActivityLogsService,
+    @Inject(KEYNAMES.COMPANY_TYPES)
+    private readonly companyTypeRepository: typeof CompanyType,
   ) {}
 
   async findAllPaginated(
@@ -176,5 +179,29 @@ export class CompaniesService {
       openWorkOrders,
       unpaidInvoices,
     };
+  }
+
+  // ── Company Types ─────────────────────────────────────────────────────────
+
+  async findAllTypes(tenantId: string): Promise<CompanyType[]> {
+    return this.companyTypeRepository.findAll({
+      where: { tenant_id: tenantId, is_deleted: false },
+      order: [['name', 'ASC']],
+    });
+  }
+
+  async createType(tenantId: string, name: string): Promise<CompanyType> {
+    const existing = await this.companyTypeRepository.findOne({
+      where: { tenant_id: tenantId, name, is_deleted: false },
+    });
+    if (existing) return existing;
+    return this.companyTypeRepository.create({ tenant_id: tenantId, name });
+  }
+
+  async deleteType(id: string, tenantId: string): Promise<void> {
+    await this.companyTypeRepository.update(
+      { is_deleted: true },
+      { where: { id, tenant_id: tenantId } },
+    );
   }
 }

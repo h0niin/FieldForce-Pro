@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Select, Tabs, Modal, Input, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, FilterOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useServiceRequests, useDeleteServiceRequest, useMyPendingApprovals, useProcessServiceRequestApproval, useQueue, useUpdatePriority, useApproveAndConvert, useUpdateServiceRequestStatus } from '@/hooks/use-service-requests';
 import { serviceRequestsApi } from '@/api/service-requests.api';
 import { usePermission } from '@/components/permissions/usePermission';
 import { useAuthStore } from '@/store/auth.store';
+import { useAllCompanies } from '@/hooks/use-companies';
 import type { ServiceRequest } from '@/types/models.types';
 import PageHeader from '@/components/common/PageHeader';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -17,7 +18,14 @@ import SearchFilter from '@/components/common/SearchFilter';
 import { SlaCountdownCell } from '@/components/common/SlaCountdownCell';
 
 const priorityColors: Record<string, string> = {
+  // uppercase values (backend constraint)
+  CRITICAL: 'red',
+  HIGH: 'orange',
+  MEDIUM: 'blue',
+  LOW: 'default',
+  // legacy lowercase
   urgent: 'red',
+  critical: 'red',
   high: 'orange',
   medium: 'blue',
   low: 'default',
@@ -55,6 +63,9 @@ export default function RequestListPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     searchParams.get('status') || undefined,
   );
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+
+  const { data: allCompanies = [] } = useAllCompanies();
 
   // Approval modal state
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
@@ -260,11 +271,20 @@ export default function RequestListPage() {
         ),
     },
     {
+      title: 'Company',
+      key: 'company',
+      render: (_, record) => {
+        if (!record.contact?.company_id) return <span style={{ opacity: 0.5 }}>-</span>;
+        const company = allCompanies.find((c) => c.id === record.contact!.company_id);
+        return company?.name ?? <span style={{ opacity: 0.5 }}>-</span>;
+      },
+    },
+    {
       title: t('serviceRequests.table.customer'),
       key: 'contact',
       render: (_, record) =>
         record.contact
-          ? `${record.contact.first_name} ${record.contact.last_name}`
+          ? `${record.contact.first_name} ${record.contact.last_name || ''}`
           : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
@@ -315,9 +335,12 @@ export default function RequestListPage() {
       title: t('serviceRequests.table.actions'),
       key: 'actions',
       fixed: 'right',
-      width: 150,
+      width: 160,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title={t('common.view', 'View')}>
+            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}`)} />
+          </Tooltip>
           {isAdmin && (
             <>
               <Tooltip title={t('common.edit')}>
@@ -569,22 +592,37 @@ export default function RequestListPage() {
           style={{ width: 400 }}
         />
         {activeTab === 'all' && (
-          <Select
-            placeholder={t('serviceRequests.filterByStatusPlaceholder')}
-            allowClear
-            value={statusFilter}
-            onChange={(value) => {
-              setStatusFilter(value);
-              setPage(1);
-              if (value) {
-                setSearchParams({ status: value }, { replace: true });
-              } else {
-                setSearchParams({}, { replace: true });
-              }
-            }}
-            options={statusOptions}
-            style={{ width: 200 }}
-          />
+          <>
+            <Select
+              placeholder={t('serviceRequests.filterByStatusPlaceholder')}
+              allowClear
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPage(1);
+                if (value) {
+                  setSearchParams({ status: value }, { replace: true });
+                } else {
+                  setSearchParams({}, { replace: true });
+                }
+              }}
+              options={statusOptions}
+              style={{ width: 180 }}
+            />
+            <Select
+              placeholder="Filter by Priority"
+              allowClear
+              value={priorityFilter}
+              onChange={(value) => { setPriorityFilter(value); setPage(1); }}
+              style={{ width: 160 }}
+              options={[
+                { value: 'LOW', label: 'Low' },
+                { value: 'MEDIUM', label: 'Medium' },
+                { value: 'HIGH', label: 'High' },
+                { value: 'CRITICAL', label: 'Critical' },
+              ]}
+            />
+          </>
         )}
       </div>
 

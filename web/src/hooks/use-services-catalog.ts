@@ -43,9 +43,9 @@ export function useCreateServiceCatalog() {
 
   return useMutation({
     mutationFn: (payload: CreateServiceCatalogPayload) => servicesCatalogApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (_res, variables) => {
       queryClient.invalidateQueries({ queryKey: ['services-catalog'] });
-      addNotification({ type: 'success', message: 'Service created successfully' });
+      addNotification({ type: 'success', message: `✓ Service created — ${variables.name}` }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create service' });
@@ -62,7 +62,7 @@ export function useUpdateServiceCatalog() {
       servicesCatalogApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-catalog'] });
-      addNotification({ type: 'success', message: 'Service updated successfully' });
+      addNotification({ type: 'success', message: '✓ Service updated' }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to update service' });
@@ -78,7 +78,7 @@ export function useDeleteServiceCatalog() {
     mutationFn: (id: string) => servicesCatalogApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-catalog'] });
-      addNotification({ type: 'success', message: 'Service deleted successfully' });
+      addNotification({ type: 'success', message: '✓ Service deleted' }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to delete service' });

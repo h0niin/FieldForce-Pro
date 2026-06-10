@@ -170,6 +170,9 @@ const MyJobsPage = lazy(() => import('@/pages/technician/MyJobsPage'));
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 const WhatsAppChannelSettingsPage = lazy(() => import('@/pages/settings/WhatsAppChannelSettingsPage'));
 const SlaConfigPage = lazy(() => import('@/pages/slas/SlaConfigPage'));
+const ServiceAppointmentsPage = lazy(() => import('@/pages/service-appointments/ServiceAppointmentsPage'));
+const ServiceAppointmentDetailPage = lazy(() => import('@/pages/service-appointments/ServiceAppointmentDetailPage'));
+const ServiceReportsPage = lazy(() => import('@/pages/service-reports/ServiceReportsPage'));
 const EmailChannelSettingsPage = lazy(() => import('@/pages/settings/EmailChannelSettingsPage'));
 const TerritoriesListPage = lazy(() => import('@/pages/territories/TerritoriesList'));
 
@@ -585,6 +588,32 @@ export const routes: RouteObject[] = [
         element: (
           <SuspenseWrapper>
             <SlaConfigPage />
+          </SuspenseWrapper>
+        ),
+      },
+      // Service Appointments
+      {
+        path: 'service-appointments',
+        element: (
+          <SuspenseWrapper>
+            <ServiceAppointmentsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'service-appointments/:id',
+        element: (
+          <SuspenseWrapper>
+            <ServiceAppointmentDetailPage />
+          </SuspenseWrapper>
+        ),
+      },
+      // Service Reports
+      {
+        path: 'service-reports',
+        element: (
+          <SuspenseWrapper>
+            <ServiceReportsPage />
           </SuspenseWrapper>
         ),
       },

@@ -13,6 +13,7 @@ import {
 import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { EstimatesService } from './estimates.service';
 import { CreateEstimateDto } from './dto/estimates_create.dto';
@@ -57,6 +58,15 @@ export class EstimatePageOptionsDto extends PageOptionsDto {
 
   @ApiPropertyOptional({ description: 'Filter by is_template flag' })
   @IsOptional()
+  // Query params arrive as strings. With ValidationPipe's enableImplicitConversion,
+  // implicit Boolean coercion runs BEFORE @Transform and turns the string 'false'
+  // into boolean `true` (Boolean('false') === true). So `value` here is already the
+  // corrupted boolean. We must read the RAW value from `obj` (the untransformed
+  // source object) to parse it correctly. Preserve undefined when absent (no filter).
+  @Transform(({ obj }) => {
+    const raw = obj?.isTemplate;
+    return raw === undefined ? undefined : raw === true || raw === 'true';
+  })
   readonly isTemplate?: boolean;
 
   @ApiPropertyOptional({ description: 'Filter by asset ID' })

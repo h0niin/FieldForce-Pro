@@ -54,9 +54,10 @@ export function useCreateCompany() {
 
   return useMutation({
     mutationFn: (payload: CreateCompanyPayload) => companiesApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      addNotification({ type: 'success', message: 'Company created successfully' });
+      const name = (response as any)?.data?.data?.name ?? variables.name;
+      addNotification({ type: 'success', message: `✓ Company created — ${name}` }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create company' });

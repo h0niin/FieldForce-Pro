@@ -94,28 +94,39 @@ export interface Contact {
   id: string;
   tenant_id: string;
   company_id: string | null;
+  salutation: string | null;
   first_name: string;
-  last_name: string;
+  last_name: string | null;
   email: string | null;
   phone: string | null;
   service_address: string | null;
   billing_address: string | null;
+  mobile: string | null;
+  secondary_email: string | null;
+  department: string | null;
+  title: string | null;
+  address: string | null;
   tags: string[];
   custom_fields: Record<string, unknown>;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+  company?: Company;
 }
 
 export interface Company {
   id: string;
   tenant_id: string;
   name: string;
-  phone?: string;
+  company_type: string | null;
+  phone: string | null;
+  email: string | null;
   industry: string | null;
   billing_address: string | null;
+  service_address: string | null;
   tax_id: string | null;
   website: string | null;
+  tags: string[];
   notes: string | null;
   custom_fields: Record<string, unknown>;
   is_deleted: boolean;
@@ -402,26 +413,85 @@ export interface WorkOrderAttachment {
 }
 
 // Phase 10: Service Appointments
+export type ServiceAppointmentStatus =
+  | 'scheduled'
+  | 'en_route'
+  | 'on_site'
+  | 'in_progress'
+  | 'on_hold'
+  | 'completed'
+  | 'cancelled';
+
+export interface ServiceAppointmentTrip {
+  id: string;
+  tenant_id: string;
+  appointment_id: string;
+  trip_date: string;
+  start_location: string;
+  end_location: string;
+  departure_time: string | null;
+  arrival_time: string | null;
+  distance_km: number | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceAppointmentActivity {
+  id: string;
+  type: string;
+  description: string;
+  user_id: string | null;
+  user_name: string | null;
+  at: string;
+}
+
+export interface ServiceAppointmentNoteEntry {
+  id: string;
+  content: string;
+  user_id: string | null;
+  user_name: string | null;
+  created_at: string;
+}
+
 export interface ServiceAppointment {
   id: string;
   tenant_id: string;
   work_order_id: string;
   agent_id: string;
   crew_id: string | null;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  appointment_number: string | null;
+  summary: string | null;
+  type: 'Service' | 'Installation' | 'Maintenance' | 'Inspection' | null;
+  schedule_type: 'time_bound' | 'all_day' | null;
+  status: ServiceAppointmentStatus;
   scheduled_start: string;
   scheduled_end: string;
+  scheduled_duration: number | null;
   actual_start: string | null;
   actual_end: string | null;
+  actual_duration: number | null;
+  due_date: string | null;
+  billing_status: 'not_invoiced' | 'invoiced' | null;
+  preferred_date_1: string | null;
+  preferred_date_2: string | null;
+  preferred_time: string | null;
   notes: string | null;
   is_recurring: boolean;
   recurrence_rule: string | null;
   custom_fields: Record<string, unknown>;
+  created_by: string | null;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
   work_order?: WorkOrder;
   agent?: User;
+  creator?: User;
+  // Attached by the detail endpoint
+  trips?: ServiceAppointmentTrip[];
+  activity?: ServiceAppointmentActivity[];
+  note_entries?: ServiceAppointmentNoteEntry[];
 }
 
 // Phase 11: Job Sheets

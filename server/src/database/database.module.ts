@@ -26,6 +26,7 @@ import { WorkOrderLineItem } from '../WORK_ORDER_LINE_ITEMS/work_order_line_item
 import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
 import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
+import { ServiceAppointmentTrip } from '../SERVICE_APPOINTMENTS/service_appointment_trips.entity';
 import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
 import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
 import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
@@ -96,6 +97,8 @@ import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
 import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
 import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
 import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
+import { CompanyType } from '../COMPANY_TYPES/company_types.entity';
+import { ServiceRequestNote } from '../SERVICE_REQUEST_NOTES/service_request_notes.entity';
 
 @Module({
   imports: [
@@ -115,7 +118,7 @@ import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
           ServiceRequest,
           Estimate, EstimateLineItem,
           WorkOrder, WorkOrderLineItem, WorkOrderNote, WorkOrderAttachment,
-          ServiceAppointment,
+          ServiceAppointment, ServiceAppointmentTrip,
           JobSheetTemplate, JobSheetInstance, JobSheetItem,
           Timesheet, Trip, AgentLocation,
           Invoice, InvoiceLineItem, Payment, PaymentGateway,
@@ -138,6 +141,7 @@ import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
           EmailChannel, EmailThread, Territory, ServiceReport,
           TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
+          CompanyType, ServiceRequestNote,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,

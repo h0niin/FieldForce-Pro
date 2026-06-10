@@ -25,6 +25,8 @@ import { ServiceAppointmentsService } from './service_appointments.service';
 import { CreateServiceAppointmentDto } from './dto/service_appointments_create.dto';
 import { UpdateServiceAppointmentDto } from './dto/service_appointments_update.dto';
 import { UpdateServiceAppointmentStatusDto } from './dto/service_appointments_update_status.dto';
+import { CreateServiceAppointmentTripDto, UpdateServiceAppointmentTripDto } from './dto/service_appointment_trips.dto';
+import { CreateServiceAppointmentNoteDto } from './dto/service_appointment_note.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
@@ -53,6 +55,41 @@ export class AppointmentPageOptionsDto extends PageOptionsDto {
   @IsString()
   @IsOptional()
   readonly unassigned?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by schedule type (time_bound | all_day)' })
+  @IsString()
+  @IsOptional()
+  readonly scheduleType?: string;
+
+  @ApiPropertyOptional({ description: 'Service appointment name search (summary / appointment number)' })
+  @IsString()
+  @IsOptional()
+  readonly name?: string;
+
+  @ApiPropertyOptional({ description: 'Appointment time range start (ISO date)' })
+  @IsString()
+  @IsOptional()
+  readonly dateFrom?: string;
+
+  @ApiPropertyOptional({ description: 'Appointment time range end (ISO date)' })
+  @IsString()
+  @IsOptional()
+  readonly dateTo?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by contact name' })
+  @IsString()
+  @IsOptional()
+  readonly contact?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by company name' })
+  @IsString()
+  @IsOptional()
+  readonly company?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by contact email' })
+  @IsString()
+  @IsOptional()
+  readonly email?: string;
 }
 
 @ApiTags('Service Appointments')
@@ -75,6 +112,15 @@ export class ServiceAppointmentsController {
       query.excludeStatus,
       query.hasPendingApproval === 'true',
       query.unassigned === 'true',
+      {
+        scheduleType: query.scheduleType,
+        name: query.name,
+        dateFrom: query.dateFrom,
+        dateTo: query.dateTo,
+        contact: query.contact,
+        company: query.company,
+        email: query.email,
+      },
     );
     return DataResponseDto.success(result.data, 'Service appointments fetched successfully', {
       ...result.meta,
@@ -184,8 +230,12 @@ export class ServiceAppointmentsController {
   @Post()
   @Permissions('service_appointments:create', 'scheduling:create')
   @ApiOperation({ summary: 'Create a new service appointment' })
-  async create(@TenantId() tenantId: string, @Body() dto: CreateServiceAppointmentDto) {
-    const appointment = await this.serviceAppointmentsService.create(tenantId, dto);
+  async create(
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+    @Body() dto: CreateServiceAppointmentDto,
+  ) {
+    const appointment = await this.serviceAppointmentsService.create(tenantId, dto, userId);
     return DataResponseDto.created(appointment, 'Service appointment created successfully');
   }
 
@@ -233,9 +283,10 @@ export class ServiceAppointmentsController {
   async updateStatus(
     @Param('id') id: string,
     @TenantId() tenantId: string,
+    @UserId() userId: string,
     @Body() dto: UpdateServiceAppointmentStatusDto,
   ) {
-    const appointment = await this.serviceAppointmentsService.updateStatus(id, tenantId, dto);
+    const appointment = await this.serviceAppointmentsService.updateStatus(id, tenantId, dto, userId);
     return DataResponseDto.success(appointment, 'Service appointment status updated successfully');
   }
 
@@ -307,6 +358,69 @@ export class ServiceAppointmentsController {
     const photoUrls = files.map(f => `${appUrl}/uploads/appointment-photos/${f.filename}`);
     const appointment = await this.serviceAppointmentsService.addPhotos(id, tenantId, photoUrls);
     return DataResponseDto.success(appointment, 'Photos uploaded successfully');
+  }
+
+  // ── Trips (manual web entry) ─────────────────────────────────────────
+
+  @Get(':id/trips')
+  @Permissions('service_appointments:read', 'scheduling:read')
+  @ApiOperation({ summary: 'List trips for a service appointment' })
+  async listTrips(@Param('id') id: string, @TenantId() tenantId: string) {
+    const trips = await this.serviceAppointmentsService.listTrips(id, tenantId);
+    return DataResponseDto.success(trips, 'Trips fetched successfully');
+  }
+
+  @Post(':id/trips')
+  @Permissions('service_appointments:update', 'scheduling:update')
+  @ApiOperation({ summary: 'Add a trip to a service appointment' })
+  async addTrip(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+    @Body() dto: CreateServiceAppointmentTripDto,
+  ) {
+    const trip = await this.serviceAppointmentsService.addTrip(id, tenantId, dto, userId);
+    return DataResponseDto.created(trip, 'Trip added successfully');
+  }
+
+  @Put(':id/trips/:tripId')
+  @Permissions('service_appointments:update', 'scheduling:update')
+  @ApiOperation({ summary: 'Update a trip on a service appointment' })
+  async updateTrip(
+    @Param('id') id: string,
+    @Param('tripId') tripId: string,
+    @TenantId() tenantId: string,
+    @Body() dto: UpdateServiceAppointmentTripDto,
+  ) {
+    const trip = await this.serviceAppointmentsService.updateTrip(id, tripId, tenantId, dto);
+    return DataResponseDto.success(trip, 'Trip updated successfully');
+  }
+
+  @Delete(':id/trips/:tripId')
+  @Permissions('service_appointments:update', 'scheduling:update')
+  @ApiOperation({ summary: 'Delete a trip from a service appointment' })
+  async deleteTrip(
+    @Param('id') id: string,
+    @Param('tripId') tripId: string,
+    @TenantId() tenantId: string,
+  ) {
+    await this.serviceAppointmentsService.deleteTrip(id, tripId, tenantId);
+    return DataResponseDto.success(null, 'Trip deleted successfully');
+  }
+
+  // ── Notes ────────────────────────────────────────────────────────────
+
+  @Post(':id/notes')
+  @Permissions('service_appointments:update', 'scheduling:update')
+  @ApiOperation({ summary: 'Add a note to a service appointment' })
+  async addNote(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+    @Body() dto: CreateServiceAppointmentNoteDto,
+  ) {
+    const notes = await this.serviceAppointmentsService.addNote(id, tenantId, dto.content, userId);
+    return DataResponseDto.created(notes, 'Note added successfully');
   }
 
   @Delete(':id')

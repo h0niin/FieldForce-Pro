@@ -4,24 +4,36 @@ import type { Contact } from '@/types/models.types';
 
 export interface CreateContactPayload {
   company_id?: string;
+  salutation?: string;
   first_name: string;
-  last_name: string;
+  last_name?: string;
   email?: string;
   phone?: string;
   service_address?: string;
   billing_address?: string;
+  mobile?: string;
+  secondary_email?: string;
+  department?: string;
+  title?: string;
+  address?: string;
   tags?: string[];
   custom_fields?: Record<string, unknown>;
 }
 
 export interface UpdateContactPayload {
   company_id?: string;
+  salutation?: string;
   first_name?: string;
   last_name?: string;
   email?: string;
   phone?: string;
   service_address?: string;
   billing_address?: string;
+  mobile?: string;
+  secondary_email?: string;
+  department?: string;
+  title?: string;
+  address?: string;
   tags?: string[];
   custom_fields?: Record<string, unknown>;
 }

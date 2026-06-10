@@ -85,12 +85,14 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    section: 'sidebar.operations',
+    section: 'sidebar.workOrderManagement',
     items: [
       { key: '/service-requests', icon: <FileTextOutlined />, labelKey: 'nav.serviceRequests', permission: 'service_requests:read' },
       { key: '/estimates', icon: <CalculatorOutlined />, labelKey: 'nav.estimates', permission: 'estimates:read' },
       { key: '/work-orders', icon: <ScheduleOutlined />, labelKey: 'nav.workOrders', permission: 'work_orders:read' },
       { key: '/slas', icon: <ClockCircleOutlined />, labelKey: 'nav.slaPolicies', permission: 'settings:read' },
+      { key: '/service-appointments', icon: <CalendarOutlined />, labelKey: 'sidebar.serviceAppointments', permission: 'service_appointments:read' },
+      { key: '/service-reports', icon: <FileDoneOutlined />, labelKey: 'sidebar.serviceReports', permission: 'reports:read' },
     ],
   },
   {

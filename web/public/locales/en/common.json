@@ -46,6 +46,7 @@
     "mainNavigation": "Main Navigation",
     "customerManagement": "Customer Management",
     "operations": "Operations",
+    "workOrderManagement": "Work Order Management",
     "schedulingWorkforce": "Scheduling & Workforce",
     "financial": "Financial",
     "catalogPricing": "Catalog & Pricing",
@@ -67,7 +68,9 @@
     "auditLogs": "Audit Logs",
     "myJobs": "My Jobs",
     "mySchedule": "My Schedule",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "serviceAppointments": "Service Appointments",
+    "serviceReports": "Service Reports"
   },
   "header": {
     "search": "Search ...",
