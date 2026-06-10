@@ -14,7 +14,7 @@ This workflow covers editing an existing pricebook item, including updating its 
 
 ### Steps — From Pricebook List
 
-1. In the sidebar, click **Pricebook** (the page title on the list page is "Pricebook").
+1. Open the **Pricebook** page (its list page title is "Pricebook"). *(Note: Pricebook is not currently shown in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. The Pricebook list page loads.
 3. Locate the desired pricebook item row in the table.
 4. In the **Actions** column, click the icon-only button with tooltip **Edit** (EditOutlined icon).
@@ -47,7 +47,7 @@ This workflow covers editing an existing pricebook item, including updating its 
 
 ### Steps
 
-1. In the sidebar, click **Pricebook**.
+1. Open the **Pricebook** page. *(Note: Pricebook is not currently in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. The Pricebook list page loads.
 3. Locate the desired pricebook item row in the table.
 4. In the **Status** column, locate the Switch control showing either "Active" or "Inactive".

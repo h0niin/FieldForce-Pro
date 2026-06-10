@@ -9,7 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Op } from 'sequelize';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { REPOSITORY } from '../shared/constants/keynames';
 import { AppConfigService } from '../shared/config/config.service';

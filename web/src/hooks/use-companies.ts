@@ -37,15 +37,27 @@ export function useCompany(id: string) {
   });
 }
 
+export function useCompanyInsights(id: string) {
+  return useQuery({
+    queryKey: ['companies', id, 'insights'],
+    queryFn: async () => {
+      const response = await companiesApi.getInsights(id);
+      return response.data.data!;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateCompany() {
   const queryClient = useQueryClient();
   const addNotification = useNotificationStore((s) => s.add);
 
   return useMutation({
     mutationFn: (payload: CreateCompanyPayload) => companiesApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      addNotification({ type: 'success', message: 'Company created successfully' });
+      const name = (response as any)?.data?.data?.name ?? variables.name;
+      addNotification({ type: 'success', message: `✓ Company created — ${name}` }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create company' });

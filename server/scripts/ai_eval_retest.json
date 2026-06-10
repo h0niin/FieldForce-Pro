@@ -1,0 +1,15 @@
+[
+  { "c": "control", "auth": true, "q": "How do I create a work order?" },
+  { "c": "control", "auth": true, "q": "How do I record a payment against an invoice?" },
+  { "c": "fixed-nav", "auth": true, "q": "What is a blueprint?" },
+  { "c": "fixed-nav", "auth": true, "q": "What is a pricebook?" },
+  { "c": "fixed-nav", "auth": true, "q": "What is a service agreement?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I view SLA compliance for my service agreements?" },
+  { "c": "fixed-nav", "auth": true, "q": "What can the Vision AI feature do for me?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I transcribe a voice note?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I upload a document for the AI to read with OCR?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I ask a question using natural language analytics?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I check the health of my equipment?" },
+  { "c": "fixed-nav", "auth": true, "q": "How do I create a new blueprint workflow?" },
+  { "c": "fixed-endpoint", "auth": true, "q": "How do I integrate my website form to create service requests via the API?" }
+]

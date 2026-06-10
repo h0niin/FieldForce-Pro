@@ -6,11 +6,10 @@ import type { ApiResponse } from '@/types/api.types';
 export interface WhatsAppChannel {
   id: string;
   tenant_id: string;
-  connection_method: 'twilio_qr' | 'business_api';
+  connection_method: 'web_js' | 'business_api';
   phone_number: string | null;
   display_name: string | null;
   status: 'disconnected' | 'pending' | 'connected';
-  twilio_config: Record<string, unknown>;
   meta_config: Record<string, unknown>;
   greeting_message: string;
   confirmation_message: string;
@@ -47,22 +46,23 @@ export interface WhatsAppConversation {
   updated_at: string;
 }
 
-export interface QrCodeInfo {
-  qr_url: string;
-  sandbox_number: string;
-  join_code: string;
-}
 
 export interface ConnectionTestResult {
   success: boolean;
   message: string;
 }
 
+export interface WebJsQrStatus {
+  status: 'not_initialized' | 'initializing' | 'qr_ready' | 'authenticated' | 'connected' | 'disconnected' | 'error';
+  qr_data_url: string | null;
+  phone_number: string | null;
+  error: string | null;
+}
+
 export interface UpsertChannelPayload {
-  connection_method: 'twilio_qr' | 'business_api';
+  connection_method?: 'web_js' | 'business_api';
   phone_number?: string;
   display_name?: string;
-  twilio_config?: Record<string, unknown>;
   meta_config?: Record<string, unknown>;
   greeting_message?: string;
   confirmation_message?: string;
@@ -95,9 +95,6 @@ export const whatsappApi = {
     return api.post<ApiResponse<WhatsAppChannel>>('/whatsapp/channel/disconnect');
   },
 
-  getQrCode() {
-    return api.get<ApiResponse<QrCodeInfo>>('/whatsapp/channel/qr-code');
-  },
 
   getConversations(params?: { page?: number; take?: number }) {
     return api.get<ApiResponse<{ data: WhatsAppConversation[]; meta: unknown }>>('/whatsapp/conversations', { params });
@@ -105,5 +102,18 @@ export const whatsappApi = {
 
   getConversation(id: string) {
     return api.get<ApiResponse<WhatsAppConversation>>(`/whatsapp/conversations/${id}`);
+  },
+
+  // Web JS endpoints
+  initializeWebJs() {
+    return api.post<ApiResponse<{ status: string; message: string }>>('/whatsapp/webjs/initialize');
+  },
+
+  getWebJsQr() {
+    return api.get<ApiResponse<WebJsQrStatus>>('/whatsapp/webjs/qr');
+  },
+
+  disconnectWebJs() {
+    return api.post<ApiResponse<null>>('/whatsapp/webjs/disconnect');
   },
 };

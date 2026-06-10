@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { StartupMigrationsService } from './startup-migrations.service';
+import { LookupSeederService } from './lookup-seeder.service';
 import { AppConfigService } from '../shared/config/config.service';
 import { User } from '../USERS/users.entity';
 import { Tenant } from '../TENANTS/tenants.entity';
@@ -25,6 +26,7 @@ import { WorkOrderLineItem } from '../WORK_ORDER_LINE_ITEMS/work_order_line_item
 import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
 import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
+import { ServiceAppointmentTrip } from '../SERVICE_APPOINTMENTS/service_appointment_trips.entity';
 import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
 import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
 import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
@@ -63,6 +65,8 @@ import { WorkOrderTechnicianSession } from '../WORK_ORDER_TECHNICIAN_SESSIONS/wo
 import { SlaTimer } from '../SLA_TIMERS/sla_timers.entity';
 import { RequestAttachment } from '../ATTACHMENTS/request_attachments.entity';
 import { EstimateAttachment } from '../ATTACHMENTS/estimate_attachments.entity';
+import { GlobalAttachment } from '../ATTACHMENTS/global_attachments.entity';
+import { Note } from '../NOTES/notes.entity';
 import { SubscriptionMagicLink } from '../SUBSCRIPTION_MAGIC_LINKS/subscription_magic_links.entity';
 import { RequestAuditLog } from '../SERVICE_REQUESTS/request_audit_log.entity';
 import { TechnicianFeedback } from '../FEEDBACK/technician_feedback.entity';
@@ -87,6 +91,14 @@ import { SlaEscalation } from '../SLA_MODULE/sla_escalations.entity';
 import { SlaPauseTrigger } from '../SLA_MODULE/sla_pause_triggers.entity';
 import { EmailChannel } from '../EMAIL_CHANNELS/email_channels.entity';
 import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
+import { Territory } from '../TERRITORIES/territories.entity';
+import { ServiceReport } from '../SERVICE_REPORTS/service_reports.entity';
+import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
+import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
+import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
+import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
+import { CompanyType } from '../COMPANY_TYPES/company_types.entity';
+import { ServiceRequestNote } from '../SERVICE_REQUEST_NOTES/service_request_notes.entity';
 
 @Module({
   imports: [
@@ -106,7 +118,7 @@ import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
           ServiceRequest,
           Estimate, EstimateLineItem,
           WorkOrder, WorkOrderLineItem, WorkOrderNote, WorkOrderAttachment,
-          ServiceAppointment,
+          ServiceAppointment, ServiceAppointmentTrip,
           JobSheetTemplate, JobSheetInstance, JobSheetItem,
           Timesheet, Trip, AgentLocation,
           Invoice, InvoiceLineItem, Payment, PaymentGateway,
@@ -119,7 +131,7 @@ import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
           WorkflowTemplate, WorkflowApprover, DocumentApproval, ApprovalHistory,
           IPWhitelist,
           WorkOrderTechnicianSession,
-          SlaTimer,
+          SlaTimer, Note, GlobalAttachment,
           RequestAttachment, EstimateAttachment, RequestAuditLog, TechnicianFeedback, CustomerSatisfaction,
           SubscriptionMagicLink,
           ApiKey, MagicLink, SuperAdminApiKey, SuperAdminAuditLog, ServiceRequestTechnician,
@@ -127,7 +139,9 @@ import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
           Category, SubCategory, Priority, Location,
           SlaPolicy, ServiceRequestSla, SlaAuditLog,
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
-          EmailChannel, EmailThread
+          EmailChannel, EmailThread, Territory, ServiceReport,
+          TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
+          CompanyType, ServiceRequestNote,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,
@@ -159,8 +173,9 @@ import { EmailThread } from '../EMAIL_CHANNELS/email_threads.entity';
       }),
       inject: [AppConfigService],
     }),
+    SequelizeModule.forFeature([Priority, Category, SubCategory, ServiceLocation, Tenant]),
   ],
-  providers: [StartupMigrationsService],
-  exports: [StartupMigrationsService],
+  providers: [StartupMigrationsService, LookupSeederService],
+  exports: [StartupMigrationsService, LookupSeederService],
 })
 export class DatabaseModule { }

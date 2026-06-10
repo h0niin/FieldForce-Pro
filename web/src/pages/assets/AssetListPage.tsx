@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Table, Space, Tooltip, Tag } from 'antd';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button, Table, Space, Tooltip, Tag, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAssets, useDeleteAsset } from '@/hooks/use-assets';
 import type { Asset } from '@/types/models.types';
@@ -11,6 +11,7 @@ import { showConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PermissionGuard } from '@/components/permissions';
 import { formatDateTime } from '@/utils/format-date';
 import SearchFilter from '@/components/common/SearchFilter';
+import { formatEnumText } from '@/utils/string';
 
 function getWarrantyStatus(warrantyExpiry: string | null): { color: string; text: string } {
   if (!warrantyExpiry) return { color: 'default', text: 'N/A' };
@@ -29,12 +30,19 @@ export default function AssetListPage() {
   const [pageSize, setPageSize] = useState(10);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
+  // Note: Assuming `useAssets` API is updated to handle `status` in backend, or we filter locally.
+  // For now, we will pass it if useAssets supports it, else we filter locally.
   const { data, isLoading } = useAssets({ page, take: pageSize, search });
   const deleteAsset = useDeleteAsset();
 
   const assets = data?.data || [];
   const meta = data?.meta;
+
+  const filteredAssets = statusFilter 
+    ? assets.filter(a => a.status === statusFilter)
+    : assets;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,32 +68,42 @@ export default function AssetListPage() {
       title: t('assets.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/assets/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('assets.columns.serialNumber'),
       dataIndex: 'serial_number',
       key: 'serial_number',
-      render: (sn: string) => sn || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (sn: string, record: any) => sn || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('assets.columns.manufacturer'),
       dataIndex: 'manufacturer',
       key: 'manufacturer',
-      render: (m: string) => m || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (m: string, record: any) => m || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('assets.columns.category'),
-      dataIndex: 'category',
-      key: 'category',
-      render: (category: string) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+      dataIndex: 'product_category',
+      key: 'product_category',
+      render: (category: string, record: any) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'OPERATIONAL' ? 'success' : status === 'NEEDS_REPAIR' ? 'warning' : status === 'IN_REPAIR' ? 'processing' : 'default'}>
+          {status ? formatEnumText(status) : 'Operational'}
+        </Tag>
+      ),
     },
     {
       title: t('assets.columns.health'),
       dataIndex: 'health_score',
       key: 'health_score',
-      render: (score: number | null) => {
+      render: (score: number | null, record: any) => {
         if (score === null || score === undefined) return <span style={{ opacity: 0.5 }}>-</span>;
         const color = score >= 80 ? 'green' : score >= 50 ? 'orange' : 'red';
         return <Tag color={color}>{score}%</Tag>;
@@ -96,7 +114,7 @@ export default function AssetListPage() {
       title: t('assets.columns.warranty'),
       dataIndex: 'warranty_expiry',
       key: 'warranty_expiry',
-      render: (date: string | null) => {
+      render: (date: string | null, record: any) => {
         const status = getWarrantyStatus(date);
         return <Tag color={status.color}>{t(`assets.warrantyStatus.${status.text.toLowerCase().replace(' ', '')}`)}</Tag>;
       },
@@ -113,7 +131,7 @@ export default function AssetListPage() {
       title: t('assets.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -124,9 +142,7 @@ export default function AssetListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="assets:read">
-            <Tooltip title={t('common.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/assets/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="assets:update">
             <Tooltip title={t('common.edit')}>
@@ -157,19 +173,32 @@ export default function AssetListPage() {
         }
       />
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: '16px' }}>
         <SearchFilter
           placeholder={t('assets.searchPlaceholder')}
           allowClear
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={{ width: 500 }}
+          style={{ width: 400 }}
+        />
+        <Select
+          placeholder="Filter by Status"
+          allowClear
+          style={{ width: 200 }}
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value)}
+          options={[
+            { value: 'OPERATIONAL', label: 'Operational' },
+            { value: 'NEEDS_REPAIR', label: 'Needs Repair' },
+            { value: 'IN_REPAIR', label: 'In Repair' },
+            { value: 'DECOMMISSIONED', label: 'Decommissioned' },
+          ]}
         />
       </div>
 
       <Table
         columns={columns}
-        dataSource={assets}
+        dataSource={filteredAssets}
         rowKey="id"
         loading={isLoading}
         pagination={{

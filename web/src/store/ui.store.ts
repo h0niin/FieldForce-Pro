@@ -14,6 +14,8 @@ interface UiState {
   setTheme: (theme: ThemeMode) => void;
   setLocale: (locale: string) => void;
   setCurrency: (currency: CurrencyType) => void;
+  chatbotEnabled: boolean;
+  setChatbotEnabled: (enabled: boolean) => void;
 }
 
 const detectDefaultCurrency = (): CurrencyType => {
@@ -43,6 +45,8 @@ export const useUiStore = create<UiState>()(
       setTheme: (theme) => set({ theme }),
       setLocale: (locale) => set({ locale }),
       setCurrency: (currency) => set({ currency }),
+      chatbotEnabled: true,
+      setChatbotEnabled: (enabled) => set({ chatbotEnabled: enabled }),
     }),
     {
       name: 'ui-storage',

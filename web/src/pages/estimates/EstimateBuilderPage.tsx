@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -40,6 +41,7 @@ import {
   ToolOutlined,
   FormOutlined,
   EnvironmentOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -67,7 +69,10 @@ import {
   useSendEstimate,
   useEstimateAssignedCreator,
   useSubmitForInternalApproval,
+  useConvertEstimateToWorkOrder,
 } from '@/hooks/use-estimates';
+import ServiceQuickCreateDrawer from '@/components/estimates/ServiceQuickCreateDrawer';
+import PartQuickCreateDrawer from '@/components/estimates/PartQuickCreateDrawer';
 import { usePermission } from '@/components/permissions/usePermission';
 import { useAuthStore } from '@/store/auth.store';
 import { useAllContacts } from '@/hooks/use-contacts';
@@ -172,16 +177,16 @@ function SortableLineItemRow({
         {item.unit && <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 3 }}>{t(`estimateBuilder.units.${item.unit}`, { defaultValue: item.unit })}</span>}
       </td>
       <td style={{ padding: '10px 8px', textAlign: 'right', width: 100, fontSize: 13 }}>
-        ${price.toFixed(2)}
+        ₹{price.toFixed(2)}
       </td>
       <td style={{ padding: '10px 8px', textAlign: 'right', width: 70, fontSize: 13 }}>
         {tax > 0 ? `${tax}%` : <Text type="secondary">—</Text>}
       </td>
       <td style={{ padding: '10px 8px', textAlign: 'right', width: 90, fontSize: 13 }}>
-        {discAmt > 0 ? <Text style={{ color: '#ef4444' }}>{discType === 'percentage' ? `${discVal}%` : `-$${discAmt.toFixed(2)}`}</Text> : <Text type="secondary">—</Text>}
+        {discAmt > 0 ? <Text style={{ color: '#ef4444' }}>{discType === 'percentage' ? `${discVal}%` : `-₹${discAmt.toFixed(2)}`}</Text> : <Text type="secondary">—</Text>}
       </td>
       <td style={{ padding: '10px 8px', textAlign: 'right', width: 105, fontWeight: 600, fontSize: 13 }}>
-        ${lineTotal.toFixed(2)}
+        ₹{lineTotal.toFixed(2)}
       </td>
       <td style={{ padding: '10px 8px', width: 72 }}>
         <Space size={2}>
@@ -205,6 +210,11 @@ export default function EstimateBuilderPage() {
   const { id }           = useParams<{ id: string }>();
   const [searchParams]   = useSearchParams();
   const serviceRequestId = searchParams.get('service_request_id');
+
+  // Where to go after save / cancel — back to SR estimates tab if launched from a SR
+  const exitDestination = serviceRequestId
+    ? { path: `/service-requests/${serviceRequestId}`, state: { tab: 'related-list' } }
+    : { path: '/estimates', state: undefined };
   const estimateTypeParam  = searchParams.get('estimate_type') || 'pre_visit';
   const theme            = useUiStore((s) => s.theme);
   const { isAdmin }      = usePermission();
@@ -246,10 +256,12 @@ export default function EstimateBuilderPage() {
     return opts;
   }, [allLocations, linkedSR]);
 
+  const queryClient             = useQueryClient();
   const createEstimate          = useCreateEstimate();
   const updateEstimate          = useUpdateEstimate();
   const sendEstimate            = useSendEstimate();
   const submitForInternalApproval = useSubmitForInternalApproval();
+  const convertToWorkOrder      = useConvertEstimateToWorkOrder();
   const createLineItem          = useCreateEstimateLineItem();
   const isOnSite                = estimateTypeParam === 'on_site';
   const { data: contacts } = useAllContacts();
@@ -259,6 +271,12 @@ export default function EstimateBuilderPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [itemSource,   setItemSource]   = useState<ItemSource>('service');
   const [isSaving,     setIsSaving]     = useState(false);
+  const [templateModalVisible, setTemplateModalVisible] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
+  const [partDrawerOpen,    setPartDrawerOpen]    = useState(false);
+  const [serviceSearchText, setServiceSearchText] = useState('');
+  const [partSearchText,    setPartSearchText]    = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -447,6 +465,7 @@ export default function EstimateBuilderPage() {
             terms_and_conditions: (values.terms_and_conditions as string) || '',
             location_id:          (values.location_id as string) || '',
           },
+          is_template: false,
         };
 
         let estimateId: string | undefined = id;
@@ -488,7 +507,12 @@ export default function EstimateBuilderPage() {
           await sendEstimate.mutateAsync(estimateId);
         }
 
-        navigate('/estimates');
+        // Force a fresh fetch so the global estimates list is up to date
+        // when the user navigates to /estimates (not just marked stale).
+        await queryClient.invalidateQueries({ queryKey: ['estimates'] });
+        await queryClient.refetchQueries({ queryKey: ['estimates'] });
+
+        navigate(exitDestination.path, { state: exitDestination.state });
       } catch (err: unknown) {
         message.error((err as { message?: string })?.message || t('estimateBuilder.errors.failedToSave'));
       } finally {
@@ -499,6 +523,75 @@ export default function EstimateBuilderPage() {
      serviceRequestId, estimate, id, isEdit,
      updateEstimate, createEstimate, sendEstimate, createLineItem, navigate, t],
   );
+
+  const doSaveAsTemplate = async () => {
+    if (!templateName) {
+      message.error('Template name is required');
+      return;
+    }
+
+    let values: Record<string, unknown>;
+    try { values = await form.validateFields(); } catch { return; }
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        contact_id:     values.contact_id as string,
+        request_id:     (serviceRequestId || estimate?.request_id) ?? undefined,
+        work_order_id:  (searchParams.get('work_order_id') || estimate?.work_order_id) ?? undefined,
+        estimate_type:  isEdit ? undefined : estimateTypeParam,
+        expiry_date:    values.expiry_date ? (values.expiry_date as dayjs.Dayjs).format('YYYY-MM-DD') : undefined,
+        scheduled_start: values.scheduled_start ? (values.scheduled_start as dayjs.Dayjs).toISOString() : undefined,
+        notes:          (values.notes as string) || undefined,
+        subtotal, tax: totalTax, discount: totalDiscount, total: grandTotal,
+        custom_fields: {
+          title:                (values.title as string) || '',
+          priority:             (values.priority as string) || '',
+          terms_and_conditions: (values.terms_and_conditions as string) || '',
+          location_id:          (values.location_id as string) || '',
+        },
+        is_template: true,
+        template_name: templateName,
+      };
+
+      const res = await createEstimate.mutateAsync(payload);
+      const estimateId = (res.data?.data as { id?: string } | undefined)?.id;
+
+      if (!estimateId) { message.error(t('estimateBuilder.errors.noId')); return; }
+
+      for (const item of lineItems) {
+        const qty      = Number(item.quantity)   || 1;
+        const price    = Number(item.unit_price) || 0;
+        const discType = item.discount_type || 'fixed';
+        const discVal  = Number(item.discount)   || 0;
+        const discAmt  = discType === 'percentage' ? (qty * price) * (discVal / 100) : discVal;
+        const taxRate  = Number(item.tax_rate)   || 0;
+        const lineBase = qty * price - discAmt;
+        await createLineItem.mutateAsync({
+          estimate_id: estimateId,
+          type:        (String(item.type || 'service')) as LineItemType,
+          name:        String(item.name || ''),
+          description: item.description ?? undefined,
+          quantity:    qty,
+          unit:        item.unit,
+          unit_price:  price,
+          tax_rate:    taxRate,
+          discount_type: discType,
+          discount:    discVal,
+          total:       lineBase + lineBase * (taxRate / 100),
+          sort_order:  item.sort_order || 0,
+        });
+      }
+
+      message.success('Estimate saved as template');
+      setTemplateModalVisible(false);
+      navigate('/estimates?tab=templates');
+    } catch (err: unknown) {
+      message.error((err as { message?: string })?.message || t('estimateBuilder.errors.failedToSave'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isEdit && isLoading) {
     return <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" /></div>;
@@ -517,13 +610,38 @@ export default function EstimateBuilderPage() {
       <PageHeader
         title={isEdit ? t('estimateBuilder.createEstimate') : t('estimateBuilder.newEstimate')}
         subtitle={isEdit ? t('estimateBuilder.subtitleEdit') : t('estimateBuilder.subtitleCreate')}
-        onBack={() => navigate('/estimates')}
+        onBack={() => navigate(exitDestination.path, { state: exitDestination.state })}
         extra={
           <Space>
-            <Button onClick={() => navigate('/estimates')}>{t('estimateBuilder.cancel')}</Button>
+            <Button onClick={() => navigate(exitDestination.path, { state: exitDestination.state })}>{t('estimateBuilder.cancel')}</Button>
+            <Button onClick={() => setTemplateModalVisible(true)} loading={isSaving}>
+              Save as Template
+            </Button>
             <Button icon={<SaveOutlined />} onClick={() => doSave(false)} loading={isSaving}>
               {t('estimateBuilder.saveDraft')}
             </Button>
+            {isEdit && estimate?.status === 'approved' && (
+              <Button
+                type="primary"
+                icon={<SwapOutlined />}
+                loading={convertToWorkOrder.isPending}
+                onClick={() => {
+                  Modal.confirm({
+                    title: 'Convert to Work Order',
+                    content: 'This will convert this approved estimate into a Work Order. Continue?',
+                    okText: 'Convert',
+                    onOk: async () => {
+                      const res = await convertToWorkOrder.mutateAsync(id!);
+                      const wo = (res as any)?.data?.data?.workOrder;
+                      if (wo?.id) navigate(`/work-orders/${wo.id}`);
+                      else navigate('/work-orders');
+                    },
+                  });
+                }}
+              >
+                Convert to Work Order
+              </Button>
+            )}
             {isOnSite ? (
               <Button
                 type="primary"
@@ -661,9 +779,9 @@ export default function EstimateBuilderPage() {
                         <Col xs={24} sm={14} md={10}>
                           <div style={{ padding: '0 8px' }}>
                             {[
-                              { label: t('estimateBuilder.subtotal'), value: `$${subtotal.toFixed(2)}` },
-                              { label: t('estimateBuilder.totalDiscount'), value: totalDiscount > 0 ? `-$${totalDiscount.toFixed(2)}` : '—', color: totalDiscount > 0 ? '#ef4444' : undefined },
-                              { label: t('estimateBuilder.tax'), value: `$${totalTax.toFixed(2)}` },
+                              { label: t('estimateBuilder.subtotal'), value: `₹${subtotal.toFixed(2)}` },
+                              { label: t('estimateBuilder.totalDiscount'), value: totalDiscount > 0 ? `-₹${totalDiscount.toFixed(2)}` : '—', color: totalDiscount > 0 ? '#ef4444' : undefined },
+                              { label: t('estimateBuilder.tax'), value: `₹${totalTax.toFixed(2)}` },
                             ].map(({ label, value, color }) => (
                               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 13 }}>
                                 <Text type="secondary">{label}</Text>
@@ -673,7 +791,7 @@ export default function EstimateBuilderPage() {
                             <Divider style={{ margin: '8px 0' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                               <Text strong style={{ fontSize: 14 }}>{t('estimateBuilder.grandTotal')}</Text>
-                              <Text strong style={{ fontSize: 20, color: '#2563eb' }}>${grandTotal.toFixed(2)}</Text>
+                              <Text strong style={{ fontSize: 20, color: '#2563eb' }}>₹{grandTotal.toFixed(2)}</Text>
                             </div>
                           </div>
                         </Col>
@@ -761,9 +879,9 @@ export default function EstimateBuilderPage() {
                   <Text>{lineItems.length}</Text>
                 </div>
                 {[
-                  { label: t('estimateBuilder.subtotal'), value: `$${subtotal.toFixed(2)}` },
-                  { label: t('estimateBuilder.discount'), value: totalDiscount > 0 ? `-$${totalDiscount.toFixed(2)}` : '—', color: totalDiscount > 0 ? '#ef4444' : undefined },
-                  { label: t('estimateBuilder.tax'), value: `$${totalTax.toFixed(2)}` },
+                  { label: t('estimateBuilder.subtotal'), value: `₹${subtotal.toFixed(2)}` },
+                  { label: t('estimateBuilder.discount'), value: totalDiscount > 0 ? `-₹${totalDiscount.toFixed(2)}` : '—', color: totalDiscount > 0 ? '#ef4444' : undefined },
+                  { label: t('estimateBuilder.tax'), value: `₹${totalTax.toFixed(2)}` },
                 ].map(({ label, value, color }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
                     <Text type="secondary">{label}</Text>
@@ -773,7 +891,7 @@ export default function EstimateBuilderPage() {
                 <Divider style={{ margin: '8px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                   <Text strong style={{ fontSize: 14 }}>{t('estimateBuilder.total')}</Text>
-                  <Text strong style={{ fontSize: 22, color: '#2563eb' }}>${grandTotal.toFixed(2)}</Text>
+                  <Text strong style={{ fontSize: 22, color: '#2563eb' }}>₹{grandTotal.toFixed(2)}</Text>
                 </div>
               </div>
             </Card>
@@ -783,6 +901,7 @@ export default function EstimateBuilderPage() {
       </Form>
 
       {/* ── LINE ITEM MODAL ── */}
+      {/* zIndex must be below ServiceQuickCreateDrawer/PartQuickCreateDrawer (1020) */}
       <Modal
         title={editingIndex !== null ? t('estimateBuilder.editLineItem') : t('estimateBuilder.addLineItem')}
         open={modalVisible}
@@ -791,6 +910,7 @@ export default function EstimateBuilderPage() {
         okText={editingIndex !== null ? t('estimateBuilder.updateItem') : t('estimateBuilder.addItem')}
         width={680}
         destroyOnClose
+        zIndex={1010}
       >
         {/* Source selector */}
         <div style={{ marginBottom: 20 }}>
@@ -827,8 +947,34 @@ export default function EstimateBuilderPage() {
                 allowClear
                 placeholder={t('estimateBuilder.searchServicesPlaceholder')}
                 optionFilterProp="label"
+                onSearch={(val) => setServiceSearchText(val)}
                 options={activeSvcOptions}
-                notFoundContent={<div style={{ padding: '8px 0', color: '#9ca3af', textAlign: 'center' }}>{t('estimateBuilder.noActiveServices')}</div>}
+                notFoundContent={
+                  <div style={{ padding: '8px 0', color: '#9ca3af', textAlign: 'center', fontSize: 13 }}>
+                    {t('estimateBuilder.noActiveServices')}
+                  </div>
+                }
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '4px 0' }} />
+                    <Button
+                      type="link"
+                      size="small"
+                      style={{
+                        padding: '6px 12px',
+                        width: '100%',
+                        textAlign: 'left',
+                        color: '#16a34a',
+                        fontWeight: 500,
+                        fontSize: 13,
+                      }}
+                      onClick={() => setServiceDrawerOpen(true)}
+                    >
+                      + Create New Service
+                    </Button>
+                  </>
+                )}
                 onChange={(serviceId: string) => {
                   if (!serviceId) return;
                   const svc = (servicesCatalog as ServiceCatalogItem[]).find((s) => s.id === serviceId);
@@ -855,8 +1001,34 @@ export default function EstimateBuilderPage() {
                 allowClear
                 placeholder={t('estimateBuilder.searchPartsPlaceholder')}
                 optionFilterProp="label"
+                onSearch={(val) => setPartSearchText(val)}
                 options={activePartOptions}
-                notFoundContent={<div style={{ padding: '8px 0', color: '#9ca3af', textAlign: 'center' }}>{t('estimateBuilder.noActiveParts')}</div>}
+                notFoundContent={
+                  <div style={{ padding: '8px 0', color: '#9ca3af', textAlign: 'center', fontSize: 13 }}>
+                    {t('estimateBuilder.noActiveParts')}
+                  </div>
+                }
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '4px 0' }} />
+                    <Button
+                      type="link"
+                      size="small"
+                      style={{
+                        padding: '6px 12px',
+                        width: '100%',
+                        textAlign: 'left',
+                        color: '#16a34a',
+                        fontWeight: 500,
+                        fontSize: 13,
+                      }}
+                      onClick={() => setPartDrawerOpen(true)}
+                    >
+                      + Create New Part
+                    </Button>
+                  </>
+                )}
                 onChange={(partId: string) => {
                   if (!partId) return;
                   const part = (partsCatalog as PartsCatalogItem[]).find((p) => p.id === partId);
@@ -912,7 +1084,7 @@ export default function EstimateBuilderPage() {
             </Col>
             <Col span={8}>
               <Form.Item name="unit_price" label={t('estimateBuilder.unitPrice')} rules={[{ required: true, message: t('estimateBuilder.requiredField') }]}>
-                <InputNumber min={0} step={0.01} prefix="$" style={{ width: '100%' }} precision={2} />
+                <InputNumber min={0} step={0.01} prefix="₹" style={{ width: '100%' }} precision={2} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -946,7 +1118,7 @@ export default function EstimateBuilderPage() {
                         min={0}
                         max={dType === 'percentage' ? 100 : undefined}
                         step={dType === 'percentage' ? 1 : 0.01}
-                        prefix={dType === 'percentage' ? undefined : '$'}
+                        prefix={dType === 'percentage' ? undefined : '₹'}
                         suffix={dType === 'percentage' ? '%' : undefined}
                         style={{ width: '100%' }}
                         precision={2}
@@ -959,6 +1131,63 @@ export default function EstimateBuilderPage() {
           </Row>
         </Form>
       </Modal>
+
+      <Modal
+        title="Save as Template"
+        open={templateModalVisible}
+        onOk={doSaveAsTemplate}
+        onCancel={() => setTemplateModalVisible(false)}
+        confirmLoading={isSaving}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text>Please enter a name for this template:</Text>
+        </div>
+        <Input
+          placeholder="e.g., Standard Installation"
+          value={templateName}
+          onChange={(e) => setTemplateName(e.target.value)}
+        />
+      </Modal>
+
+      {/* ── Service Quick-Create Drawer ── */}
+      <ServiceQuickCreateDrawer
+        open={serviceDrawerOpen}
+        initialName={serviceSearchText}
+        onClose={() => setServiceDrawerOpen(false)}
+        onSuccess={(svc) => {
+          setServiceDrawerOpen(false);
+          setServiceSearchText('');
+          lineItemForm.setFieldsValue({
+            name:        svc.name,
+            description: svc.description || '',
+            unit_price:  Number(svc.default_price) || 0,
+            tax_rate:    Number(svc.tax_rate) || 0,
+            unit:        svc.duration_minutes ? 'hrs' : 'each',
+            quantity:    1,
+            discount:    0,
+          });
+        }}
+      />
+
+      {/* ── Part Quick-Create Drawer ── */}
+      <PartQuickCreateDrawer
+        open={partDrawerOpen}
+        initialName={partSearchText}
+        onClose={() => setPartDrawerOpen(false)}
+        onSuccess={(part) => {
+          setPartDrawerOpen(false);
+          setPartSearchText('');
+          lineItemForm.setFieldsValue({
+            name:        part.name,
+            description: part.description || (part.sku ? `SKU: ${part.sku}` : ''),
+            unit_price:  Number(part.unit_price) || 0,
+            tax_rate:    0,
+            unit:        'each',
+            quantity:    1,
+            discount:    0,
+          });
+        }}
+      />
     </div>
   );
 }

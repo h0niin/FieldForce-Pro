@@ -64,6 +64,85 @@ export class Company extends Model {
   website: string;
 
   @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  company_type: string;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: true,
+  })
+  phone: string;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+  })
+  email: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  tax_registration_number: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  tax_treatment: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  custom_vendor_id: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  billing_street: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_city: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_state: string;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: true,
+  })
+  billing_zip_code: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
+  billing_country: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  service_address: string;
+
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true,
+    defaultValue: [],
+  })
+  tags: string[];
+
+  @Column({
     type: DataType.TEXT,
     allowNull: true,
   })

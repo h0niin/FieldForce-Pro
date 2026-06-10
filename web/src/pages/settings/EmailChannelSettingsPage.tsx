@@ -79,8 +79,8 @@ function ConnectionMethodSelector({
   selected,
   onSelect,
 }: {
-  selected: 'forwarding' | 'mailbox' | 'platform_provided';
-  onSelect: (method: 'forwarding' | 'mailbox' | 'platform_provided') => void;
+  selected: 'forwarding' | 'platform_provided';
+  onSelect: (method: 'forwarding' | 'platform_provided') => void;
 }) {
   const { t } = useTranslation();
   const methods = [
@@ -91,14 +91,6 @@ function ConnectionMethodSelector({
       description: t('emailChannel.connection.forwardingDesc'),
       badge: t('emailChannel.connection.recommended'),
       badgeColor: 'blue',
-    },
-    {
-      key: 'mailbox' as const,
-      icon: <LinkOutlined style={{ fontSize: 36, color: '#722ed1' }} />,
-      title: t('emailChannel.connection.mailboxTitle'),
-      description: t('emailChannel.connection.mailboxDesc'),
-      badge: t('emailChannel.connection.comingSoon'),
-      badgeColor: 'purple',
     },
     {
       key: 'platform_provided' as const,
@@ -113,19 +105,18 @@ function ConnectionMethodSelector({
   return (
     <Row gutter={[16, 16]}>
       {methods.map((m) => (
-        <Col xs={24} md={8} key={m.key}>
+        <Col xs={24} md={12} key={m.key}>
           <Card
             hoverable
-            onClick={() => m.key !== 'mailbox' && onSelect(m.key)}
+            onClick={() => onSelect(m.key)}
             style={{
               borderColor: selected === m.key ? '#1677ff' : undefined,
               borderWidth: selected === m.key ? 2 : 1,
               background:
                 selected === m.key
                   ? 'linear-gradient(135deg, rgba(22, 119, 255, 0.05), rgba(22, 119, 255, 0.02))'
-                  : m.key === 'mailbox' ? 'rgba(0,0,0,0.02)' : undefined,
-              cursor: m.key === 'mailbox' ? 'not-allowed' : 'pointer',
-              opacity: m.key === 'mailbox' ? 0.6 : 1,
+                  : undefined,
+              cursor: 'pointer',
               transition: 'all 0.3s ease',
             }}
           >
@@ -156,7 +147,7 @@ export default function EmailChannelSettingsPage() {
   const [testing, setTesting] = useState(false);
   const [channel, setChannel] = useState<EmailChannelConfig | null>(null);
 
-  const [connectionMethod, setConnectionMethod] = useState<'forwarding' | 'mailbox' | 'platform_provided'>('forwarding');
+  const [connectionMethod, setConnectionMethod] = useState<'forwarding' | 'platform_provided'>('forwarding');
   const [supportEmail, setSupportEmail] = useState('');
   const [platformEmail, setPlatformEmail] = useState('');
   const [replyFromName, setReplyFromName] = useState(t('emailChannel.defaults.supportTeam'));
@@ -191,7 +182,7 @@ export default function EmailChannelSettingsPage() {
       const ch = data?.data;
       if (ch) {
         setChannel(ch);
-        setConnectionMethod(ch.connection_method as 'forwarding' | 'mailbox' | 'platform_provided');
+        setConnectionMethod(ch.connection_method as 'forwarding' | 'platform_provided');
         setSupportEmail(ch.support_email || '');
         setPlatformEmail(ch.platform_email || '');
         setReplyFromName(ch.reply_from_name || t('emailChannel.defaults.supportTeam'));
@@ -290,7 +281,7 @@ export default function EmailChannelSettingsPage() {
     <div>
       <PageHeader
         title={t('emailChannel.title')}
-        subtitle={t('emailChannel.subtitle')}
+        subtitle="Configure email integration rules and forwarding endpoints. Enable automated ticket classification, custom auto-replies, allowlist/blocklist senders, and keywords for human support handoff."
       />
 
       <Card

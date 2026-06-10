@@ -43,8 +43,7 @@ async function bootstrap() {
   expressApp.use(bodyParser.json({ limit: '50mb' }));
   expressApp.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-  // Static file serving for uploaded documents
-  expressApp.use('/uploads', bodyParser.static(join(process.cwd(), 'uploads')));
+  // Static file serving is handled by ServeStaticModule in app.module.ts
 
   // Swagger
   setupSwagger(app);

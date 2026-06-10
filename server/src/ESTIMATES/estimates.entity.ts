@@ -10,6 +10,7 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { EstimateLineItem } from '../ESTIMATE_LINE_ITEMS/estimate_line_items.entity';
+import { Asset } from '../ASSETS/assets.entity';
 
 @Table({
   tableName: 'estimates',
@@ -50,6 +51,16 @@ export class Estimate extends Model {
 
   @BelongsTo(() => Contact)
   contact: Contact;
+
+  @ForeignKey(() => Asset)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  asset_id: string;
+
+  @BelongsTo(() => Asset)
+  asset: Asset;
 
   @Column({
     type: DataType.STRING(50),
@@ -216,4 +227,17 @@ export class Estimate extends Model {
     defaultValue: DataType.NOW,
   })
   updated_at: Date;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  is_template: boolean;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+  })
+  template_name: string;
 }

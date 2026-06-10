@@ -275,6 +275,31 @@ export class ServiceRequestsController {
     return DataResponseDto.success(serviceRequest, 'Technician assigned successfully');
   }
 
+  @Post(':id/accept')
+  @Permissions('service_requests:update')
+  @ApiOperation({ summary: 'Technician accepts the assigned service request' })
+  async acceptRequest(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+  ) {
+    const serviceRequest = await this.serviceRequestsService.acceptRequest(id, tenantId, userId);
+    return DataResponseDto.success(serviceRequest, 'Service request accepted successfully');
+  }
+
+  @Post(':id/reject')
+  @Permissions('service_requests:update')
+  @ApiOperation({ summary: 'Technician rejects the assigned service request' })
+  async rejectRequest(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+    @Body('reason') reason?: string,
+  ) {
+    const serviceRequest = await this.serviceRequestsService.rejectRequest(id, tenantId, userId, reason);
+    return DataResponseDto.success(serviceRequest, 'Service request rejected successfully');
+  }
+
   @Delete(':id')
   @Permissions('service_requests:delete')
   @ApiOperation({ summary: 'Delete a service request (soft delete)' })

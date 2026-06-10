@@ -40,7 +40,7 @@ export default function JobSheetTemplateFormPage() {
       } else {
         await createTemplate.mutateAsync(payload as Record<string, unknown> & { name: string });
       }
-      navigate('/job-sheets/templates');
+      navigate('/settings/customization/job-sheets');
     } catch {
       // Error handled by mutation hooks
     }
@@ -59,7 +59,7 @@ export default function JobSheetTemplateFormPage() {
     <div>
       <PageHeader
         title={isEdit ? t('jobSheetTemplate.editJobSheetTemplate') : t('jobSheetTemplate.createJobSheetTemplate')}
-        onBack={() => navigate('/job-sheets/templates')}
+        onBack={() => navigate('/settings/customization/job-sheets')}
       />
 
       <Card>
@@ -108,7 +108,7 @@ export default function JobSheetTemplateFormPage() {
               >
                 {isEdit ? t('jobSheetTemplate.update') : t('jobSheetTemplate.create')}
               </Button>
-              <Button onClick={() => navigate('/job-sheets/templates')}>{t('jobSheetTemplate.cancel')}</Button>
+              <Button onClick={() => navigate('/settings/customization/job-sheets')}>{t('jobSheetTemplate.cancel')}</Button>
             </Space>
           </Form.Item>
         </Form>

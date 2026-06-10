@@ -26,11 +26,33 @@ export function useAllContacts() {
   });
 }
 
+export function useContactsByCompany(companyId: string | null) {
+  return useQuery({
+    queryKey: ['contacts', 'company', companyId],
+    queryFn: async () => {
+      const response = await contactsApi.getByCompany(companyId!);
+      return response.data.data!;
+    },
+    enabled: !!companyId,
+  });
+}
+
 export function useContact(id: string) {
   return useQuery({
     queryKey: ['contacts', id],
     queryFn: async () => {
       const response = await contactsApi.getById(id);
+      return response.data.data!;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useContactInsights(id: string) {
+  return useQuery({
+    queryKey: ['contacts', id, 'insights'],
+    queryFn: async () => {
+      const response = await contactsApi.getInsights(id);
       return response.data.data!;
     },
     enabled: !!id,
@@ -43,9 +65,10 @@ export function useCreateContact() {
 
   return useMutation({
     mutationFn: (payload: CreateContactPayload) => contactsApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      addNotification({ type: 'success', message: 'Contact created successfully' });
+      const fullName = [variables.first_name, variables.last_name].filter(Boolean).join(' ');
+      addNotification({ type: 'success', message: `✓ Contact created — ${fullName}` }, 3000);
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create contact' });

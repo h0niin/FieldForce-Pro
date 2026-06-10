@@ -22,6 +22,18 @@ export class CreateTemplateDto {
   @MaxLength(200)
   name: string;
 
+  @ApiPropertyOptional({ description: 'Template description' })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Associated module name' })
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  module_name?: string;
+
   @ApiProperty({
     description: 'Template content (JSONB)',
     example: { header: 'Invoice', body: '<html>...</html>', styles: {} },

@@ -4,7 +4,7 @@ import type { PageOptions } from '@/types/api.types';
 import type { Invoice } from '@/types/models.types';
 import { useNotificationStore } from '@/store/notification.store';
 
-export function useEstimates(params?: PageOptions & { status?: string; excludeStatus?: string; createdBy?: string }, enabled = true) {
+export function useEstimates(params?: PageOptions & { status?: string; excludeStatus?: string; createdBy?: string; isTemplate?: boolean }, enabled = true) {
   return useQuery({
     queryKey: ['estimates', params],
     queryFn: async () => {
@@ -15,6 +15,8 @@ export function useEstimates(params?: PageOptions & { status?: string; excludeSt
       };
     },
     enabled,
+    staleTime: 0,        // always consider data stale — force refetch on mount
+    refetchOnMount: true, // always refetch when the component mounts
   });
 }
 
@@ -95,6 +97,22 @@ export function useCreateEstimate() {
   });
 }
 
+export function useCreateEstimateFromTemplate() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: ({ templateId, payload }: { templateId: string, payload?: Partial<CreateEstimatePayload> }) => estimatesApi.createFromTemplate(templateId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      addNotification({ type: 'success', message: 'Estimate created from template successfully' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to create estimate from template' });
+    },
+  });
+}
+
 export function useUpdateEstimate() {
   const queryClient = useQueryClient();
   const addNotification = useNotificationStore((s) => s.add);
@@ -157,6 +175,22 @@ export function useSendEstimate() {
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to send estimate' });
+    },
+  });
+}
+
+export function useSendEstimateWhatsApp() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: (id: string) => estimatesApi.sendWhatsApp(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      addNotification({ type: 'success', message: 'Estimate sent via WhatsApp' });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to send estimate via WhatsApp' });
     },
   });
 }

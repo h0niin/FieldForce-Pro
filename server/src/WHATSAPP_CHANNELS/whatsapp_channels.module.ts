@@ -3,6 +3,7 @@ import { WhatsAppChannelsController } from './whatsapp_channels.controller';
 import { WhatsAppChannelsService } from './whatsapp_channels.service';
 import { WhatsAppWebhookService } from './whatsapp_webhook.service';
 import { WhatsAppAiService } from './whatsapp_ai.service';
+import { WhatsAppWebJsService } from './whatsapp_webjs.service';
 import { whatsappChannelsProviders } from './whatsapp_channels.provider';
 import { DatabaseModule } from '../database/database.module';
 import { ServiceRequest } from '../SERVICE_REQUESTS/service_requests.entity';
@@ -16,6 +17,7 @@ import { KEYNAMES } from '../shared/constants/keynames';
     WhatsAppChannelsService,
     WhatsAppWebhookService,
     WhatsAppAiService,
+    WhatsAppWebJsService,
     ...whatsappChannelsProviders,
     // Inject existing repositories needed by the webhook service
     {
@@ -27,6 +29,6 @@ import { KEYNAMES } from '../shared/constants/keynames';
       useValue: Contact,
     },
   ],
-  exports: [WhatsAppChannelsService, WhatsAppWebhookService],
+  exports: [WhatsAppChannelsService, WhatsAppWebhookService, WhatsAppWebJsService],
 })
 export class WhatsAppChannelsModule {}

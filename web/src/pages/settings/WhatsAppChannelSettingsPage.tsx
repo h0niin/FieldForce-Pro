@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
   Tabs,
@@ -48,8 +48,8 @@ import {
   whatsappApi,
   type WhatsAppChannel,
   type WhatsAppConversation,
-  type QrCodeInfo,
   type UpsertChannelPayload,
+  type WebJsQrStatus,
 } from '@/api/whatsapp.api';
 import dayjs from 'dayjs';
 
@@ -87,172 +87,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── Connection Method Cards ─────────────────────────────────────────────────
-
-function ConnectionMethodSelector({
-  selected,
-  onSelect,
-}: {
-  selected: 'twilio_qr' | 'business_api';
-  onSelect: (method: 'twilio_qr' | 'business_api') => void;
-}) {
-  const { t } = useTranslation();
-  const methods = [
-    {
-      key: 'twilio_qr' as const,
-      icon: <QrcodeOutlined style={{ fontSize: 36, color: '#25D366' }} />,
-      title: t('whatsapp.twilioTitle'),
-      description: t('whatsapp.twilioDescription'),
-      badge: t('whatsapp.recommended'),
-    },
-    {
-      key: 'business_api' as const,
-      icon: <ApiOutlined style={{ fontSize: 36, color: '#0088cc' }} />,
-      title: t('whatsapp.businessApiTitle'),
-      description: t('whatsapp.businessApiDescription'),
-      badge: t('whatsapp.advanced'),
-    },
-  ];
-
-  return (
-    <Row gutter={[20, 20]}>
-      {methods.map((m) => (
-        <Col xs={24} md={12} key={m.key}>
-          <Card
-            hoverable
-            onClick={() => onSelect(m.key)}
-            style={{
-              borderColor: selected === m.key ? '#25D366' : undefined,
-              borderWidth: selected === m.key ? 2 : 1,
-              background:
-                selected === m.key
-                  ? 'linear-gradient(135deg, rgba(37, 211, 102, 0.05), rgba(37, 211, 102, 0.02))'
-                  : undefined,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <div style={{ textAlign: 'center', padding: '12px 0' }}>
-              {m.icon}
-              <Title level={5} style={{ margin: '12px 0 4px' }}>{m.title}</Title>
-              <Tag color={m.key === 'twilio_qr' ? 'green' : 'blue'}>{m.badge}</Tag>
-              <Paragraph type="secondary" style={{ marginTop: 8, fontSize: 13 }}>
-                {m.description}
-              </Paragraph>
-              {selected === m.key && (
-                <CheckCircleOutlined style={{ fontSize: 20, color: '#25D366', marginTop: 8 }} />
-              )}
-            </div>
-          </Card>
-        </Col>
-      ))}
-    </Row>
-  );
-}
-
-// ── Twilio Config Form ──────────────────────────────────────────────────────
-
-function TwilioConfigForm({
-  config,
-  onChange,
-  qrInfo,
-  onLoadQr,
-  loadingQr,
-}: {
-  config: Record<string, unknown>;
-  onChange: (config: Record<string, unknown>) => void;
-  qrInfo: QrCodeInfo | null;
-  onLoadQr: () => void;
-  loadingQr: boolean;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={12}>
-          <Form.Item label={t('whatsapp.twilioSidLabel')}>
-            <Input
-              placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              value={(config.account_sid as string) || ''}
-              onChange={(e) => onChange({ ...config, account_sid: e.target.value })}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label={t('whatsapp.twilioTokenLabel')}>
-            <Input.Password
-              placeholder={t('whatsapp.twilioTokenPlaceholder')}
-              value={(config.auth_token as string) || ''}
-              onChange={(e) => onChange({ ...config, auth_token: e.target.value })}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label={t('whatsapp.twilioNumberLabel')}>
-            <Input
-              placeholder="+14155238886 (sandbox default)"
-              value={(config.twilio_number as string) || ''}
-              onChange={(e) => onChange({ ...config, twilio_number: e.target.value })}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label={t('whatsapp.joinCodeLabel')}>
-            <Input
-              placeholder="join your-company"
-              value={(config.join_code as string) || ''}
-              onChange={(e) => onChange({ ...config, join_code: e.target.value })}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Divider>{t('whatsapp.customerQrCode')}</Divider>
-
-      <div style={{ textAlign: 'center' }}>
-        <Button
-          icon={<QrcodeOutlined />}
-          type="dashed"
-          onClick={onLoadQr}
-          loading={loadingQr}
-          style={{ marginBottom: 16 }}
-        >
-          {t('whatsapp.generateQrCode')}
-        </Button>
-
-        {qrInfo && (
-          <div>
-            <div
-              style={{
-                display: 'inline-block',
-                padding: 16,
-                background: '#fff',
-                borderRadius: 12,
-                boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
-                marginBottom: 16,
-              }}
-            >
-              <img
-                src={qrInfo.qr_url}
-                alt="WhatsApp QR Code"
-                style={{ width: 240, height: 240, borderRadius: 8 }}
-              />
-            </div>
-            <div>
-              <Text type="secondary">
-                {t('whatsapp.scanInstruction')} <strong>{qrInfo.sandbox_number}</strong>
-              </Text>
-              <br />
-              <Text code copyable>
-                {qrInfo.join_code}
-              </Text>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ── Meta Config Form ────────────────────────────────────────────────────────
 
@@ -346,18 +180,14 @@ export default function WhatsAppChannelSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [loadingQr, setLoadingQr] = useState(false);
   const [channel, setChannel] = useState<WhatsAppChannel | null>(null);
-  const [qrInfo, setQrInfo] = useState<QrCodeInfo | null>(null);
   const [conversations, setConversations] = useState<WhatsAppConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const [conversationModalOpen, setConversationModalOpen] = useState(false);
 
   // Form state
-  const [connectionMethod, setConnectionMethod] = useState<'twilio_qr' | 'business_api'>('twilio_qr');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [twilioConfig, setTwilioConfig] = useState<Record<string, unknown>>({});
   const [metaConfig, setMetaConfig] = useState<Record<string, unknown>>({});
   const [greeting, setGreeting] = useState("Hi 👋 I'm your support assistant. Tell me what you need help with.");
   const [confirmation, setConfirmation] = useState('✅ Your service request has been created. Our team will contact you shortly.');
@@ -372,6 +202,12 @@ export default function WhatsAppChannelSettingsPage() {
   const [defaultPriority, setDefaultPriority] = useState('MEDIUM');
   const [handoffTeam, setHandoffTeam] = useState('');
   const [isActive, setIsActive] = useState(false);
+  const [connectionMethod, setConnectionMethod] = useState<'web_js' | 'business_api'>('web_js');
+
+  // Web JS QR code state
+  const [webJsStatus, setWebJsStatus] = useState<WebJsQrStatus | null>(null);
+  const [webJsInitializing, setWebJsInitializing] = useState(false);
+  const qrPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Load channel config ─────────────────────────────────────────────────────
 
@@ -382,10 +218,8 @@ export default function WhatsAppChannelSettingsPage() {
       const ch = data?.data;
       if (ch) {
         setChannel(ch);
-        setConnectionMethod(ch.connection_method as 'twilio_qr' | 'business_api');
         setPhoneNumber(ch.phone_number || '');
         setDisplayName(ch.display_name || '');
-        setTwilioConfig(ch.twilio_config || {});
         setMetaConfig(ch.meta_config || {});
         setGreeting(ch.greeting_message || '');
         setConfirmation(ch.confirmation_message || '');
@@ -398,6 +232,7 @@ export default function WhatsAppChannelSettingsPage() {
         setDefaultPriority(ch.default_priority || 'MEDIUM');
         setHandoffTeam(ch.handoff_team || '');
         setIsActive(ch.is_active);
+        setConnectionMethod((ch.connection_method as 'web_js' | 'business_api') || 'web_js');
       }
     } catch {
       // Channel not configured yet, that's fine
@@ -429,8 +264,7 @@ export default function WhatsAppChannelSettingsPage() {
         connection_method: connectionMethod,
         phone_number: phoneNumber || undefined,
         display_name: displayName || undefined,
-        twilio_config: connectionMethod === 'twilio_qr' ? twilioConfig : undefined,
-        meta_config: connectionMethod === 'business_api' ? metaConfig : undefined,
+        meta_config: connectionMethod === 'business_api' ? (metaConfig || undefined) : undefined,
         greeting_message: greeting,
         confirmation_message: confirmation,
         working_hours_mode: workingHoursMode,
@@ -484,17 +318,74 @@ export default function WhatsAppChannelSettingsPage() {
     }
   };
 
-  // ── Load QR ─────────────────────────────────────────────────────────────────
+  // ── Web JS: Generate QR / Initialize ────────────────────────────────────────
 
-  const handleLoadQr = async () => {
-    setLoadingQr(true);
+  const startQrPolling = useCallback(() => {
+    // Clear any existing polling
+    if (qrPollingRef.current) clearInterval(qrPollingRef.current);
+
+    qrPollingRef.current = setInterval(async () => {
+      try {
+        const { data } = await whatsappApi.getWebJsQr();
+        const qrStatus = data?.data;
+        if (qrStatus) {
+          setWebJsStatus(qrStatus);
+          // Stop polling if connected or error
+          if (qrStatus.status === 'connected' || qrStatus.status === 'error') {
+            if (qrPollingRef.current) clearInterval(qrPollingRef.current);
+            qrPollingRef.current = null;
+            // Refresh channel data if connected
+            if (qrStatus.status === 'connected') {
+              void loadChannel();
+            }
+          }
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 5000);
+  }, [loadChannel]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (qrPollingRef.current) clearInterval(qrPollingRef.current);
+    };
+  }, []);
+
+  const handleInitializeWebJs = async () => {
+    setWebJsInitializing(true);
     try {
-      const { data } = await whatsappApi.getQrCode();
-      setQrInfo(data?.data || null);
+      const { data } = await whatsappApi.initializeWebJs();
+      const result = data?.data;
+      if (result?.status === 'connected' || result?.status === 'authenticated') {
+        message.success(result.message);
+        setWebJsStatus({ status: result.status as WebJsQrStatus['status'], qr_data_url: null, phone_number: null, error: null });
+        void loadChannel();
+      } else {
+        message.info(result?.message || 'Initializing...');
+        // Start polling for QR code
+        startQrPolling();
+      }
     } catch (err: unknown) {
-      message.error((err as Error)?.message || t('whatsapp.failedLoadQr'));
+      message.error((err as Error)?.message || 'Failed to initialize Web JS client');
     } finally {
-      setLoadingQr(false);
+      setWebJsInitializing(false);
+    }
+  };
+
+  const handleDisconnectWebJs = async () => {
+    try {
+      await whatsappApi.disconnectWebJs();
+      setWebJsStatus(null);
+      if (qrPollingRef.current) {
+        clearInterval(qrPollingRef.current);
+        qrPollingRef.current = null;
+      }
+      message.info('Web JS client disconnected');
+      void loadChannel();
+    } catch (err: unknown) {
+      message.error((err as Error)?.message || 'Failed to disconnect');
     }
   };
 
@@ -576,7 +467,7 @@ export default function WhatsAppChannelSettingsPage() {
     <div>
       <PageHeader
         title={t('whatsapp.pageTitle')}
-        subtitle={t('whatsapp.pageSubtitle')}
+        subtitle="Configure WhatsApp Business and Web JS channels. Set up greetings, intake requirements for automated service booking, translation languages, operational office hours, and support handoff routing."
       />
 
       {/* Connection Status Banner */}
@@ -648,18 +539,6 @@ export default function WhatsAppChannelSettingsPage() {
               ),
               children: (
                 <div>
-                  <Title level={5}>{t('whatsapp.connectionMethod')}</Title>
-                  <Paragraph type="secondary" style={{ marginBottom: 20 }}>
-                    {t('whatsapp.connectionMethodDescription')}
-                  </Paragraph>
-
-                  <ConnectionMethodSelector
-                    selected={connectionMethod}
-                    onSelect={setConnectionMethod}
-                  />
-
-                  <Divider />
-
                   <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                     <Col xs={24} md={12}>
                       <Form.Item label={t('whatsapp.displayNameLabel')}>
@@ -671,29 +550,183 @@ export default function WhatsAppChannelSettingsPage() {
                         />
                       </Form.Item>
                     </Col>
-                    <Col xs={24} md={12}>
-                      <Form.Item label={t('whatsapp.businessNumberLabel')}>
-                        <Input
-                          placeholder="+971 50 123 4567"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          prefix={<PhoneOutlined />}
-                        />
-                      </Form.Item>
-                    </Col>
                   </Row>
 
-                  {connectionMethod === 'twilio_qr' ? (
-                    <TwilioConfigForm
-                      config={twilioConfig}
-                      onChange={setTwilioConfig}
-                      qrInfo={qrInfo}
-                      onLoadQr={() => void handleLoadQr()}
-                      loadingQr={loadingQr}
-                    />
-                  ) : (
-                    <MetaConfigForm config={metaConfig} onChange={setMetaConfig} />
-                  )}
+                  <Tabs
+                    activeKey={connectionMethod}
+                    onChange={(key) => setConnectionMethod(key as 'web_js' | 'business_api')}
+                    type="card"
+                    items={[
+                      {
+                        key: 'web_js',
+                        label: (
+                          <span>
+                            <QrcodeOutlined /> Web JS
+                          </span>
+                        ),
+                        children: (
+                          <div style={{ padding: '20px 0' }}>
+                            <Alert
+                              type="info"
+                              showIcon
+                              message="WhatsApp Web JS"
+                              description="Connect your phone number by scanning a QR code. Similar to WhatsApp Web, your phone must stay online for messages to be received."
+                              style={{ marginBottom: 20 }}
+                            />
+
+                            {/* QR Code Area */}
+                            {(!webJsStatus || webJsStatus.status === 'not_initialized' || webJsStatus.status === 'disconnected') && (
+                              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                <QrcodeOutlined style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 16 }} />
+                                <Paragraph type="secondary">
+                                  Click the button below to generate a QR code and link your WhatsApp number.
+                                </Paragraph>
+                                <Button
+                                  type="primary"
+                                  size="large"
+                                  icon={<QrcodeOutlined />}
+                                  onClick={() => void handleInitializeWebJs()}
+                                  loading={webJsInitializing}
+                                  style={{
+                                    background: '#25D366',
+                                    borderColor: '#25D366',
+                                    fontWeight: 600,
+                                    height: 48,
+                                    paddingInline: 32,
+                                    fontSize: 16,
+                                  }}
+                                >
+                                  Generate QR Code
+                                </Button>
+                                {webJsStatus?.error && (
+                                  <Alert
+                                    type="error"
+                                    message={webJsStatus.error}
+                                    style={{ marginTop: 16, maxWidth: 400, margin: '16px auto 0' }}
+                                  />
+                                )}
+                              </div>
+                            )}
+
+                            {webJsStatus?.status === 'initializing' && (
+                              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                <Spin size="large" />
+                                <Paragraph style={{ marginTop: 16 }}>Initializing client... QR code will appear shortly.</Paragraph>
+                              </div>
+                            )}
+
+                            {webJsStatus?.status === 'qr_ready' && webJsStatus.qr_data_url && (
+                              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                                <div
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: 16,
+                                    background: '#fff',
+                                    borderRadius: 12,
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+                                    border: '2px solid #25D366',
+                                  }}
+                                >
+                                  <img
+                                    src={webJsStatus.qr_data_url}
+                                    alt="WhatsApp QR Code"
+                                    style={{ width: 280, height: 280, display: 'block' }}
+                                  />
+                                </div>
+                                <Paragraph style={{ marginTop: 16, fontWeight: 500 }}>
+                                  📱 Open WhatsApp on your phone → Settings → Linked Devices → Link a Device
+                                </Paragraph>
+                                <Paragraph type="secondary">
+                                  Scan this QR code with your phone camera. The QR code refreshes automatically.
+                                </Paragraph>
+                              </div>
+                            )}
+
+                            {webJsStatus?.status === 'authenticated' && (
+                              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                <Spin size="large" />
+                                <Paragraph style={{ marginTop: 16 }}>Authenticated! Connecting...</Paragraph>
+                              </div>
+                            )}
+
+                            {webJsStatus?.status === 'connected' && (
+                              <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                                <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 12 }} />
+                                <Title level={4} style={{ color: '#52c41a', margin: 0 }}>Connected!</Title>
+                                {webJsStatus.phone_number && (
+                                  <Paragraph style={{ marginTop: 8 }}>
+                                    Phone: <Text strong>{webJsStatus.phone_number}</Text>
+                                  </Paragraph>
+                                )}
+                                <Button
+                                  danger
+                                  icon={<DisconnectOutlined />}
+                                  onClick={() => void handleDisconnectWebJs()}
+                                  style={{ marginTop: 16 }}
+                                >
+                                  Disconnect
+                                </Button>
+                              </div>
+                            )}
+
+                            {webJsStatus?.status === 'error' && (
+                              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                <CloseCircleOutlined style={{ fontSize: 48, color: '#ff4d4f', marginBottom: 12 }} />
+                                <Alert
+                                  type="error"
+                                  message="Connection Error"
+                                  description={webJsStatus.error || 'An unknown error occurred'}
+                                  style={{ maxWidth: 400, margin: '0 auto 16px' }}
+                                />
+                                <Button
+                                  type="primary"
+                                  icon={<ReloadOutlined />}
+                                  onClick={() => void handleInitializeWebJs()}
+                                  loading={webJsInitializing}
+                                >
+                                  Retry
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ),
+                      },
+                      {
+                        key: 'business_api',
+                        label: (
+                          <span>
+                            <ApiOutlined /> Business API
+                          </span>
+                        ),
+                        children: (
+                          <div style={{ padding: '20px 0' }}>
+                            <Alert
+                              type="info"
+                              showIcon
+                              message="Meta Cloud API"
+                              description="Use the official Meta Business API. Requires a Meta Business account, verified business, and approved WhatsApp Business number."
+                              style={{ marginBottom: 20 }}
+                            />
+
+                            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                              <Col xs={24} md={12}>
+                                <Form.Item label={t('whatsapp.businessNumberLabel')}>
+                                  <Input
+                                    placeholder="+971 50 123 4567"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    prefix={<PhoneOutlined />}
+                                  />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+
+                            <MetaConfigForm config={metaConfig} onChange={setMetaConfig} />
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
                 </div>
               ),
             },

@@ -33,9 +33,9 @@ export class WhatsAppChannel extends Model {
   tenant: Tenant;
 
   @Column({
-    type: DataType.ENUM('twilio_qr', 'business_api'),
+    type: DataType.ENUM('web_js', 'business_api'),
     allowNull: false,
-    defaultValue: 'twilio_qr',
+    defaultValue: 'web_js',
   })
   connection_method: string;
 
@@ -58,13 +58,6 @@ export class WhatsAppChannel extends Model {
   })
   status: string;
 
-  // Twilio credentials: { account_sid, auth_token, messaging_service_sid, twilio_number }
-  @Column({
-    type: DataType.JSONB,
-    allowNull: true,
-    defaultValue: {},
-  })
-  twilio_config: Record<string, unknown>;
 
   // Meta Cloud API credentials: { app_id, app_secret, phone_number_id, access_token, waba_id, verify_token }
   @Column({

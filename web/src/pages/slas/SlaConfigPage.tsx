@@ -18,8 +18,8 @@ export default function SlaConfigPage() {
   return (
     <div>
       <PageHeader
-        title="SLA Policies"
-        subtitle="Manage Service Level Agreements, working hours, and escalations"
+        title={t('sla.title', 'SLA Policies')}
+        subtitle={t('sla.subtitle', 'Manage Service Level Agreements, working hours, and escalations')}
       />
       <Card>
         <Tabs
@@ -31,7 +31,7 @@ export default function SlaConfigPage() {
               label: (
                 <span>
                   <ClockCircleOutlined />
-                  SLA Matrix
+                  {t('sla.matrix', 'SLA Matrix')}
                 </span>
               ),
               children: <SlaMatrixTab />,
@@ -41,7 +41,7 @@ export default function SlaConfigPage() {
               label: (
                 <span>
                   <CalendarOutlined />
-                  Working Calendars
+                  {t('sla.workingCalendars', 'Working Calendars')}
                 </span>
               ),
               children: <WorkingCalendarsTab />,
@@ -51,7 +51,7 @@ export default function SlaConfigPage() {
               label: (
                 <span>
                   <AlertOutlined />
-                  Escalations & Alerts
+                  {t('sla.escalations', 'Escalations & Alerts')}
                 </span>
               ),
               children: <EscalationsTab />,
@@ -61,7 +61,7 @@ export default function SlaConfigPage() {
               label: (
                 <span>
                   <PauseCircleOutlined />
-                  Status Pauses
+                  {t('sla.statusPauses', 'Status Pauses')}
                 </span>
               ),
               children: <StatusPausesTab />,
@@ -71,7 +71,7 @@ export default function SlaConfigPage() {
               label: (
                 <span>
                   <LineChartOutlined />
-                  Reporting Analytics
+                  {t('sla.analytics', 'Reporting Analytics')}
                 </span>
               ),
               children: <SlaAnalyticsTab />,

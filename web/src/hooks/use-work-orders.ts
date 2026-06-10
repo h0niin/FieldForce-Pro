@@ -3,7 +3,7 @@ import { workOrdersApi, CreateWorkOrderPayload, UpdateWorkOrderPayload } from '@
 import type { PageOptions } from '@/types/api.types';
 import { useNotificationStore } from '@/store/notification.store';
 
-export function useWorkOrders(params?: PageOptions) {
+export function useWorkOrders(params?: PageOptions & { status?: string, contact_id?: string, company_id?: string, asset_id?: string }) {
   return useQuery({
     queryKey: ['work-orders', params],
     queryFn: async () => {

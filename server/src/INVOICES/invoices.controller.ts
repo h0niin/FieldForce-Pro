@@ -21,6 +21,7 @@ import { CreateInvoiceDto } from './dto/invoices_create.dto';
 import { UpdateInvoiceDto } from './dto/invoices_update.dto';
 import { UpdateInvoiceStatusDto } from './dto/invoices_update_status.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
+import { InvoiceQueryDto } from './dto/invoices_query.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
 import { UserId } from '../shared/decorator/user.decorator';
@@ -39,7 +40,7 @@ export class InvoicesController {
   @Get()
   @Permissions('invoices:read')
   @ApiOperation({ summary: 'Get all invoices (paginated)' })
-  async findAll(@TenantId() tenantId: string, @Query() pageOptionsDto: PageOptionsDto) {
+  async findAll(@TenantId() tenantId: string, @Query() pageOptionsDto: InvoiceQueryDto) {
     const result = await this.invoicesService.findAllPaginated(tenantId, pageOptionsDto);
     return DataResponseDto.success(result.data, 'Invoices fetched successfully', {
       ...result.meta,

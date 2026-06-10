@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsUrl,
   IsObject,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateEstimateDto {
@@ -34,6 +35,13 @@ export class CreateEstimateDto {
   @IsUUID()
   @IsOptional()
   contact_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Asset ID',
+  })
+  @IsUUID()
+  @IsOptional()
+  asset_id?: string;
 
   @ApiPropertyOptional({
     description: 'Estimate number (auto-generated if not provided)',
@@ -105,4 +113,19 @@ export class CreateEstimateDto {
   @IsObject()
   @IsOptional()
   custom_fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: 'Flag to mark as template' })
+  @IsBoolean()
+  @IsOptional()
+  is_template?: boolean;
+
+  @ApiPropertyOptional({ description: 'Name of the template' })
+  @IsString()
+  @IsOptional()
+  template_name?: string;
+
+  @ApiPropertyOptional({ description: 'Estimate Type' })
+  @IsString()
+  @IsOptional()
+  estimate_type?: string;
 }

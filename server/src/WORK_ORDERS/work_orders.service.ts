@@ -6,6 +6,7 @@ import { CreateWorkOrderDto } from './dto/work_orders_create.dto';
 import { UpdateWorkOrderDto } from './dto/work_orders_update.dto';
 import { UpdateWorkOrderStatusDto } from './dto/work_orders_update_status.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
+import { WorkOrderQueryDto } from './dto/work_orders_query.dto';
 import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { KEYNAMES } from '../shared/constants/keynames';
@@ -14,6 +15,8 @@ import { DocumentApprovalsService } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVAL
 import { DocumentTypeEnum } from '../shared/enums/workflow.enum';
 import { NotificationsService } from '../NOTIFICATIONS/notifications.service';
 import { ServiceRequestSla } from '../SLA_MODULE/service_request_slas.entity';
+import { SlaService } from '../SLA_MODULE/sla.service';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 // Valid status transitions for work orders
 const STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -37,24 +40,65 @@ export class WorkOrdersService {
     private readonly workOrderRepository: typeof WorkOrder,
     private readonly documentApprovalsService: DocumentApprovalsService,
     private readonly notificationsService: NotificationsService,
+    private readonly slaService: SlaService,
+    private readonly activityLogsService: ActivityLogsService,
   ) { }
 
   async findAllPaginated(
     tenantId: string,
-    pageOptionsDto: PageOptionsDto,
+    pageOptionsDto: WorkOrderQueryDto,
   ): Promise<PageDto<WorkOrder>> {
     const where: Record<string, unknown> = {
       tenant_id: tenantId,
       is_deleted: false,
     };
 
+    if (pageOptionsDto.asset_id) {
+      where.asset_id = pageOptionsDto.asset_id;
+    }
+    if (pageOptionsDto.contact_id) {
+      where.contact_id = pageOptionsDto.contact_id;
+    }
+    if (pageOptionsDto.status) {
+      where.status = pageOptionsDto.status;
+    }
+    if (pageOptionsDto.priority) {
+      where.priority = pageOptionsDto.priority;
+    }
+    const andConditions: any[] = [];
+
+    if (pageOptionsDto.company_id) {
+      const { Contact } = await import('../CONTACTS/contacts.entity');
+      const { Asset } = await import('../ASSETS/assets.entity');
+      const contacts = await Contact.findAll({ where: { company_id: pageOptionsDto.company_id, tenant_id: tenantId }, attributes: ['id'] });
+      const assets = await Asset.findAll({ where: { company_id: pageOptionsDto.company_id, tenant_id: tenantId }, attributes: ['id'] });
+      
+      const contactIds = contacts.map(c => c.id);
+      const assetIds = assets.map(a => a.id);
+      
+      andConditions.push({
+        [Op.or]: [
+          ...(contactIds.length > 0 ? [{ contact_id: { [Op.in]: contactIds } }] : []),
+          ...(assetIds.length > 0 ? [{ asset_id: { [Op.in]: assetIds } }] : []),
+          // If no contacts or assets exist, we ensure the query returns empty by setting an impossible condition
+          ...(contactIds.length === 0 && assetIds.length === 0 ? [{ id: null }] : [])
+        ]
+      });
+    }
+
     if (pageOptionsDto.search) {
-      where[Op.or as unknown as string] = [
-        { wo_number: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { summary: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { description: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { category: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-      ];
+      andConditions.push({
+        [Op.or]: [
+          { wo_number: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { summary: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { description: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+          { category: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where[Op.and as unknown as string] = andConditions;
     }
 
     const { count, rows } = await this.workOrderRepository.findAndCountAll({
@@ -274,6 +318,40 @@ export class WorkOrdersService {
       slaBreachAt,
     });
 
+    try {
+      await this.slaService.attachSlaToWorkOrder(tenantId, workOrder);
+    } catch (error) {
+      this.logger.error(`Failed to attach SLA for WO ${workOrder.id}: ${(error as Error).message}`);
+    }
+
+    if (workOrder.contact_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Contact',
+          workOrder.contact_id,
+          'CREATED',
+          `Work Order #${workOrder.wo_number} was generated.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log WO to Contact: ${(err as Error).message}`);
+      }
+    }
+
+    if (workOrder.asset_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          workOrder.asset_id,
+          'CREATED',
+          `Work Order #${workOrder.wo_number} was assigned to this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log WO to Asset: ${(err as Error).message}`);
+      }
+    }
+
     // Fetch the created work order with includes
     return this.findById(workOrder.id, tenantId);
   }
@@ -284,7 +362,46 @@ export class WorkOrdersService {
     dto: UpdateWorkOrderDto,
   ): Promise<WorkOrder> {
     const workOrder = await this.findById(id, tenantId);
+    
+    // Check if asset_id changed or is present
+    const oldAssetId = workOrder.asset_id;
+
+    // Convert empty string asset_id to null to prevent UUID validation errors in DB
+    if (dto.asset_id === '') {
+      dto.asset_id = null as unknown as string;
+    }
+    if (dto.contact_id === '') {
+      dto.contact_id = null as unknown as string;
+    }
+    if (dto.location_id === '') {
+      dto.location_id = null as unknown as string;
+    }
+
     await workOrder.update(dto);
+
+    // Only log if explicitly provided and changed
+    if (dto.asset_id !== undefined && dto.asset_id !== oldAssetId) {
+      if (dto.asset_id) {
+        try {
+          await this.activityLogsService.logActivity(
+            tenantId,
+            'Asset',
+            dto.asset_id,
+            'UPDATED',
+            `Work Order #${workOrder.wo_number} was assigned to this asset.`,
+          );
+        } catch (err) {
+          this.logger.warn(`Failed to cross-log WO to Asset: ${(err as Error).message}`);
+        }
+      }
+    } else if (workOrder.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', workOrder.asset_id, 'UPDATED', `Work Order #${workOrder.wo_number} was updated.`).catch(err => this.logger.warn((err as Error).message));
+    }
+
+    if (workOrder.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', workOrder.contact_id, 'UPDATED', `Work Order #${workOrder.wo_number} was updated.`).catch(err => this.logger.warn((err as Error).message));
+    }
+
     return workOrder;
   }
 
@@ -308,6 +425,16 @@ export class WorkOrdersService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const workOrder = await this.findById(id, tenantId);
+    
+    // Global Pre-Delete Logging
+    if (workOrder.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', workOrder.contact_id, 'DELETED', `Work Order #${workOrder.wo_number} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+    if (workOrder.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', workOrder.asset_id, 'DELETED', `Work Order #${workOrder.wo_number} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+    // Note: workOrder does not have company_id directly
+
     await workOrder.update({ is_deleted: true });
   }
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useBlueprints, useDeleteBlueprint } from '@/hooks/use-blueprints';
 import PageHeader from '@/components/common/PageHeader';
@@ -59,26 +59,26 @@ export default function BlueprintListPage() {
       title: t('blueprints.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/blueprints/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('blueprints.columns.entityType'),
       dataIndex: 'entity_type',
       key: 'entity_type',
-      render: (type: string) => <Tag>{type}</Tag>,
+      render: (type: string, record: any) => <Tag>{type}</Tag>,
     },
     {
       title: t('blueprints.columns.description'),
       dataIndex: 'description',
       key: 'description',
-      render: (desc: string) => desc || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (desc: string, record: any) => desc || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('blueprints.columns.status'),
       dataIndex: 'is_active',
       key: 'is_active',
-      render: (isActive: boolean) => (
+      render: (isActive: boolean, record: any) => (
         <Tag color={isActive ? 'green' : 'default'}>
           {isActive ? t('blueprints.status.active') : t('blueprints.status.inactive')}
         </Tag>
@@ -88,7 +88,7 @@ export default function BlueprintListPage() {
       title: t('blueprints.columns.lastUpdated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
     },
     {
@@ -99,9 +99,7 @@ export default function BlueprintListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="blueprints:read">
-            <Tooltip title={t('blueprints.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/blueprints/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="blueprints:update">
             <Tooltip title={t('blueprints.actions.edit')}>

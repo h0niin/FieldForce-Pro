@@ -9,6 +9,8 @@ import {
   SearchOutlined,
   CheckOutlined,
   GlobalOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
@@ -27,6 +29,8 @@ export default function Header() {
   const user = useAuthStore((s) => s.user);
   const theme = useUiStore((s) => s.theme);
   const setTheme = useUiStore((s) => s.setTheme);
+  const collapsed = useUiStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const logoutMutation = useLogout();
   const { data: unreadNotifications } = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
@@ -100,6 +104,27 @@ export default function Header() {
         zIndex: 99,
       }}
     >
+      {/* Far Left: Sidebar Toggle */}
+      <Button
+        id="sidebar-toggle-btn"
+        type="text"
+        onClick={toggleSidebar}
+        icon={
+          collapsed
+            ? <MenuUnfoldOutlined style={{ fontSize: 18 }} />
+            : <MenuFoldOutlined style={{ fontSize: 18 }} />
+        }
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 8,
+          marginRight: 16,
+          flexShrink: 0,
+          color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+          transition: 'background 0.2s, color 0.2s',
+        }}
+      />
+
       {/* Left: Search Bar */}
       <div style={{ flex: 1, maxWidth: 400 }}>
         <Input

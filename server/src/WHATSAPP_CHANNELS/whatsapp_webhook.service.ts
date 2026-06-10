@@ -1,16 +1,17 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { WhatsAppChannel } from './whatsapp_channels.entity';
 import { WhatsAppConversation } from './whatsapp_conversations.entity';
 import { WhatsAppAiService, WhatsAppAiResponse } from './whatsapp_ai.service';
 import { WhatsAppChannelsService } from './whatsapp_channels.service';
-import { TwilioWebhookPayload, MetaWebhookPayload } from './dto/whatsapp-webhook.dto';
+import { WhatsAppWebJsService } from './whatsapp_webjs.service';
+import { MetaWebhookPayload } from './dto/whatsapp-webhook.dto';
 import { ServiceRequest } from '../SERVICE_REQUESTS/service_requests.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { KEYNAMES } from '../shared/constants/keynames';
 import { Op } from 'sequelize';
 
 @Injectable()
-export class WhatsAppWebhookService {
+export class WhatsAppWebhookService implements OnModuleInit {
   private readonly logger = new Logger(WhatsAppWebhookService.name);
 
   constructor(
@@ -24,40 +25,62 @@ export class WhatsAppWebhookService {
     private readonly contactRepo: typeof Contact,
     private readonly aiService: WhatsAppAiService,
     private readonly channelsService: WhatsAppChannelsService,
+    private readonly webJsService: WhatsAppWebJsService,
   ) {}
 
-  // ─── Twilio webhook handler ───────────────────────────────────────────────────
-
-  async handleTwilioWebhook(payload: TwilioWebhookPayload): Promise<string> {
-    const from = payload.From?.replace('whatsapp:', '') || '';
-    const to = payload.To?.replace('whatsapp:', '') || '';
-    const body = payload.Body || '';
-    const profileName = payload.ProfileName || '';
-    const mediaUrl = payload.MediaUrl0 || null;
-
-    this.logger.log(`Twilio webhook: from=${from}, to=${to}, body="${body.substring(0, 50)}..."`);
-
-    // Find the channel by the Twilio number (the "To" number)
-    const channel = await this.channelsService.findChannelByPhoneNumber(to);
-    if (!channel) {
-      this.logger.warn(`No WhatsApp channel configured for number ${to}`);
-      return 'No channel configured';
+  async onModuleInit() {
+    if (process.env.NODE_ENV === 'test') {
+      this.logger.log('Test environment detected, skipping WhatsApp Web JS auto-initialization');
+      return;
     }
 
-    // Check blocked numbers
-    if (this.isBlocked(channel, from)) {
-      this.logger.warn(`Blocked number ${from} attempted to message tenant ${channel.tenant_id}`);
-      return 'Blocked';
+    try {
+      const activeChannels = await this.channelRepo.findAll({
+        where: {
+          connection_method: 'web_js',
+          is_active: true,
+        },
+      });
+
+      if (activeChannels.length === 0) {
+        return;
+      }
+
+      this.logger.log(`Found ${activeChannels.length} active WhatsApp Web JS channel(s) to initialize on startup.`);
+
+      for (const channel of activeChannels) {
+        const tenantId = channel.tenant_id;
+        this.logger.log(`Auto-initializing WhatsApp Web JS client for tenant: ${tenantId}`);
+
+        this.webJsService
+          .initializeClient(
+            tenantId,
+            // onConnected callback
+            async (phoneNumber: string) => {
+              await this.channelsService.upsertChannel(tenantId, {
+                connection_method: 'web_js',
+                phone_number: phoneNumber,
+                is_active: true,
+              } as any);
+              const ch = await this.channelsService.getChannel(tenantId);
+              if (ch) await ch.update({ status: 'connected' });
+            },
+            // onMessage callback
+            async (from: string, body: string, profileName: string, mediaUrl: string | null) => {
+              const ch = await this.channelsService.getChannel(tenantId);
+              if (!ch) return 'Channel not configured';
+              return this.processWebJsMessage(ch, from, body, profileName, mediaUrl);
+            },
+          )
+          .catch((err) => {
+            this.logger.error(`Failed to auto-initialize Web JS client for tenant ${tenantId}: ${err.message}`);
+          });
+      }
+    } catch (err) {
+      this.logger.error(`Error during WhatsApp Web JS auto-initialization: ${err.message}`);
     }
-
-    // Process the message
-    const aiResponse = await this.processIncomingMessage(channel, from, body, profileName, mediaUrl);
-
-    // Send the reply via Twilio
-    await this.sendTwilioMessage(channel, from, aiResponse.reply);
-
-    return aiResponse.reply;
   }
+
 
   // ─── Meta webhook handler ────────────────────────────────────────────────────
 
@@ -100,6 +123,26 @@ export class WhatsAppWebhookService {
         }
       }
     }
+  }
+
+  // ─── Web JS message handler (called from controller via WebJS service) ──────
+
+  async processWebJsMessage(
+    channel: WhatsAppChannel,
+    from: string,
+    body: string,
+    profileName: string,
+    mediaUrl: string | null,
+  ): Promise<string> {
+    this.logger.log(`Web JS message: from=${from}, body="${body.substring(0, 50)}..."`);
+
+    if (this.isBlocked(channel, from)) {
+      this.logger.warn(`Blocked number ${from} attempted to message tenant ${channel.tenant_id}`);
+      return 'Blocked';
+    }
+
+    const aiResponse = await this.processIncomingMessage(channel, from, body, profileName, mediaUrl);
+    return aiResponse.reply;
   }
 
   // ─── Core message processing ──────────────────────────────────────────────────
@@ -200,9 +243,11 @@ export class WhatsAppWebhookService {
         updateData.status = 'completed';
 
         // Override the AI reply with the confirmation message including ticket number
-        const confirmation = (channel.confirmation_message || '✅ Your service request has been created.')
-          .replace('{ticket_number}', sr.request_number || sr.id);
-        aiResponse.reply = `${confirmation} Your ticket number is **${sr.request_number}**. Our team will contact you shortly.`;
+        let confirmation = channel.confirmation_message || '✅ Your service request has been created. Your ticket number is **{ticket_number}**. Our team will contact you shortly.';
+        if (!confirmation.includes('{ticket_number}')) {
+          confirmation = `${confirmation} (Ticket #${sr.request_number})`;
+        }
+        aiResponse.reply = confirmation.replace(/{ticket_number}/g, sr.request_number || sr.id);
 
         // Update the last message in history with the actual confirmation
         messages[messages.length - 1].content = aiResponse.reply;
@@ -310,34 +355,6 @@ export class WhatsAppWebhookService {
 
   // ─── Outbound messaging ───────────────────────────────────────────────────────
 
-  private async sendTwilioMessage(
-    channel: WhatsAppChannel,
-    to: string,
-    body: string,
-  ): Promise<void> {
-    const config = channel.twilio_config as Record<string, string>;
-    if (!config?.account_sid || !config?.auth_token) {
-      this.logger.warn('Twilio not configured, skipping outbound message');
-      return;
-    }
-
-    try {
-      const twilioModule = await import('twilio');
-      const twilioInit = twilioModule.default || twilioModule;
-      const client = (twilioInit as any)(config.account_sid, config.auth_token);
-      const fromNumber = config.twilio_number || '+14155238886';
-
-      await client.messages.create({
-        body,
-        from: `whatsapp:${fromNumber}`,
-        to: `whatsapp:${to}`,
-      });
-
-      this.logger.log(`Twilio message sent to ${to}`);
-    } catch (error) {
-      this.logger.error(`Failed to send Twilio message: ${error.message}`);
-    }
-  }
 
   private async sendMetaMessage(
     channel: WhatsAppChannel,
@@ -386,7 +403,7 @@ export class WhatsAppWebhookService {
     if (!phoneNumberId) return null;
 
     const channels = await this.channelRepo.findAll({
-      where: { connection_method: 'business_api', is_active: true },
+      where: { is_active: true },
     });
 
     for (const ch of channels) {

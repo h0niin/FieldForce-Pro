@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Tag, Space, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
@@ -56,9 +56,11 @@ export default function ContactListPage() {
       title: t('contactList.name'),
       key: 'name',
       render: (_, record) => (
-        <span style={{ fontWeight: 500 }}>
-          {record.first_name} {record.last_name}
-        </span>
+        <Link to={`/contacts/${record.id}`}>
+          <span style={{ fontWeight: 500 }}>
+            {record.first_name} {record.last_name}
+          </span>
+        </Link>
       ),
       sorter: (a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`),
     },
@@ -121,23 +123,17 @@ export default function ContactListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="contacts:read">
-            <Tooltip title={t('contactList.view')}>
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => navigate(`/contacts/${record.id}`)}
-              />
-            </Tooltip>
-          </PermissionGuard>
+          {/* Removed view button */}
           <PermissionGuard permission="contacts:update">
             <Tooltip title={t('contactList.edit')}>
               <Button
                 type="text"
                 icon={<EditOutlined />}
                 size="small"
-                onClick={() => navigate(`/contacts/${record.id}/edit`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/contacts/${record.id}/edit`);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -148,7 +144,10 @@ export default function ContactListPage() {
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
-                onClick={() => handleDelete(record)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(record);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -190,6 +189,10 @@ export default function ContactListPage() {
         dataSource={contacts}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/contacts/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

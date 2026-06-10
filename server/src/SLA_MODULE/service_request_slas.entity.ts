@@ -8,6 +8,8 @@ import {
 } from 'sequelize-typescript';
 import { Tenant } from '../TENANTS/tenants.entity';
 import { ServiceRequest } from '../SERVICE_REQUESTS/service_requests.entity';
+import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
+import { Estimate } from '../ESTIMATES/estimates.entity';
 import { SlaPolicy } from './sla_policies.entity';
 
 @Table({
@@ -36,12 +38,32 @@ export class ServiceRequestSla extends Model {
   @ForeignKey(() => ServiceRequest)
   @Column({
     type: DataType.UUID,
-    allowNull: false,
+    allowNull: true,
   })
   service_request_id: string;
 
   @BelongsTo(() => ServiceRequest)
   service_request: ServiceRequest;
+
+  @ForeignKey(() => WorkOrder)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  work_order_id: string;
+
+  @BelongsTo(() => WorkOrder)
+  work_order: WorkOrder;
+
+  @ForeignKey(() => Estimate)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  estimate_id: string;
+
+  @BelongsTo(() => Estimate)
+  estimate: Estimate;
 
   @ForeignKey(() => SlaPolicy)
   @Column({
@@ -123,6 +145,30 @@ export class ServiceRequestSla extends Model {
     defaultValue: false,
   })
   is_deleted: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  response_escalation_triggered: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  resolution_escalation_triggered: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  response_warning_sent: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  resolution_warning_sent: boolean;
 
   @Column({
     type: DataType.DATE,

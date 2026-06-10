@@ -6,6 +6,17 @@
 
 ---
 
+## Analytics
+
+| Capability | SOP File |
+|---|---|
+| Ask a Data Question in Natural Language (NL Analytics) | [WF-NL-ask-analytics-question](workflows/WF-NL-ask-analytics-question.md) |
+| Run a Standard Report | [WF-REP-run-standard-report](workflows/WF-REP-run-standard-report.md) |
+| Create a Custom Report | [WF-REP-create-custom-report](workflows/WF-REP-create-custom-report.md) |
+| Add a Dashboard Widget | [WF-DASH-add-widget](workflows/WF-DASH-add-widget.md) |
+
+---
+
 ## Agreements
 
 | Capability | SOP File |
@@ -188,11 +199,28 @@
 
 ---
 
+## Blueprints
+
+| Capability | SOP File |
+|---|---|
+| Create a Blueprint (custom workflow) | [WF-BP-create-blueprint](workflows/WF-BP-create-blueprint.md) |
+
+---
+
+## Customer Portal
+
+| Capability | SOP File |
+|---|---|
+| Set Up and Use the Customer Portal | [WF-PORTAL-setup-customer-portal](workflows/WF-PORTAL-setup-customer-portal.md) |
+
+---
+
 ## Roles
 
 | Capability | SOP File |
 |---|---|
 | Create a Role | [WF-ROLE-create-role](workflows/WF-ROLE-create-role.md) |
+| Create a Custom Role with Specific Permissions | [WF-ROLE-create-custom-role](workflows/WF-ROLE-create-custom-role.md) |
 
 ---
 
@@ -228,6 +256,14 @@
 
 ---
 
+## Security & Audit Logs
+
+| Capability | SOP File |
+|---|---|
+| View Audit Logs | [WF-SEC-view-audit-logs](workflows/WF-SEC-view-audit-logs.md) |
+
+---
+
 ## Settings
 
 | Capability | SOP File |
@@ -252,10 +288,12 @@
 
 ---
 
-## Trips
+## Tracking & Trips
 
 | Capability | SOP File |
 |---|---|
+| View Live Technician Locations on Map | [WF-TRACK-view-live-agents](workflows/WF-TRACK-view-live-agents.md) |
+| View a Technician's Trip History | [WF-TRACK-view-trip-history](workflows/WF-TRACK-view-trip-history.md) |
 | View / Filter / Detail Trip History | [WF-TRIP-view-trip-history](workflows/WF-TRIP-view-trip-history.md) |
 
 ---
@@ -277,11 +315,21 @@
 
 ---
 
+## Voice Notes & AI Vision
+
+| Capability | SOP File |
+|---|---|
+| Record a Voice Note on a Work Order | [WF-VOICE-record-voice-note](workflows/WF-VOICE-record-voice-note.md) |
+| Use AI Vision to Analyse a Document or Photo | [WF-VIS-analyse-document](workflows/WF-VIS-analyse-document.md) |
+
+---
+
 ## Webforms
 
 | Capability | SOP File |
 |---|---|
 | Create / Edit / Toggle / Delete / Embed Webform | [WF-WF-manage-webforms](workflows/WF-WF-manage-webforms.md) |
+| Create a Webform for Customer Submissions | [WF-WF-create-webform](workflows/WF-WF-create-webform.md) |
 
 ---
 
@@ -293,15 +341,27 @@
 
 ---
 
+## Workforce Management
+
+| Capability | SOP File |
+|---|---|
+| Create a Crew | [WF-WRK-create-crew](workflows/WF-WRK-create-crew.md) |
+| Request Time Off | [WF-WRK-request-time-off](workflows/WF-WRK-request-time-off.md) |
+
+---
+
 ## Module Coverage Summary
 
 | Module | SOPs | Status |
 |---|---|---|
 | Agreements | 1 | ✅ Complete |
+| Analytics / NL Analytics | 4 | ✅ Complete |
 | Assets | 7 | ✅ Complete |
+| Blueprints | 1 | ✅ Complete |
 | Catalog | 2 | ✅ Complete |
 | Companies | 4 | ✅ Complete |
 | Contacts | 5 | ✅ Complete |
+| Customer Portal | 1 | ✅ Complete |
 | Customization | 3 | ✅ Complete |
 | Dashboard | 1 | ✅ Complete |
 | Estimates | 8 | ✅ Complete |
@@ -312,16 +372,56 @@
 | Notifications | 1 | ✅ Complete |
 | Payments | 5 | ✅ Complete |
 | Pricebook | 4 | ✅ Complete |
-| Reports | 1 | ✅ Complete |
+| Reports | 2 | ✅ Complete |
 | Reviews | 2 | ✅ Complete |
-| Roles | 1 | ✅ Complete |
+| Roles | 2 | ✅ Complete |
 | Scheduling | 6 | ✅ Complete |
+| Security & Audit Logs | 1 | ✅ Complete |
 | Service Locations | 4 | ✅ Complete |
 | Service Requests | 1 | ✅ Complete |
 | Settings | 4 | ✅ Complete |
 | Timesheets | 6 | ✅ Complete |
-| Trips | 1 | ✅ Complete |
+| Tracking & Trips | 3 | ✅ Complete |
 | Users | 10 | ✅ Complete |
-| Webforms | 1 | ✅ Complete |
+| Voice Notes & AI Vision | 2 | ✅ Complete |
+| Webforms | 2 | ✅ Complete |
 | Work Orders | 1 | ✅ Complete |
-| **TOTAL** | **98** | |
+| Workforce Management | 2 | ✅ Complete |
+| **TOTAL** | **115+** | |
+
+---
+
+## Overview Guides (Topic Files)
+
+In addition to workflow SOPs, the knowledge base includes topic overview files for all major modules:
+
+| File | Covers |
+|------|--------|
+| `00-getting-started.md` | Onboarding, setup checklist, first steps |
+| `01-platform-overview.md` | Navigation, roles, status flows |
+| `02-work-orders.md` | Work order lifecycle |
+| `03-service-requests.md` | Service request flow |
+| `04-scheduling-dispatch.md` | Dispatch board, calendar, map |
+| `05-invoicing-payments.md` | Invoicing and payments |
+| `06-mobile-app.md` | Mobile app guide |
+| `07-user-roles-permissions.md` | User management |
+| `08-settings-customization.md` | Settings and automation |
+| `09-estimates.md` | Estimates/quotes lifecycle |
+| `10-assets.md` | Asset management and health |
+| `11-contacts-companies.md` | CRM — contacts, companies, locations |
+| `12-job-sheets.md` | Checklists and job sheets |
+| `13-timesheets-trips.md` | Time tracking and GPS trips |
+| `14-workforce-management.md` | Crews, shifts, territories, time off, skills |
+| `15-catalog-pricebook.md` | Services, parts, pricebook |
+| `16-service-agreements.md` | Contracts and SLA policies |
+| `17-blueprints.md` | Custom workflow builder |
+| `18-reports-analytics.md` | Reporting, dashboards, NL analytics |
+| `19-customer-portal.md` | Customer self-service portal |
+| `20-communications-notifications.md` | Communications and notifications |
+| `21-webforms-reviews.md` | Webforms and customer reviews |
+| `22-maintenance-plans.md` | Recurring maintenance and equipment health |
+| `23-live-tracking.md` | Real-time GPS tracking |
+| `24-security-audit.md` | 2FA, security settings, audit logs |
+| `25-voice-vision-ai.md` | Voice notes and AI Vision / OCR |
+| `26-fsm-glossary.md` | Full FSM terminology glossary |
+| `27-faq-new-users.md` | Common new-user questions and answers |

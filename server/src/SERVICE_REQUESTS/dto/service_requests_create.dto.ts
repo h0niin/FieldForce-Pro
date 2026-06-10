@@ -12,6 +12,11 @@ export class CreateServiceRequestDto {
   @IsOptional()
   location_id?: string;
 
+  @ApiPropertyOptional({ description: 'Asset ID', example: 'uuid' })
+  @IsUUID()
+  @IsOptional()
+  asset_id?: string;
+
   @ApiProperty({ description: 'Subject of the service request', example: 'AC not cooling' })
   @IsString()
   subject: string;
@@ -24,18 +29,25 @@ export class CreateServiceRequestDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Priority ID', example: 'uuid' })
+  @ApiPropertyOptional({ description: 'Priority ID (UUID, legacy)', example: 'uuid' })
   @IsUUID()
   @IsOptional()
   priority_id?: string;
 
-  @ApiProperty({ description: 'Category ID', example: 'uuid' })
-  @IsUUID()
-  category_id: string;
+  @ApiPropertyOptional({ description: 'Priority value e.g. LOW, MEDIUM, HIGH, CRITICAL', example: 'MEDIUM' })
+  @IsString()
+  @IsOptional()
+  priority?: string;
 
-  @ApiProperty({ description: 'Sub Category ID', example: 'uuid' })
+  @ApiPropertyOptional({ description: 'Category ID', example: 'uuid' })
   @IsUUID()
-  sub_category_id: string;
+  @IsOptional()
+  category_id?: string;
+
+  @ApiPropertyOptional({ description: 'Sub Category ID', example: 'uuid' })
+  @IsUUID()
+  @IsOptional()
+  sub_category_id?: string;
 
   @ApiPropertyOptional({
     description: 'Status',

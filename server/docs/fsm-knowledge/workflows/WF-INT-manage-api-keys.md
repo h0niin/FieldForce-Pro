@@ -10,7 +10,7 @@ Integrations — `ApiKeysPage` (`/integrations/api-keys`)
 
 ## Steps — View API Keys
 
-1. In the left sidebar, click **API Keys** (under Integrations). The browser navigates to `/integrations/api-keys`.
+1. In the left sidebar, click **API Keys** (a top-level item in the sidebar). The browser navigates to the API Keys page.
 2. The page header reads **"API Keys"** with subtitle "Manage API keys for external integrations and inbound service requests".
 3. The table shows columns: **Name**, **Key Prefix** (e.g., `abc123…`), **Scopes** (blue tags), **Status** (Active green / Revoked red), **Last Used**, **Expires**, **Actions**.
 

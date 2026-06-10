@@ -226,7 +226,7 @@ export function useTerminateSession() {
       if (error?.response?.status === 401) {
         logout();
         queryClient.clear();
-        window.location.href = '/login';
+        window.location.href = window.location.origin + '/login';
       } else {
         addNotification({ type: 'error', message: 'Failed to terminate session', description: getApiErrorMessage(error) });
       }

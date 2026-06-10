@@ -117,7 +117,7 @@ export default function JobSheetListPage() {
       title: t('jobSheetList.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {formatStatus(status)}
         </Tag>
@@ -127,14 +127,14 @@ export default function JobSheetListPage() {
       title: t('jobSheetList.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
       title: t('jobSheetList.updated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
     },
     {
       title: t('jobSheetList.actions'),
@@ -148,7 +148,7 @@ export default function JobSheetListPage() {
               type="text"
               icon={<EyeOutlined />}
               size="small"
-              onClick={() => navigate(`/job-sheets/${record.id}`)}
+              onClick={(e) => { e.stopPropagation(); navigate(`/job-sheets/${record.id}`); }}
             />
           </Tooltip>
           {record.status === 'draft' && (
@@ -158,12 +158,12 @@ export default function JobSheetListPage() {
                 icon={<PlusOutlined />}
                 size="small"
                 style={{ color: '#1677ff' }}
-                onClick={() => navigate(`/job-sheets/${record.id}/edit`)}
+                onClick={(e) => { e.stopPropagation(); navigate(`/job-sheets/${record.id}/edit`); }}
               />
             </Tooltip>
           )}
           {activeTab === 'approvals' && approvalMap[record.id] && (
-            <>
+            <div onClick={(e) => e.stopPropagation()} style={{ display: 'inline-block' }}>
               <Popconfirm
                 title={t('jobSheetList.approveConfirm')}
                 onConfirm={() =>
@@ -207,7 +207,7 @@ export default function JobSheetListPage() {
                   />
                 </Tooltip>
               </Popconfirm>
-            </>
+            </div>
           )}
         </Space>
       ),
@@ -249,6 +249,10 @@ export default function JobSheetListPage() {
         dataSource={instances}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/job-sheets/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: currentPage,
           pageSize: currentPageSize,

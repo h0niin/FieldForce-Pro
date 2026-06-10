@@ -9,9 +9,10 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpsertWhatsAppChannelDto {
-  @ApiProperty({ enum: ['twilio_qr', 'business_api'] })
-  @IsEnum(['twilio_qr', 'business_api'])
-  connection_method: string;
+  @ApiPropertyOptional({ enum: ['web_js', 'business_api'] })
+  @IsOptional()
+  @IsEnum(['web_js', 'business_api'])
+  connection_method?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -23,10 +24,6 @@ export class UpsertWhatsAppChannelDto {
   @IsString()
   display_name?: string;
 
-  @ApiPropertyOptional({ description: 'Twilio credentials JSON' })
-  @IsOptional()
-  @IsObject()
-  twilio_config?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Meta Cloud API credentials JSON' })
   @IsOptional()

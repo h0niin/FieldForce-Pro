@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function listModels() {
   try {
     const models = await genAI.getGenerativeModel({ model: 'gemini-pro' });
-    // wait, list models is not easily exposed. we can just try "gemini-2.0-flash" or "gemini-2.5-flash".
+    // wait, list models is not easily exposed. we can just try "gemini-2.0-flash" or "gemini-2.0-flash".
     console.log('Testing gemini-2.0-flash...');
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const res = await model.generateContent('hi');

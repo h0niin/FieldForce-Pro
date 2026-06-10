@@ -1,0 +1,8 @@
+[
+  { "c": "control", "auth": true, "q": "How do I create a work order?" },
+  { "c": "blueprint", "auth": true, "q": "What is a blueprint?" },
+  { "c": "blueprint", "auth": true, "q": "How do I create a new blueprint workflow?" },
+  { "c": "pricebook", "auth": true, "q": "What is a pricebook?" },
+  { "c": "pricebook", "auth": true, "q": "How do I add a new pricebook item?" },
+  { "c": "agreement", "auth": true, "q": "How do I create a service agreement?" }
+]

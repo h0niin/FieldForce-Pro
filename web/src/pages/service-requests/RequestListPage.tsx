@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Select, Tabs, Modal, Input, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, FilterOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useServiceRequests, useDeleteServiceRequest, useMyPendingApprovals, useProcessServiceRequestApproval, useQueue, useUpdatePriority, useApproveAndConvert, useUpdateServiceRequestStatus } from '@/hooks/use-service-requests';
 import { serviceRequestsApi } from '@/api/service-requests.api';
 import { usePermission } from '@/components/permissions/usePermission';
 import { useAuthStore } from '@/store/auth.store';
+import { useAllCompanies } from '@/hooks/use-companies';
 import type { ServiceRequest } from '@/types/models.types';
 import PageHeader from '@/components/common/PageHeader';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -17,7 +18,14 @@ import SearchFilter from '@/components/common/SearchFilter';
 import { SlaCountdownCell } from '@/components/common/SlaCountdownCell';
 
 const priorityColors: Record<string, string> = {
+  // uppercase values (backend constraint)
+  CRITICAL: 'red',
+  HIGH: 'orange',
+  MEDIUM: 'blue',
+  LOW: 'default',
+  // legacy lowercase
   urgent: 'red',
+  critical: 'red',
   high: 'orange',
   medium: 'blue',
   low: 'default',
@@ -55,6 +63,9 @@ export default function RequestListPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     searchParams.get('status') || undefined,
   );
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+
+  const { data: allCompanies = [] } = useAllCompanies();
 
   // Approval modal state
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
@@ -210,10 +221,12 @@ export default function RequestListPage() {
       dataIndex: 'request_number',
       key: 'request_number',
       width: 140,
-      render: (num: string) => (
-        <span style={{ fontWeight: 600, fontFamily: 'monospace', color: '#1890ff' }}>
-          {num || '-'}
-        </span>
+      render: (num: string, record: any) => (
+        <Link to={`/service-requests/${record.id}`}>
+          <span style={{ fontWeight: 600, fontFamily: 'monospace', color: '#1890ff' }}>
+            {num || '-'}
+          </span>
+        </Link>
       ),
       sorter: (a, b) => (a.request_number || '').localeCompare(b.request_number || ''),
     },
@@ -221,16 +234,16 @@ export default function RequestListPage() {
       title: t('serviceRequests.table.subject'),
       dataIndex: 'subject',
       key: 'subject',
-      render: (subject: string) => <span style={{ fontWeight: 500 }}>{subject}</span>,
+      render: (subject: string, record: any) => <span style={{ fontWeight: 500 }}>{subject}</span>,
       sorter: (a, b) => a.subject.localeCompare(b.subject),
     },
     {
       title: t('serviceRequests.table.priority'),
       dataIndex: 'priority',
       key: 'priority',
-      render: (priority: string) => (
+      render: (priority: string, record: any) => (
         <Tag color={priorityColors[priority] || 'default'}>
-          {priority?.charAt(0).toUpperCase() + priority?.slice(1)}
+          {priority ? t(`priorities.${priority.charAt(0).toUpperCase() + priority.slice(1)}`, priority.charAt(0).toUpperCase() + priority.slice(1)) : '-'}
         </Tag>
       ),
     },
@@ -239,7 +252,7 @@ export default function RequestListPage() {
       dataIndex: 'status',
       key: 'status',
       width: 160,
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'} style={{ whiteSpace: 'nowrap' }}>
           {statusLabelsMap[status] || status?.replace(/_/g, ' ').replace(/\\b\\w/g, (l) => l.toUpperCase())}
         </Tag>
@@ -250,7 +263,7 @@ export default function RequestListPage() {
       dataIndex: 'channel',
       key: 'channel',
       width: 120,
-      render: (channel: string) =>
+      render: (channel: string, record: any) =>
         channel ? (
           <Tag style={{ whiteSpace: 'nowrap' }}>{channel.charAt(0).toUpperCase() + channel.slice(1)}</Tag>
         ) : (
@@ -258,11 +271,20 @@ export default function RequestListPage() {
         ),
     },
     {
+      title: 'Company',
+      key: 'company',
+      render: (_, record) => {
+        if (!record.contact?.company_id) return <span style={{ opacity: 0.5 }}>-</span>;
+        const company = allCompanies.find((c) => c.id === record.contact!.company_id);
+        return company?.name ?? <span style={{ opacity: 0.5 }}>-</span>;
+      },
+    },
+    {
       title: t('serviceRequests.table.customer'),
       key: 'contact',
       render: (_, record) =>
         record.contact
-          ? `${record.contact.first_name} ${record.contact.last_name}`
+          ? `${record.contact.first_name} ${record.contact.last_name || ''}`
           : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
@@ -287,7 +309,7 @@ export default function RequestListPage() {
       title: t('serviceRequests.table.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -313,19 +335,19 @@ export default function RequestListPage() {
       title: t('serviceRequests.table.actions'),
       key: 'actions',
       fixed: 'right',
-      width: 150,
+      width: 160,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('common.view')}>
+          <Tooltip title={t('common.view', 'View')}>
             <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}`)} />
           </Tooltip>
           {isAdmin && (
             <>
               <Tooltip title={t('common.edit')}>
-                <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}/edit`)} />
+                <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/service-requests/${record.id}/edit`); }} />
               </Tooltip>
               <Tooltip title={t('common.delete')}>
-                <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+                <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
               </Tooltip>
             </>
           )}
@@ -344,9 +366,6 @@ export default function RequestListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('common.viewDetails')}>
-            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}`)} />
-          </Tooltip>
         </Space>
       ),
     },
@@ -362,9 +381,6 @@ export default function RequestListPage() {
       width: 200,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('common.view')}>
-            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}`)} />
-          </Tooltip>
           <Tooltip title={t('common.approve')}>
             <Button
               type="text"
@@ -445,17 +461,19 @@ export default function RequestListPage() {
       dataIndex: 'request_number',
       key: 'request_number',
       width: 140,
-      render: (num: string) => (
-        <span style={{ fontWeight: 600, fontFamily: 'monospace', color: '#1890ff' }}>
-          {num || '-'}
-        </span>
+      render: (num: string, record: any) => (
+        <Link to={`/service-requests/${record.id}`}>
+          <span style={{ fontWeight: 600, fontFamily: 'monospace', color: '#1890ff' }}>
+            {num || '-'}
+          </span>
+        </Link>
       ),
     },
     {
       title: t('serviceRequests.table.subject'),
       dataIndex: 'subject',
       key: 'subject',
-      render: (subject: string) => <span style={{ fontWeight: 500 }}>{subject}</span>,
+      render: (subject: string, record: any) => <span style={{ fontWeight: 500 }}>{subject}</span>,
     },
     {
       title: t('serviceRequests.table.priority'),
@@ -481,7 +499,7 @@ export default function RequestListPage() {
       dataIndex: 'status',
       key: 'status',
       width: 160,
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'} style={{ whiteSpace: 'nowrap' }}>
           {statusLabelsMap[status] || status?.replace(/_/g, ' ').replace(/\\b\\w/g, (l) => l.toUpperCase())}
         </Tag>
@@ -491,7 +509,7 @@ export default function RequestListPage() {
       title: t('serviceRequests.table.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
     },
     {
       title: 'Response SLA',
@@ -514,9 +532,6 @@ export default function RequestListPage() {
       width: 160,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('common.view')}>
-            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/service-requests/${record.id}`)} />
-          </Tooltip>
           {isAdmin && !['converted_to_wo', 'closed', 'spam', 'rejected'].includes(record.status) && (
             <>
               <Tooltip title={t('serviceRequests.approveAndConvertTooltip')}>
@@ -526,7 +541,7 @@ export default function RequestListPage() {
                   size="small"
                   style={{ color: '#52c41a' }}
                   loading={approveAndConvert.isPending}
-                  onClick={() => handleApproveFromQueue(record)}
+                  onClick={(e) => { e.stopPropagation(); handleApproveFromQueue(record); }}
                 />
               </Tooltip>
               <Tooltip title={t('common.reject')}>
@@ -535,7 +550,7 @@ export default function RequestListPage() {
                   icon={<CloseCircleOutlined />}
                   size="small"
                   danger
-                  onClick={() => handleRejectFromQueue(record)}
+                  onClick={(e) => { e.stopPropagation(); handleRejectFromQueue(record); }}
                 />
               </Tooltip>
             </>
@@ -577,22 +592,37 @@ export default function RequestListPage() {
           style={{ width: 400 }}
         />
         {activeTab === 'all' && (
-          <Select
-            placeholder={t('serviceRequests.filterByStatusPlaceholder')}
-            allowClear
-            value={statusFilter}
-            onChange={(value) => {
-              setStatusFilter(value);
-              setPage(1);
-              if (value) {
-                setSearchParams({ status: value }, { replace: true });
-              } else {
-                setSearchParams({}, { replace: true });
-              }
-            }}
-            options={statusOptions}
-            style={{ width: 200 }}
-          />
+          <>
+            <Select
+              placeholder={t('serviceRequests.filterByStatusPlaceholder')}
+              allowClear
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPage(1);
+                if (value) {
+                  setSearchParams({ status: value }, { replace: true });
+                } else {
+                  setSearchParams({}, { replace: true });
+                }
+              }}
+              options={statusOptions}
+              style={{ width: 180 }}
+            />
+            <Select
+              placeholder="Filter by Priority"
+              allowClear
+              value={priorityFilter}
+              onChange={(value) => { setPriorityFilter(value); setPage(1); }}
+              style={{ width: 160 }}
+              options={[
+                { value: 'LOW', label: 'Low' },
+                { value: 'MEDIUM', label: 'Medium' },
+                { value: 'HIGH', label: 'High' },
+                { value: 'CRITICAL', label: 'Critical' },
+              ]}
+            />
+          </>
         )}
       </div>
 
@@ -603,6 +633,10 @@ export default function RequestListPage() {
           scroll={{ x: 1200 }}
           rowKey="id"
           loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => navigate(`/service-requests/${record.id}`),
+            style: { cursor: 'pointer' },
+          })}
         pagination={{
           current: page,
           pageSize,

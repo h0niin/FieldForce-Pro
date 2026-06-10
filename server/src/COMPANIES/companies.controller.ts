@@ -16,6 +16,12 @@ import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
 import { Permissions } from '../shared/decorator/permission.decorator';
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+
+class CreateCompanyTypeDto {
+  @IsString() @IsNotEmpty() @MaxLength(100)
+  name: string;
+}
 
 @ApiTags('Companies')
 @ApiBearerAuth()
@@ -39,11 +45,41 @@ export class CompaniesController {
     return DataResponseDto.success(companies, 'Companies fetched successfully');
   }
 
+  // ── Company Types — defined before :id to avoid route conflict ───────────
+
+  @Get('types')
+  @ApiOperation({ summary: 'List custom company types' })
+  async getTypes(@TenantId() tenantId: string) {
+    const types = await this.companiesService.findAllTypes(tenantId);
+    return DataResponseDto.success(types, 'Company types fetched successfully');
+  }
+
+  @Post('types')
+  @ApiOperation({ summary: 'Create a custom company type' })
+  async createType(@TenantId() tenantId: string, @Body() dto: CreateCompanyTypeDto) {
+    const type = await this.companiesService.createType(tenantId, dto.name);
+    return DataResponseDto.created(type, 'Company type created');
+  }
+
+  @Delete('types/:typeId')
+  @ApiOperation({ summary: 'Delete a custom company type (soft)' })
+  async deleteType(@Param('typeId') typeId: string, @TenantId() tenantId: string) {
+    await this.companiesService.deleteType(typeId, tenantId);
+    return DataResponseDto.success(null, 'Company type deleted');
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get company by ID' })
   async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
     const company = await this.companiesService.findById(id, tenantId);
     return DataResponseDto.success(company);
+  }
+
+  @Get(':id/insights')
+  @ApiOperation({ summary: 'Get company insights' })
+  async getInsights(@Param('id') id: string, @TenantId() tenantId: string) {
+    const insights = await this.companiesService.getInsights(id, tenantId);
+    return DataResponseDto.success(insights, 'Insights fetched successfully');
   }
 
   @Post()

@@ -12,7 +12,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { EstimatesService } from './estimates.service';
 import { CreateEstimateDto } from './dto/estimates_create.dto';
@@ -54,6 +55,24 @@ export class EstimatePageOptionsDto extends PageOptionsDto {
   @IsString()
   @IsOptional()
   readonly createdBy?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by is_template flag' })
+  @IsOptional()
+  // Query params arrive as strings. With ValidationPipe's enableImplicitConversion,
+  // implicit Boolean coercion runs BEFORE @Transform and turns the string 'false'
+  // into boolean `true` (Boolean('false') === true). So `value` here is already the
+  // corrupted boolean. We must read the RAW value from `obj` (the untransformed
+  // source object) to parse it correctly. Preserve undefined when absent (no filter).
+  @Transform(({ obj }) => {
+    const raw = obj?.isTemplate;
+    return raw === undefined ? undefined : raw === true || raw === 'true';
+  })
+  readonly isTemplate?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by asset ID' })
+  @IsUUID()
+  @IsOptional()
+  readonly asset_id?: string;
 }
 
 @ApiTags('Estimates')
@@ -73,7 +92,7 @@ export class EstimatesController {
     @TenantId() tenantId: string,
     @Query() query: EstimatePageOptionsDto,
   ) {
-    const result = await this.estimatesService.findAllPaginated(tenantId, query, query.status, query.excludeStatus, query.createdBy);
+    const result = await this.estimatesService.findAllPaginated(tenantId, query, query.status, query.excludeStatus, query.createdBy, query.isTemplate);
     return DataResponseDto.success(result.data, 'Estimates fetched successfully', {
       ...result.meta,
     } as unknown as Record<string, unknown>);
@@ -90,8 +109,9 @@ export class EstimatesController {
   @Get('all')
   @Permissions('estimates:read')
   @ApiOperation({ summary: 'Get all estimates (non-paginated)' })
-  async findAllNonPaginated(@TenantId() tenantId: string) {
-    const estimates = await this.estimatesService.findAll(tenantId);
+  async findAllNonPaginated(@TenantId() tenantId: string, @Query('isTemplate') isTemplate?: string) {
+    const isTemplateBool = isTemplate ? isTemplate === 'true' : undefined;
+    const estimates = await this.estimatesService.findAll(tenantId, isTemplateBool);
     return DataResponseDto.success(estimates, 'Estimates fetched successfully');
   }
 
@@ -313,6 +333,27 @@ export class EstimatesController {
   async sendToCustomer(@Param('id') id: string, @TenantId() tenantId: string) {
     const estimate = await this.estimatesService.sendToCustomer(id, tenantId);
     return DataResponseDto.success(estimate, 'Estimate sent to customer successfully');
+  }
+
+  @Post(':id/send-whatsapp')
+  @Permissions('estimates:update')
+  @ApiOperation({ summary: 'Send estimate to customer via WhatsApp' })
+  async sendWhatsApp(@Param('id') id: string, @TenantId() tenantId: string) {
+    const estimate = await this.estimatesService.sendWhatsApp(id, tenantId);
+    return DataResponseDto.success(estimate, 'Estimate sent via WhatsApp successfully');
+  }
+
+  @Post('create-from-template/:templateId')
+  @Permissions('estimates:create')
+  @ApiOperation({ summary: 'Create estimate from a template' })
+  async createFromTemplate(
+    @Param('templateId') templateId: string,
+    @TenantId() tenantId: string,
+    @UserId() userId: string,
+    @Body() dto: Partial<CreateEstimateDto>,
+  ) {
+    const estimate = await this.estimatesService.createFromTemplate(templateId, tenantId, userId, dto);
+    return DataResponseDto.created(estimate, 'Estimate created from template successfully');
   }
 
   @Post(':id/generate-link')

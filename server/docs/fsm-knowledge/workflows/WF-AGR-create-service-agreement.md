@@ -16,7 +16,7 @@
 
 ## Steps
 
-1. Click **Service Agreements** in the sidebar. The page title reads **"Service Agreements"** with subtitle **"Manage service agreements and contracts"**.
+1. Open the **Service Agreements** page (title **"Service Agreements"**, subtitle **"Manage service agreements and contracts"**). *(Note: Service Agreements is not currently shown in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. Click the **Add Agreement** button (top-right, primary, `PlusOutlined` icon). This navigates to `/agreements/new`.
 3. The page header now reads **"Create Agreement"**. The back arrow (`onBack`) navigates to `/agreements` when clicked.
 4. **Agreement Name** field (required):

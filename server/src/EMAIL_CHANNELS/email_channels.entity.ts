@@ -33,7 +33,7 @@ export class EmailChannel extends Model {
   tenant: Tenant;
 
   @Column({
-    type: DataType.ENUM('forwarding', 'mailbox', 'platform_provided'),
+    type: DataType.ENUM('forwarding', 'platform_provided'),
     allowNull: false,
     defaultValue: 'forwarding',
   })
@@ -177,15 +177,6 @@ export class EmailChannel extends Model {
     defaultValue: false,
   })
   is_active: boolean;
-
-  // Future: IMAP/OAuth credentials for direct mailbox connection
-  // { host, port, user, password, tls, oauth_provider, oauth_tokens }
-  @Column({
-    type: DataType.JSONB,
-    allowNull: true,
-    defaultValue: {},
-  })
-  imap_config: Record<string, unknown>;
 
   // SMTP config for sending outbound replies (if different from global mail config)
   // { host, port, user, password, tls }

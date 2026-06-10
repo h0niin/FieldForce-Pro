@@ -9,7 +9,7 @@ export interface AppNotification {
 
 interface NotificationState {
   notifications: AppNotification[];
-  add: (notification: Omit<AppNotification, 'id'>) => void;
+  add: (notification: Omit<AppNotification, 'id'>, durationMs?: number) => void;
   remove: (id: string) => void;
   clear: () => void;
 }
@@ -19,7 +19,7 @@ let notificationId = 0;
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
 
-  add: (notification) => {
+  add: (notification, durationMs = 5000) => {
     const id = String(++notificationId);
     set((state) => ({
       notifications: [...state.notifications, { ...notification, id }],
@@ -28,7 +28,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       set((state) => ({
         notifications: state.notifications.filter((n) => n.id !== id),
       }));
-    }, 5000);
+    }, durationMs);
   },
 
   remove: (id) =>

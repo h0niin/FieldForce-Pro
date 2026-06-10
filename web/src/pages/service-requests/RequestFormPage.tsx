@@ -1,20 +1,30 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Form, Input, Button, Space, Skeleton, Select, Row, Col, Typography, message, Alert, Divider, AutoComplete, DatePicker, Upload } from 'antd';
-import { EnvironmentOutlined, CheckCircleOutlined, WarningOutlined, SaveOutlined, CloseOutlined, AimOutlined, LoadingOutlined, PlusOutlined, InboxOutlined } from '@ant-design/icons';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Tooltip, GeoJSON } from 'react-leaflet';
+import {
+  Card, Form, Input, Button, Space, Skeleton, Select, Row, Col, Typography,
+  message, Alert, Divider, AutoComplete, DatePicker, Upload, Checkbox,
+} from 'antd';
+import {
+  EnvironmentOutlined, CheckCircleOutlined, WarningOutlined, SaveOutlined,
+  CloseOutlined, AimOutlined, LoadingOutlined, PlusOutlined, InboxOutlined,
+} from '@ant-design/icons';
+import {
+  MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Tooltip, GeoJSON,
+} from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import dayjs from 'dayjs';
 import { useServiceRequest, useCreateServiceRequest, useUpdateServiceRequest } from '@/hooks/use-service-requests';
 import { formatDateTime } from '@/utils/format-date';
-import { useCategories, useSubCategories, usePriorities } from '@/hooks/use-lookups';
 import { useAllContacts } from '@/hooks/use-contacts';
+import { useAllCompanies } from '@/hooks/use-companies';
 import { useAllServiceLocations } from '@/hooks/use-service-locations';
 import { useAgents } from '@/hooks/use-users';
 import PageHeader from '@/components/common/PageHeader';
-import CreateContactModal from '@/components/contacts/CreateContactModal';
+import CompanyQuickCreateDrawer from '@/components/service-requests/CompanyQuickCreateDrawer';
+import ContactQuickCreateDrawer from '@/components/service-requests/ContactQuickCreateDrawer';
+import AddressPickerField from '@/components/service-requests/AddressPickerField';
 import type { ServiceLocation } from '@/types/models.types';
 
 const { TextArea } = Input;
@@ -51,7 +61,9 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
-function DraggableMarker({ lat, lng, onDragEnd }: { lat: number; lng: number; onDragEnd: (lat: number, lng: number) => void }) {
+function DraggableMarker({
+  lat, lng, onDragEnd,
+}: { lat: number; lng: number; onDragEnd: (lat: number, lng: number) => void }) {
   const markerRef = useRef<L.Marker>(null);
   const eventHandlers = useMemo(() => ({
     dragend() {
@@ -62,7 +74,6 @@ function DraggableMarker({ lat, lng, onDragEnd }: { lat: number; lng: number; on
       }
     },
   }), [onDragEnd]);
-
   return <Marker draggable eventHandlers={eventHandlers} position={[lat, lng]} ref={markerRef} />;
 }
 
@@ -78,7 +89,6 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Find nearest service location within a max distance (km). Returns null if none within range.
 function findNearestLocation(
   lat: number,
   lng: number,
@@ -90,33 +100,22 @@ function findNearestLocation(
   for (const loc of locs) {
     if (loc.lat == null || loc.lng == null) continue;
     const dist = haversineDistance(lat, lng, Number(loc.lat), Number(loc.lng));
-    if (dist < minDist) {
-      minDist = dist;
-      nearest = loc;
-    }
+    if (dist < minDist) { minDist = dist; nearest = loc; }
   }
   if (!nearest) return null;
   if (maxKm !== undefined && minDist > maxKm) return null;
   return { location: nearest, distance: minDist };
 }
 
-// Max distance (km) to auto-match a searched point to an existing service location
 const MATCH_RADIUS_KM = 10;
 
-// --- Photon geocoding (fast, free, no rate limit issues) ---
+// --- Photon geocoding (for service location search) ---
 interface PhotonFeature {
   geometry: { coordinates: [number, number] };
   properties: {
-    name?: string;
-    street?: string;
-    housenumber?: string;
-    city?: string;
-    town?: string;
-    village?: string;
-    state?: string;
-    country?: string;
-    postcode?: string;
-    osm_value?: string;
+    name?: string; street?: string; housenumber?: string;
+    city?: string; town?: string; village?: string;
+    state?: string; country?: string; postcode?: string; osm_value?: string;
   };
 }
 
@@ -129,7 +128,6 @@ async function photonSearch(query: string): Promise<PhotonFeature[]> {
   return data.features || [];
 }
 
-// --- Nominatim (only for boundary polygon — single call after selection) ---
 async function fetchNominatimBoundary(lat: number, lng: number) {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&polygon_geojson=1&addressdetails=1`,
@@ -139,21 +137,16 @@ async function fetchNominatimBoundary(lat: number, lng: number) {
   return res.json();
 }
 
-// Boundary styles
 const boundaryStyle = {
-  color: '#F59E0B',
-  weight: 3,
-  fillColor: '#FCD34D',
-  fillOpacity: 0.12,
-  dashArray: '6 4',
+  color: '#F59E0B', weight: 3, fillColor: '#FCD34D', fillOpacity: 0.12, dashArray: '6 4',
+};
+const boundaryMatchedStyle = {
+  color: '#10B981', weight: 3, fillColor: '#6EE7B7', fillOpacity: 0.15,
 };
 
-const boundaryMatchedStyle = {
-  color: '#10B981',
-  weight: 3,
-  fillColor: '#6EE7B7',
-  fillOpacity: 0.15,
-};
+// Disable past dates for date pickers
+const disablePastDates = (current: dayjs.Dayjs) =>
+  current && current.isBefore(dayjs().startOf('day'));
 
 // --- Main form ---
 
@@ -167,18 +160,23 @@ export default function RequestFormPage() {
   const { data: request, isLoading } = useServiceRequest(id!);
   const createRequest = useCreateServiceRequest();
   const updateRequest = useUpdateServiceRequest();
+
   const { data: contacts } = useAllContacts();
+  const { data: companies } = useAllCompanies();
   const { data: locations } = useAllServiceLocations();
   const { data: agents } = useAgents();
 
-  const { data: categories } = useCategories();
-  const { data: priorities } = usePriorities();
-  
-  const categoryId = Form.useWatch('category_id', form);
-  const { data: subCategories } = useSubCategories(categoryId);
+  // Watched form values for reactive behaviour
+  const companyId = Form.useWatch('company_id', form);
+  const contactId = Form.useWatch('contact_id', form);
+  const serviceAddress = Form.useWatch('service_address', form);
 
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [sameAsService, setSameAsService] = useState(false);
+  const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false);
+  const [isCompanyDrawerOpen, setIsCompanyDrawerOpen] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
+
+  // Service location map state (unchanged)
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
   const [searchText, setSearchText] = useState('');
@@ -194,6 +192,42 @@ export default function RequestFormPage() {
 
   const selectedLocation = (locations || []).find((l) => l.id === selectedLocationId) || null;
 
+  // Filter contacts by selected company (or show all)
+  const filteredContacts = useMemo(() => {
+    if (!contacts) return [];
+    if (!companyId) return contacts;
+    return contacts.filter((c) => c.company_id === companyId);
+  }, [contacts, companyId]);
+
+  // Clear contact when company changes if the contact doesn't belong to new company
+  useEffect(() => {
+    const currentContactId = form.getFieldValue('contact_id');
+    if (currentContactId && contacts) {
+      const currentContact = contacts.find((c) => c.id === currentContactId);
+      if (currentContact && companyId && currentContact.company_id !== companyId) {
+        form.setFieldsValue({ contact_id: undefined, email: '' });
+      }
+    }
+  }, [companyId, contacts, form]);
+
+  // Auto-populate email from selected contact
+  useEffect(() => {
+    if (contactId && contacts) {
+      const contact = contacts.find((c) => c.id === contactId);
+      form.setFieldValue('email', contact?.email || '');
+    } else if (!contactId) {
+      form.setFieldValue('email', '');
+    }
+  }, [contactId, contacts, form]);
+
+  // Sync billing address when "same as service" is active
+  useEffect(() => {
+    if (sameAsService) {
+      form.setFieldValue('billing_address', serviceAddress || '');
+    }
+  }, [sameAsService, serviceAddress, form]);
+
+  // Populate form in edit mode
   useEffect(() => {
     if (request) {
       form.setFieldsValue({
@@ -201,12 +235,10 @@ export default function RequestFormPage() {
         description: request.description,
         contact_id: request.contact_id,
         location_id: request.location_id,
-        priority_id: request.priority_id,
-        category_id: request.category_id,
-        sub_category_id: request.sub_category_id,
+        priority: request.priority || request.priority_id,
         channel: request.channel,
         scheduled_start: request.scheduled_start ? dayjs(request.scheduled_start) : null,
-        technician_ids: request.technicians?.map((t) => t.id) || [],
+        technician_ids: request.technicians?.map((tech) => tech.id) || [],
       });
       setSelectedLocationId(request.location_id || null);
       if (request.location_id && locations) {
@@ -220,11 +252,10 @@ export default function RequestFormPage() {
     }
   }, [request, form, locations]);
 
-  // --- Fetch and show boundary on map for any lat/lng ---
+  // --- Boundary fetch ---
   const fetchBoundary = useCallback(async (lat: number, lng: number, updateSearchText = true) => {
     try {
       const data = await fetchNominatimBoundary(lat, lng);
-
       if (data.geojson && (data.geojson.type === 'Polygon' || data.geojson.type === 'MultiPolygon')) {
         setBoundaryData(data.geojson);
         const areaName = data.address?.city || data.address?.town || data.address?.village ||
@@ -235,22 +266,17 @@ export default function RequestFormPage() {
         setBoundaryData(null);
         setBoundaryName('');
       }
-
       if (updateSearchText && data.display_name && !isTypingRef.current) {
         setSearchText(data.display_name);
       }
     } catch {
-      // Boundary fetch failed — not critical, just skip
+      // Boundary fetch failed — not critical
     }
   }, []);
 
-  // --- Check if user-selected point matches an existing service location ---
   const matchLocationAndFetchBoundary = useCallback(async (lat: number, lng: number) => {
     setMapCoords({ lat, lng });
-
-    // 1. Check if any existing service location is near the selected point
     const match = findNearestLocation(lat, lng, locations || [], MATCH_RADIUS_KM);
-
     if (match) {
       form.setFieldsValue({ location_id: match.location.id });
       setSelectedLocationId(match.location.id);
@@ -264,16 +290,11 @@ export default function RequestFormPage() {
       form.setFieldsValue({ location_id: undefined });
       setSelectedLocationId(null);
       setBoundaryMatched(false);
-      setNoServiceWarning(
-        t('serviceRequests.noServiceWarning'),
-      );
+      setNoServiceWarning(t('serviceRequests.noServiceWarning'));
     }
-
-    // 2. Always fetch and show the boundary
     await fetchBoundary(lat, lng);
   }, [locations, form, fetchBoundary, t]);
 
-  // --- Dropdown selection (direct pick — always valid) ---
   const handleDropdownSelect = (value: string | undefined) => {
     if (!value) {
       form.setFieldsValue({ location_id: undefined });
@@ -293,28 +314,18 @@ export default function RequestFormPage() {
       setSearchText(loc.address || '');
       if (loc.lat != null && loc.lng != null) {
         setMapCoords({ lat: Number(loc.lat), lng: Number(loc.lng) });
-        // Fetch boundary for this location
         fetchBoundary(Number(loc.lat), Number(loc.lng), false);
       }
       message.success(t('serviceRequests.selectedAddress', { address: loc.address }));
     }
   };
 
-  // --- Address search (existing locations first, then Photon geocoder) ---
   const handleSearch = useCallback((query: string) => {
     setSearchText(query);
     isTypingRef.current = true;
-
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
-    if (query.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-
+    if (query.length < 2) { setSuggestions([]); return; }
     const lowerQuery = query.toLowerCase();
-
-    // 1. Immediately show matching saved locations
     const localMatches = (locations || [])
       .filter((l) => l.address && l.address.toLowerCase().includes(lowerQuery) && l.lat != null && l.lng != null)
       .slice(0, 3)
@@ -325,37 +336,24 @@ export default function RequestFormPage() {
         lng: Number(l.lng),
         localId: l.id,
       }));
-
     setSuggestions(localMatches.length > 0
       ? localMatches
       : [{ value: '', label: t('serviceRequests.searching'), lat: 0, lng: 0 }],
     );
-
-    // 2. Debounce the Photon search (300ms — no rate limit issues)
     if (query.length >= 3) {
       debounceTimer.current = setTimeout(async () => {
         try {
           const features = await photonSearch(query);
-
           const photonResults = features.map((f) => {
             const p = f.properties;
             const [lon, lat] = f.geometry.coordinates;
             const label = [
               p.name,
               p.street && p.housenumber ? `${p.street} ${p.housenumber}` : p.street,
-              p.city || p.town || p.village,
-              p.state,
-              p.country,
+              p.city || p.town || p.village, p.state, p.country,
             ].filter(Boolean).join(', ');
-
-            return {
-              value: label,
-              label: `🔍 ${label}`,
-              lat,
-              lng: lon,
-            };
+            return { value: label, label: `🔍 ${label}`, lat, lng: lon };
           });
-
           const combined = [...localMatches, ...photonResults];
           setSuggestions(combined.length > 0 ? combined : [{ value: '', label: t('serviceRequests.noResults'), lat: 0, lng: 0 }]);
         } catch {
@@ -368,11 +366,7 @@ export default function RequestFormPage() {
   const handleSelectSuggestion = (_value: string, option: { lat?: number; lng?: number; value?: string; localId?: string }) => {
     isTypingRef.current = false;
     setSuggestions([]);
-
-    // Ignore placeholder items
     if (!option.lat && !option.lng) return;
-
-    // Direct pick of existing service location — always valid
     if (option.localId) {
       const loc = (locations || []).find((l) => l.id === option.localId);
       if (loc) {
@@ -383,20 +377,16 @@ export default function RequestFormPage() {
         setSearchText(loc.address || '');
         if (loc.lat != null && loc.lng != null) {
           setMapCoords({ lat: Number(loc.lat), lng: Number(loc.lng) });
-          // Fetch boundary for this location
           fetchBoundary(Number(loc.lat), Number(loc.lng), false);
         }
         message.success(t('serviceRequests.selectedAddress', { address: loc.address }));
         return;
       }
     }
-
-    // Nominatim result — check if it matches an existing service location
     setSearchText(option.value || '');
     matchLocationAndFetchBoundary(option.lat!, option.lng!);
   };
 
-  // --- Current location ---
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) { message.error(t('serviceRequests.geolocationNotSupported')); return; }
     setFetchingLocation(true);
@@ -413,7 +403,6 @@ export default function RequestFormPage() {
     );
   };
 
-  // --- Map click / marker drag ---
   const handleMapClick = useCallback((lat: number, lng: number) => {
     matchLocationAndFetchBoundary(lat, lng);
   }, [matchLocationAndFetchBoundary]);
@@ -428,11 +417,22 @@ export default function RequestFormPage() {
       message.warning(t('serviceRequests.selectExistingLocationWarning'));
       return;
     }
+    // Build a payload containing only fields the backend DTO accepts.
+    // (Global ValidationPipe runs with forbidNonWhitelisted:true — unknown fields throw 400.)
+    const v = values as any;
     const payload = {
-      ...values,
+      subject: v.subject,
+      description: v.description || undefined,
+      contact_id: v.contact_id || undefined,
+      location_id: v.location_id || undefined,
+      priority: v.priority || undefined,
+      channel: v.channel || undefined,
+      technician_ids: v.technician_ids?.length ? v.technician_ids : undefined,
       lat: mapCoords.lat || undefined,
       lng: mapCoords.lng || undefined,
-      scheduled_start: values.scheduled_start ? dayjs(values.scheduled_start as any).toISOString() : undefined,
+      scheduled_start: v.scheduled_start
+        ? dayjs(v.scheduled_start as any).toISOString()
+        : undefined,
     };
     try {
       if (isEdit) {
@@ -454,7 +454,6 @@ export default function RequestFormPage() {
     );
   }
 
-  // Wrap boundary geometry as a GeoJSON Feature for react-leaflet
   const boundaryFeature = boundaryData
     ? { type: 'Feature' as const, geometry: boundaryData, properties: { name: boundaryName } }
     : null;
@@ -463,7 +462,11 @@ export default function RequestFormPage() {
     <div>
       <PageHeader
         title={isEdit ? t('serviceRequests.editTitle') : t('serviceRequests.createTitle')}
-        subtitle={isEdit ? t('serviceRequests.editSubtitle', { subject: request?.subject || '' }) : t('serviceRequests.createSubtitle')}
+        subtitle={
+          isEdit
+            ? t('serviceRequests.editSubtitle', { subject: request?.subject || '' })
+            : t('serviceRequests.createSubtitle')
+        }
         onBack={() => navigate('/service-requests')}
       />
 
@@ -472,11 +475,12 @@ export default function RequestFormPage() {
         layout="vertical"
         onFinish={handleSubmit}
         autoComplete="off"
-        initialValues={{ priority: 'medium', channel: 'phone' }}
+        initialValues={{ priority: 'MEDIUM', channel: 'phone', preferred_time: 'Anytime' }}
       >
+        {/* ── Row 1: Request details + Location map ── */}
         <Row gutter={24}>
           {/* Left column: Request details */}
-          <Col xs={24} lg={10}>
+          <Col xs={24} lg={11}>
             <Card title={t('serviceRequests.requestDetails')} style={{ marginBottom: 24 }}>
               <Form.Item
                 name="subject"
@@ -502,36 +506,102 @@ export default function RequestFormPage() {
                 />
               </Form.Item>
 
-              <Form.Item
-                name="contact_id"
-                label={t('serviceRequests.customer')}
-                rules={[{ required: true, message: t('serviceRequests.customerRequired') }]}
-              >
-                <Select
-                  placeholder={t('serviceRequests.selectCustomer')}
-                  showSearch
-                  optionFilterProp="label"
-                  onChange={() => {}}
-                  options={contacts?.map((c) => ({
-                    value: c.id,
-                    label: `${c.first_name} ${c.last_name}${c.email ? ` (${c.email})` : ''}`,
-                  })) || []}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      <Divider style={{ margin: '8px 0' }} />
-                      <Button
-                        type="text"
-                        icon={<PlusOutlined />}
-                        onClick={() => setIsContactModalOpen(true)}
-                        style={{ width: '100%', textAlign: 'left', padding: '4px 12px' }}
-                      >
-                        {t('serviceRequests.createNewCustomer')}
-                      </Button>
-                    </>
-                  )}
+              <Divider style={{ margin: '16px 0' }} />
+
+              {/* ── 1. Priority ── */}
+              <Form.Item name="priority" label={t('serviceRequests.priority')}>
+                <Select placeholder={t('serviceRequests.select')} allowClear>
+                  <Select.Option value="LOW">Low</Select.Option>
+                  <Select.Option value="MEDIUM">Medium</Select.Option>
+                  <Select.Option value="HIGH">High</Select.Option>
+                  <Select.Option value="CRITICAL">Critical</Select.Option>
+                </Select>
+              </Form.Item>
+
+              {/* ── 2. Company → Contact (side by side) ── */}
+              <Row gutter={12}>
+                <Col span={12}>
+                  <Form.Item name="company_id" label="Company">
+                    <Select
+                      placeholder="Select company"
+                      showSearch
+                      allowClear
+                      optionFilterProp="label"
+                      options={companies?.map((c) => ({ value: c.id, label: c.name })) || []}
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          <Divider style={{ margin: '8px 0' }} />
+                          <Button
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsCompanyDrawerOpen(true)}
+                            style={{ width: '100%', textAlign: 'left', padding: '4px 12px' }}
+                          >
+                            + Create New Company
+                          </Button>
+                        </>
+                      )}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="contact_id"
+                    label={t('serviceRequests.customer')}
+                    rules={[{ required: true, message: t('serviceRequests.customerRequired') }]}
+                  >
+                    <Select
+                      placeholder={t('serviceRequests.selectCustomer')}
+                      showSearch
+                      allowClear
+                      optionFilterProp="label"
+                      options={filteredContacts.map((c) => ({
+                        value: c.id,
+                        label: `${c.first_name} ${[c.last_name].filter(Boolean).join('')}${c.email ? ` (${c.email})` : ''}`,
+                      }))}
+                      dropdownRender={(menu) => (
+                        <>
+                          {companyId && filteredContacts.length === 0 ? (
+                            <div style={{ padding: '8px 12px', color: '#6b7280', fontSize: 13 }}>
+                              {`No contacts found for ${companies?.find((c) => c.id === companyId)?.name ?? 'this company'} — `}
+                              <Button
+                                type="link"
+                                size="small"
+                                style={{ padding: 0, height: 'auto' }}
+                                onClick={() => setIsContactDrawerOpen(true)}
+                              >
+                                + Create one?
+                              </Button>
+                            </div>
+                          ) : (
+                            menu
+                          )}
+                          <Divider style={{ margin: '8px 0' }} />
+                          <Button
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsContactDrawerOpen(true)}
+                            style={{ width: '100%', textAlign: 'left', padding: '4px 12px' }}
+                          >
+                            + Create New Contact
+                          </Button>
+                        </>
+                      )}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* ── 3. Email (auto-populated from contact) ── */}
+              <Form.Item name="email" label="Email">
+                <Input
+                  placeholder="Contact email or enter manually"
+                  type="email"
                 />
               </Form.Item>
+
+              {/* Customer phone display (conditional) */}
               <Form.Item
                 noStyle
                 shouldUpdate={(prev, curr) => prev.contact_id !== curr.contact_id}
@@ -564,62 +634,7 @@ export default function RequestFormPage() {
 
               <Divider style={{ margin: '16px 0' }} />
 
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="priority_id" label={t('serviceRequests.priority')}>
-                    <Select placeholder={t('serviceRequests.select')}>
-                      {priorities?.map(p => (
-                        <Select.Option key={p.id} value={p.id}>{p.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="category_id" label={t('serviceRequests.category')} rules={[{ required: true, message: t('serviceRequests.categoryRequired', 'Please select a category') }]}>
-                    <Select placeholder={t('serviceRequests.select')} allowClear onChange={() => form.setFieldValue('sub_category_id', undefined)}>
-                      {categories?.map(c => (
-                        <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="sub_category_id" label="Sub Category" rules={[{ required: true, message: 'Please select a sub-category' }]}>
-                    <Select placeholder={t('serviceRequests.select')} allowClear disabled={!categoryId}>
-                      {subCategories?.map(sc => (
-                        <Select.Option key={sc.id} value={sc.id}>{sc.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="technician_ids" label={t('serviceRequests.assignedTechnicians')}>
-                <Select
-                  mode="multiple"
-                  placeholder={t('serviceRequests.selectTechnicians')}
-                  allowClear
-                  options={agents?.map((a) => ({
-                    value: a.id,
-                    label: `${a.first_name} ${a.last_name}`,
-                  })) || []}
-                />
-              </Form.Item>
-
-              <Form.Item label={t('serviceRequests.attachmentsOptional')}>
-  <Upload.Dragger
-    multiple
-    fileList={fileList}
-    beforeUpload={() => false}
-    onChange={({ fileList: newList }) => setFileList(newList)}
-    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-  >
-    <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-    <p className="ant-upload-text">{t('serviceRequests.uploadDragText')}</p>
-    <p className="ant-upload-hint">{t('serviceRequests.uploadHint')}</p>
-  </Upload.Dragger>
-</Form.Item>
-              <Form.Item name="channel" label={t('serviceRequests.channel')} style={{ marginBottom: 0 }}>
+              <Form.Item name="channel" label={t('serviceRequests.channel')}>
                 <Select placeholder={t('serviceRequests.selectChannel')}>
                   <Select.Option value="phone">{t('serviceRequests.channelPhone')}</Select.Option>
                   <Select.Option value="email">{t('serviceRequests.channelEmail')}</Select.Option>
@@ -630,13 +645,45 @@ export default function RequestFormPage() {
                   <Select.Option value="sms">{t('serviceRequests.channelSms')}</Select.Option>
                 </Select>
               </Form.Item>
+
+              <Form.Item name="technician_ids" label={t('serviceRequests.assignedTechnicians')}>
+                <Select
+                  mode="multiple"
+                  placeholder={t('serviceRequests.selectTechnicians', 'Select technicians')}
+                  allowClear
+                  options={agents?.map((a) => ({
+                    value: a.id,
+                    label: `${a.first_name} ${a.last_name}`,
+                  })) || []}
+                />
+              </Form.Item>
+
+              <Form.Item label={t('serviceRequests.attachmentsOptional')} style={{ marginBottom: 0 }}>
+                <Upload.Dragger
+                  multiple
+                  fileList={fileList}
+                  beforeUpload={() => false}
+                  onChange={({ fileList: newList }) => setFileList(newList)}
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                >
+                  <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                  <p className="ant-upload-text">{t('serviceRequests.uploadDragText')}</p>
+                  <p className="ant-upload-hint">{t('serviceRequests.uploadHint')}</p>
+                </Upload.Dragger>
+              </Form.Item>
             </Card>
           </Col>
 
-          {/* Right column: Location picker */}
-          <Col xs={24} lg={14}>
+          {/* Right column: Service location map (unchanged) */}
+          <Col xs={24} lg={13}>
             <Card
-              title={<Space><EnvironmentOutlined /> {t('serviceRequests.serviceLocation')} <span style={{ color: '#ff4d4f' }}>*</span></Space>}
+              title={
+                <Space>
+                  <EnvironmentOutlined />
+                  {t('serviceRequests.serviceLocation')}
+                  <span style={{ color: '#ff4d4f' }}>*</span>
+                </Space>
+              }
               extra={
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   {t('serviceRequests.locationsAvailable', { count: locations?.length || 0 })}
@@ -644,12 +691,17 @@ export default function RequestFormPage() {
               }
               style={{ marginBottom: 24 }}
             >
-              <Form.Item name="location_id" hidden rules={[{ required: true, message: t('serviceRequests.pleaseSelectLocation') }]}>
+              <Form.Item
+                name="location_id"
+                hidden
+                rules={[{ required: true, message: t('serviceRequests.pleaseSelectLocation') }]}
+              >
                 <Input />
               </Form.Item>
 
-              {/* Quick select dropdown */}
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>{t('serviceRequests.quickSelect')}</Text>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>
+                {t('serviceRequests.quickSelect')}
+              </Text>
               <Select
                 value={selectedLocationId || undefined}
                 placeholder={t('serviceRequests.selectFromExisting')}
@@ -659,15 +711,11 @@ export default function RequestFormPage() {
                 style={{ width: '100%', marginBottom: 16 }}
                 size="large"
                 onChange={handleDropdownSelect}
-                options={(locations || []).map((l) => ({
-                  value: l.id,
-                  label: l.address,
-                }))}
+                options={(locations || []).map((l) => ({ value: l.id, label: l.address }))}
               />
 
               <Divider style={{ margin: '0 0 16px 0' }}>{t('serviceRequests.orFindOnMap')}</Divider>
 
-              {/* Address search */}
               <AutoComplete
                 value={searchText}
                 options={suggestions}
@@ -692,7 +740,6 @@ export default function RequestFormPage() {
                 {t('serviceRequests.useCurrentLocation')}
               </Button>
 
-              {/* Interactive map */}
               <div style={{ height: 350, borderRadius: 8, overflow: 'hidden', border: '1px solid #e8e8e8' }}>
                 <MapContainer
                   center={[mapCoords.lat || 25.276987, mapCoords.lng || 55.296249]}
@@ -705,8 +752,6 @@ export default function RequestFormPage() {
                   />
                   <MapUpdater lat={mapCoords.lat} lng={mapCoords.lng} />
                   <MapClickHandler onMapClick={handleMapClick} />
-
-                  {/* Boundary polygon (visual context) */}
                   {boundaryFeature && (
                     <GeoJSON
                       key={boundaryKeyRef.current}
@@ -714,8 +759,6 @@ export default function RequestFormPage() {
                       style={boundaryMatched ? boundaryMatchedStyle : boundaryStyle}
                     />
                   )}
-
-                  {/* Existing service locations as dots */}
                   {(locations || []).filter((l) => l.lat != null && l.lng != null).map((loc) => (
                     <CircleMarker
                       key={loc.id}
@@ -745,10 +788,12 @@ export default function RequestFormPage() {
                       <Tooltip>{loc.address}</Tooltip>
                     </CircleMarker>
                   ))}
-
-                  {/* Draggable marker */}
                   {mapCoords.lat !== 0 && mapCoords.lng !== 0 && (
-                    <DraggableMarker lat={mapCoords.lat} lng={mapCoords.lng} onDragEnd={handleMarkerDrag} />
+                    <DraggableMarker
+                      lat={mapCoords.lat}
+                      lng={mapCoords.lng}
+                      onDragEnd={handleMarkerDrag}
+                    />
                   )}
                 </MapContainer>
               </div>
@@ -757,12 +802,12 @@ export default function RequestFormPage() {
                 {t('serviceRequests.mapHelpText')}
               </Text>
 
-              {/* Success: matched an existing service location */}
               {selectedLocation && (
                 <Alert
                   message={
                     <span>
-                      {t('serviceRequests.matchedServiceLocation')} <strong>{selectedLocation.address}</strong>
+                      {t('serviceRequests.matchedServiceLocation')}{' '}
+                      <strong>{selectedLocation.address}</strong>
                       {boundaryName && (
                         <Text type="secondary" style={{ marginLeft: 8 }}>
                           {t('serviceRequests.inBoundary', { name: boundaryName })}
@@ -777,8 +822,6 @@ export default function RequestFormPage() {
                   banner
                 />
               )}
-
-              {/* Warning: no matching service location */}
               {noServiceWarning && !selectedLocation && (
                 <Alert
                   message={noServiceWarning}
@@ -789,8 +832,6 @@ export default function RequestFormPage() {
                   style={{ marginTop: 12 }}
                 />
               )}
-
-              {/* No locations at all */}
               {(locations || []).length === 0 && (
                 <Alert
                   message={t('serviceRequests.noLocationsAvailable')}
@@ -804,6 +845,97 @@ export default function RequestFormPage() {
           </Col>
         </Row>
 
+        {/* ── Row 2: Address Details ── */}
+        <Card title="Address Details" style={{ marginBottom: 24 }}>
+          <Row gutter={24}>
+            {/* ── 4. Service Address ── */}
+            <Col xs={24} lg={12}>
+              <Form.Item name="service_address" label="Service Address">
+                <AddressPickerField placeholder="Search service address..." />
+              </Form.Item>
+            </Col>
+
+            {/* ── 5. Billing Address ── */}
+            <Col xs={24} lg={12}>
+              <Form.Item
+                label={
+                  <Space>
+                    <span>Billing Address</span>
+                    <Checkbox
+                      checked={sameAsService}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSameAsService(checked);
+                        if (checked) {
+                          const current = form.getFieldValue('service_address') || '';
+                          form.setFieldValue('billing_address', current);
+                        } else {
+                          form.setFieldValue('billing_address', '');
+                        }
+                      }}
+                      style={{ fontWeight: 400, fontSize: 13 }}
+                    >
+                      Same as service address
+                    </Checkbox>
+                  </Space>
+                }
+                name="billing_address"
+              >
+                <AddressPickerField
+                  placeholder="Search billing address..."
+                  disabled={sameAsService}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* ── Row 3: Scheduling Preferences ── */}
+        <Card title="Scheduling Preferences" style={{ marginBottom: 24 }}>
+          {/* ── 6. Preferred Date 1 + Preferred Date 2 (side by side) ── */}
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="preferred_date_1" label="Preferred Date 1">
+                <DatePicker
+                  format="YYYY-MM-DD"
+                  placeholder="Select preferred date"
+                  style={{ width: '100%' }}
+                  disabledDate={disablePastDates}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="preferred_date_2" label="Preferred Date 2">
+                <DatePicker
+                  format="YYYY-MM-DD"
+                  placeholder="Select preferred date"
+                  style={{ width: '100%' }}
+                  disabledDate={disablePastDates}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* ── 7. Preferred Time ── */}
+          <Form.Item name="preferred_time" label="Preferred Time">
+            <Select>
+              <Select.Option value="Anytime">Anytime</Select.Option>
+              <Select.Option value="Morning">Morning</Select.Option>
+              <Select.Option value="Afternoon">Afternoon</Select.Option>
+              <Select.Option value="Evening">Evening</Select.Option>
+            </Select>
+          </Form.Item>
+
+          {/* ── 8. Preference Note ── */}
+          <Form.Item name="preference_note" label="Preference Note" style={{ marginBottom: 0 }}>
+            <TextArea
+              rows={3}
+              placeholder="Add any special instructions or customer preferences..."
+            />
+          </Form.Item>
+        </Card>
+
+        {/* ── Submit / Cancel ── */}
         <Card>
           <Space>
             <Button
@@ -821,12 +953,23 @@ export default function RequestFormPage() {
         </Card>
       </Form>
 
-      <CreateContactModal
-        open={isContactModalOpen}
-        onCancel={() => setIsContactModalOpen(false)}
+      <CompanyQuickCreateDrawer
+        open={isCompanyDrawerOpen}
+        onClose={() => setIsCompanyDrawerOpen(false)}
+        onSuccess={(newCompany) => {
+          form.setFieldValue('company_id', newCompany.id);
+          setIsCompanyDrawerOpen(false);
+        }}
+      />
+
+      <ContactQuickCreateDrawer
+        open={isContactDrawerOpen}
+        onClose={() => setIsContactDrawerOpen(false)}
+        defaultCompanyId={companyId}
         onSuccess={(newContact) => {
           form.setFieldValue('contact_id', newContact.id);
-          setIsContactModalOpen(false);
+          form.setFieldValue('email', newContact.email || '');
+          setIsContactDrawerOpen(false);
         }}
       />
     </div>

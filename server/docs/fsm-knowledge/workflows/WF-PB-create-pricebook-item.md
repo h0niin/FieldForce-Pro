@@ -11,7 +11,7 @@ This workflow covers creating a new pricebook entry from the Pricebook module.
 
 ## Steps
 
-1. In the sidebar, click **Pricebook** (the page title on the list page is "Pricebook").
+1. Open the **Pricebook** page (its list page title is "Pricebook"). *(Note: Pricebook is not currently shown in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. The Pricebook list page loads with subtitle "Manage tiered pricing for services (Good/Better/Best)".
 3. In the page header, click **Add Pricebook Item** (primary button with PlusOutlined icon).
    - This button is wrapped in `PermissionGuard permission="pricebook:create"`.

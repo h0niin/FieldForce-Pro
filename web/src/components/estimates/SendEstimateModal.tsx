@@ -6,7 +6,7 @@ import {
   SendOutlined, WhatsAppOutlined, MailOutlined, CopyOutlined, LinkOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useEstimate, useGenerateEstimateLink } from '@/hooks/use-estimates';
+import { useEstimate, useGenerateEstimateLink, useSendEstimateWhatsApp } from '@/hooks/use-estimates';
 
 interface SendEstimateModalProps {
   estimateId: string | null;
@@ -25,6 +25,8 @@ export default function SendEstimateModal({ estimateId, onClose }: SendEstimateM
   const contactEmail = (estimate?.contact as Record<string, unknown> | undefined)?.email as string | undefined;
   const contactFirstName = (estimate?.contact as Record<string, unknown> | undefined)?.first_name as string | undefined;
 
+  const sendWhatsApp = useSendEstimateWhatsApp();
+
   const getMagicLink = async (): Promise<string | null> => {
     if (!estimateId) return null;
     try {
@@ -39,14 +41,21 @@ export default function SendEstimateModal({ estimateId, onClose }: SendEstimateM
     if (!contactPhone) { Modal.warning({ title: t('sendEstimateModal.noPhoneNumber'), content: t('sendEstimateModal.noPhoneOnRecord') }); return; }
     const phone = contactPhone.replace(/\D/g, '');
     if (!phone) { Modal.warning({ title: t('sendEstimateModal.invalidPhoneNumber'), content: t('sendEstimateModal.noDigits') }); return; }
-    const link = await getMagicLink();
-    const firstName = contactFirstName || t('sendEstimateModal.there');
-    const total = Number(estimate?.total || 0).toFixed(2);
-    const ref = estimate?.estimate_number || estimateId?.slice(0, 8) || '';
-    const expiryLine = estimate?.expiry_date ? `\n${t('sendEstimateModal.validUntil')}: ${estimate.expiry_date}` : '';
-    const msg = encodeURIComponent(`${t('sendEstimateModal.hi')} ${firstName},\n\n${t('sendEstimateModal.estimate')} *${ref}* ${t('sendEstimateModal.isReady')}.\n*${t('sendEstimateModal.total')}: $${total}*${expiryLine}\n\n${t('sendEstimateModal.pleaseReview')}:\n${link ?? ''}\n\n${t('sendEstimateModal.linkExpires')}`);
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-    onClose();
+    
+    try {
+      await sendWhatsApp.mutateAsync(estimateId!);
+      onClose();
+    } catch (err) {
+      // Fallback to wa.me if the API call fails
+      const link = await getMagicLink();
+      const firstName = contactFirstName || t('sendEstimateModal.there');
+      const total = Number(estimate?.total || 0).toFixed(2);
+      const ref = estimate?.estimate_number || estimateId?.slice(0, 8) || '';
+      const expiryLine = estimate?.expiry_date ? `\n${t('sendEstimateModal.validUntil')}: ${estimate.expiry_date}` : '';
+      const msg = encodeURIComponent(`${t('sendEstimateModal.hi')} ${firstName},\n\n${t('sendEstimateModal.estimate')} *${ref}* ${t('sendEstimateModal.isReady')}.\n*${t('sendEstimateModal.total')}: $${total}*${expiryLine}\n\n${t('sendEstimateModal.pleaseReview')}:\n${link ?? ''}\n\n${t('sendEstimateModal.linkExpires')}`);
+      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+      onClose();
+    }
   };
 
   const handleSendEmail = async () => {
@@ -108,7 +117,7 @@ export default function SendEstimateModal({ estimateId, onClose }: SendEstimateM
                 fontSize: 14,
               }}
               onClick={() => void handleSendWhatsApp()}
-              loading={generateLink.isPending}
+              loading={generateLink.isPending || sendWhatsApp.isPending}
               disabled={!contactPhone}
             >
               {t('sendEstimateModal.sendWhatsApp')}

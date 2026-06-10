@@ -11,6 +11,9 @@ import { Priority } from '../PRIORITIES/priorities.entity';
 import { Location } from '../LOCATIONS/locations.entity';
 import { Tenant } from '../TENANTS/tenants.entity';
 import { KEYNAMES } from '../shared/constants/keynames';
+import { SlaMonitorService } from './sla-monitor.service';
+import { NotificationsModule } from '../NOTIFICATIONS/notifications.module';
+import { UsersModule } from '../USERS/users.module';
 
 const lookupProviders = [
   { provide: KEYNAMES.CATEGORIES, useValue: Category },
@@ -21,9 +24,9 @@ const lookupProviders = [
 ];
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, NotificationsModule, UsersModule],
   controllers: [SlaConfigController],
-  providers: [SlaService, SlaConfigService, SlaPolicySeederService, ...slaProviders, ...lookupProviders],
-  exports: [SlaService, SlaConfigService],
+  providers: [SlaService, SlaConfigService, SlaPolicySeederService, SlaMonitorService, ...slaProviders, ...lookupProviders],
+  exports: [SlaService, SlaConfigService, SlaMonitorService],
 })
 export class SlaModule {}

@@ -84,7 +84,7 @@ export default function PaymentListPage() {
       title: t('payments.table.amount'),
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount: number) => (
+      render: (amount: number, record: any) => (
         <span style={{ fontWeight: 500 }}>{formatCurrency(amount || 0)}</span>
       ),
       sorter: (a, b) => (a.amount || 0) - (b.amount || 0),
@@ -93,13 +93,13 @@ export default function PaymentListPage() {
       title: t('payments.table.method'),
       dataIndex: 'method',
       key: 'method',
-      render: (method: string) => <Tag>{formatStatus(method)}</Tag>,
+      render: (method: string, record: any) => <Tag>{formatStatus(method)}</Tag>,
     },
     {
       title: t('payments.table.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {formatStatus(status)}
         </Tag>
@@ -109,13 +109,13 @@ export default function PaymentListPage() {
       title: t('payments.table.transactionId'),
       dataIndex: 'gateway_transaction_id',
       key: 'gateway_transaction_id',
-      render: (txId: string) => txId || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (txId: string, record: any) => txId || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('payments.table.paidAt'),
       dataIndex: 'paid_at',
       key: 'paid_at',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => {
         if (!a.paid_at) return 1;
         if (!b.paid_at) return -1;
@@ -129,19 +129,14 @@ export default function PaymentListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="payments:read">
-            <Tooltip title={t('common.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/payments/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="payments:update">
             <Tooltip title={t('common.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/payments/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/payments/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="payments:delete">
             <Tooltip title={t('common.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -178,6 +173,10 @@ export default function PaymentListPage() {
         rowKey="id"
         loading={isLoading}
         scroll={{ x: 1200 }}
+        onRow={(record) => ({
+          onClick: () => navigate(`/payments/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

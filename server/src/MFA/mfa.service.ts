@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { generateSecret, generateURI, verifySync } from 'otplib';
+import { authenticator } from 'otplib';
 import { User } from '../USERS/users.entity';
 import { EmailService } from '../shared/services/email.service';
 import { AppConfigService } from '../shared/config/config.service';
@@ -165,12 +165,12 @@ export class MFAService {
       throw new NotFoundException('User not found');
     }
 
-    const secret = generateSecret();
-    const otpauth_url = generateURI({
+    const secret = authenticator.generateSecret();
+    const otpauth_url = authenticator.keyuri(
+      user.email,
+      this.configService.appName,
       secret,
-      issuer: this.configService.appName,
-      label: user.email,
-    });
+    );
 
     // Store secret but don't enable yet — user must verify first
     await user.update({ totp_secret: secret });
@@ -190,8 +190,7 @@ export class MFAService {
       throw new BadRequestException('TOTP not configured for this user');
     }
 
-    const result = verifySync({ secret: user.totp_secret, token: code });
-    return result.valid;
+    return authenticator.verify({ token: code, secret: user.totp_secret });
   }
 
   async verifyAndEnableTOTP(
@@ -210,7 +209,7 @@ export class MFAService {
       throw new BadRequestException('TOTP not set up. Call setup-totp first.');
     }
 
-    const { valid: isValid } = verifySync({ secret: user.totp_secret, token: code });
+    const isValid = authenticator.verify({ token: code, secret: user.totp_secret });
     if (!isValid) {
       return { success: false };
     }

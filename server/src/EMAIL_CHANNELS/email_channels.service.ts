@@ -58,7 +58,6 @@ export class EmailChannelsService {
       if (dto.human_handoff_keywords !== undefined) updateData.human_handoff_keywords = dto.human_handoff_keywords;
       if (dto.handoff_team !== undefined) updateData.handoff_team = dto.handoff_team;
       if (dto.is_active !== undefined) updateData.is_active = dto.is_active;
-      if (dto.imap_config !== undefined) updateData.imap_config = dto.imap_config;
       if (dto.smtp_config !== undefined) updateData.smtp_config = dto.smtp_config;
       if (dto.webhook_secret !== undefined) updateData.webhook_secret = dto.webhook_secret;
 

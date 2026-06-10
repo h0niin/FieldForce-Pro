@@ -24,7 +24,7 @@ A new **Settings → Channels → Email** section is added. Here the Company Adm
 | --------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | **Support email address**         | The address customers will email. Two options (see 3.2).                                        | <support@coolbreeze.com>                          |
 | ---                               | ---                                                                                             | ---                                               |
-| **Connection method**             | How emails reach the platform - forwarding, mailbox connection, or a platform-provided address. | Forwarding                                        |
+| **Connection method**             | How emails reach the platform - forwarding or a platform-provided address.                      | Forwarding                                        |
 | ---                               | ---                                                                                             | ---                                               |
 | **Connection status**             | Whether email is flowing in correctly.                                                          | 🟢 Receiving · 🔴 Not receiving                   |
 | ---                               | ---                                                                                             | ---                                               |
@@ -48,10 +48,9 @@ A new **Settings → Channels → Email** section is added. Here the Company Adm
 ### 3.2 Two Ways to Connect the Email (We Recommend One)
 
 - **Email forwarding (simplest):** The company keeps its existing inbox (<support@coolbreeze.com>) and sets a rule to **auto-forward** a copy to a unique, secure platform address. Easiest to set up; no password sharing.
-- **Mailbox connection (deeper):** The platform connects directly to the mailbox (e.g., via secure OAuth with Google/Microsoft, or IMAP). Allows two-way threading from the real address.
 - **Platform-provided address:** We issue an address like <coolbreeze@tickets.yourfsm.com> that the company publishes or forwards to. Zero email setup on their side.
 
-📌 We'll recommend the best option for your email provider during setup. All three result in the same outcome: emails become tickets.
+📌 We'll recommend the best option for your email provider during setup. Both result in the same outcome: emails become tickets.
 
 ### 3.3 Multi-Company Isolation
 

@@ -12,9 +12,11 @@ import { ApiKeyGuard } from '../shared/guards/api-key.guard';
 import { NotificationsModule } from '../NOTIFICATIONS/notifications.module';
 import { workOrdersProviders } from '../WORK_ORDERS/work_orders.provider';
 import { SlaModule } from '../SLA_MODULE/sla.module';
+import { UsersModule } from '../USERS/users.module';
+import { ActivityLogsModule } from '../ACTIVITY_LOGS/activity_logs.module';
 
 @Module({
-  imports: [DatabaseModule, WorkflowModule, ApiKeysModule, NotificationsModule, SlaModule],
+  imports: [DatabaseModule, WorkflowModule, ApiKeysModule, NotificationsModule, SlaModule, UsersModule, ActivityLogsModule],
   controllers: [ServiceRequestsController, QueueController],
   providers: [
     ServiceRequestsService,

@@ -291,9 +291,6 @@ export default function DispatchBoardPage() {
       width: 80,
       render: (_, record) => (
         <PermissionGuard anyPermissions={['service_appointments:read', 'scheduling:read']}>
-          <Tooltip title={t('dispatchBoard.actions.view')}>
-            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)} />
-          </Tooltip>
         </PermissionGuard>
       ),
     },
@@ -310,9 +307,6 @@ export default function DispatchBoardPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard anyPermissions={['service_appointments:read', 'scheduling:read']}>
-            <Tooltip title={t('dispatchBoard.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)} />
-            </Tooltip>
           </PermissionGuard>
           {canAssign && !record.agent_id && (
             <Tooltip title={t('dispatchBoard.actions.assignTechnician')}>

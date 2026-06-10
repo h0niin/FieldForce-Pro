@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
+import { Navigate, useLocation, useParams, type RouteObject } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/auth.store';
 import { useMe } from '@/hooks/use-auth';
@@ -19,6 +19,35 @@ const UserDetailPage = lazy(() => import('@/pages/users/UserDetailPage'));
 const UserFormPage = lazy(() => import('@/pages/users/UserFormPage'));
 const GeneralSettingsPage = lazy(() => import('@/pages/settings/GeneralSettingsPage'));
 const RolesPermissionsPage = lazy(() => import('@/pages/settings/RolesPermissionsPage'));
+
+const SettingsLayout = lazy(() => import('@/pages/settings/SettingsLayout'));
+const CurrencySettingsPage = lazy(() => import('@/pages/settings/CurrencySettingsPage'));
+const TerritoriesSettingsPage = lazy(() => import('@/pages/settings/TerritoriesSettingsPage'));
+const TerritoryFormPage = lazy(() => import('@/pages/settings/TerritoryFormPage'));
+const SkillsSettingsPage = lazy(() => import('@/pages/settings/SkillsSettingsPage'));
+const ShiftsSettingsPage = lazy(() => import('@/pages/settings/ShiftsSettingsPage'));
+const HolidaysSettingsPage = lazy(() => import('@/pages/settings/HolidaysSettingsPage'));
+const DataExportSettingsPage = lazy(() => import('@/pages/settings/DataExportSettingsPage'));
+const FileStoragePage = lazy(() => import('@/pages/settings/FileStoragePage'));
+const ChatbotSettingsPage = lazy(() => import('@/pages/settings/ChatbotSettingsPage'));
+
+// Redirect Helpers
+function RedirectToSettingsUsers() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/settings/users/${id}` : '/settings/users'} replace />;
+}
+function RedirectToSettingsUsersEdit() {
+  const { id } = useParams();
+  return <Navigate to={`/settings/users/${id}/edit`} replace />;
+}
+function RedirectToSettingsServiceLocations() {
+  const { id } = useParams();
+  return <Navigate to={id ? `/settings/service-locations/${id}` : '/settings/service-locations'} replace />;
+}
+function RedirectToSettingsServiceLocationsEdit() {
+  const { id } = useParams();
+  return <Navigate to={`/settings/service-locations/${id}/edit`} replace />;
+}
 const ContactListPage = lazy(() => import('@/pages/contacts/ContactListPage'));
 const ContactDetailPage = lazy(() => import('@/pages/contacts/ContactDetailPage'));
 const ContactFormPage = lazy(() => import('@/pages/contacts/ContactFormPage'));
@@ -49,6 +78,7 @@ const WorkOrderDetailPage = lazy(() => import('@/pages/work-orders/WorkOrderDeta
 const WorkOrderFormPage = lazy(() => import('@/pages/work-orders/WorkOrderFormPage'));
 const DispatchBoardPage = lazy(() => import('@/pages/scheduling/DispatchBoardPage'));
 const AppointmentFormPage = lazy(() => import('@/pages/scheduling/AppointmentFormPage'));
+const AppointmentDetailPage = lazy(() => import('@/pages/scheduling/AppointmentDetailPage'));
 const JobSheetTemplateListPage = lazy(() => import('@/pages/job-sheets/JobSheetTemplateListPage'));
 const JobSheetBuilderPage = lazy(() => import('@/pages/job-sheets/JobSheetBuilderPage'));
 const JobSheetDashboardPage = lazy(() => import('@/pages/job-sheets/JobSheetDashboardPage'));
@@ -62,6 +92,7 @@ const LiveAgentTrackingPage = lazy(() => import('@/pages/tracking/LiveAgentTrack
 const InvoiceListPage = lazy(() => import('@/pages/invoices/InvoiceListPage'));
 const InvoiceDetailPage = lazy(() => import('@/pages/invoices/InvoiceDetailPage'));
 const InvoiceFormPage = lazy(() => import('@/pages/invoices/InvoiceFormPage'));
+const ServiceReportViewer = lazy(() => import('@/pages/service-reports/ServiceReportViewer'));
 const PaymentListPage = lazy(() => import('@/pages/payments/PaymentListPage'));
 const PaymentDetailPage = lazy(() => import('@/pages/payments/PaymentDetailPage'));
 const PaymentFormPage = lazy(() => import('@/pages/payments/PaymentFormPage'));
@@ -93,6 +124,11 @@ const WorkflowRuleFormPage = lazy(() => import('@/pages/customization/WorkflowRu
 const WebhookFormPage = lazy(() => import('@/pages/customization/WebhookFormPage'));
 const AuditLogListPage = lazy(() => import('@/pages/security/AuditLogListPage'));
 const MobileUsageLogs = lazy(() => import('@/pages/admin/MobileUsageLogs'));
+const ModulesAndFieldsPage = lazy(() => import('@/pages/settings/customization/ModulesAndFieldsPage'));
+const FieldPermissionsPage = lazy(() => import('@/pages/settings/customization/FieldPermissionsPage'));
+const DispatchConsoleLayoutPage = lazy(() => import('@/pages/settings/customization/DispatchConsoleLayoutPage'));
+const TemplatesPage = lazy(() => import('@/pages/settings/customization/TemplatesPage'));
+const ModuleMappingPage = lazy(() => import('@/pages/settings/customization/ModuleMappingPage'));
 const ReportListPage = lazy(() => import('@/pages/reports/ReportListPage'));
 const ReportDetailPage = lazy(() => import('@/pages/reports/ReportDetailPage'));
 const AgentListPage = lazy(() => import('@/pages/workforce/AgentListPage'));
@@ -134,7 +170,11 @@ const MyJobsPage = lazy(() => import('@/pages/technician/MyJobsPage'));
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 const WhatsAppChannelSettingsPage = lazy(() => import('@/pages/settings/WhatsAppChannelSettingsPage'));
 const SlaConfigPage = lazy(() => import('@/pages/slas/SlaConfigPage'));
+const ServiceAppointmentsPage = lazy(() => import('@/pages/service-appointments/ServiceAppointmentsPage'));
+const ServiceAppointmentDetailPage = lazy(() => import('@/pages/service-appointments/ServiceAppointmentDetailPage'));
+const ServiceReportsPage = lazy(() => import('@/pages/service-reports/ServiceReportsPage'));
 const EmailChannelSettingsPage = lazy(() => import('@/pages/settings/EmailChannelSettingsPage'));
+const TerritoriesListPage = lazy(() => import('@/pages/territories/TerritoriesList'));
 
 function SuspenseWrapper({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>;
@@ -292,38 +332,22 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
-      // Users
+      // Users Redirects
       {
         path: 'users',
-        element: (
-          <SuspenseWrapper>
-            <UserListPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsUsers />,
       },
       {
         path: 'users/create',
-        element: (
-          <SuspenseWrapper>
-            <UserFormPage />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/users/create" replace />,
       },
       {
         path: 'users/:id',
-        element: (
-          <SuspenseWrapper>
-            <UserDetailPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsUsers />,
       },
       {
         path: 'users/:id/edit',
-        element: (
-          <SuspenseWrapper>
-            <UserFormPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsUsersEdit />,
       },
       // Contacts
       {
@@ -392,37 +416,22 @@ export const routes: RouteObject[] = [
         ),
       },
       // Service Locations
+      // Service Locations Redirects
       {
         path: 'service-locations',
-        element: (
-          <SuspenseWrapper>
-            <ServiceLocationListPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsServiceLocations />,
       },
       {
         path: 'service-locations/new',
-        element: (
-          <SuspenseWrapper>
-            <ServiceLocationFormPage />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/service-locations/new" replace />,
       },
       {
         path: 'service-locations/:id',
-        element: (
-          <SuspenseWrapper>
-            <ServiceLocationDetailPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsServiceLocations />,
       },
       {
         path: 'service-locations/:id/edit',
-        element: (
-          <SuspenseWrapper>
-            <ServiceLocationFormPage />
-          </SuspenseWrapper>
-        ),
+        element: <RedirectToSettingsServiceLocationsEdit />,
       },
       // Assets
       {
@@ -582,6 +591,32 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
+      // Service Appointments
+      {
+        path: 'service-appointments',
+        element: (
+          <SuspenseWrapper>
+            <ServiceAppointmentsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'service-appointments/:id',
+        element: (
+          <SuspenseWrapper>
+            <ServiceAppointmentDetailPage />
+          </SuspenseWrapper>
+        ),
+      },
+      // Service Reports
+      {
+        path: 'service-reports',
+        element: (
+          <SuspenseWrapper>
+            <ServiceReportsPage />
+          </SuspenseWrapper>
+        ),
+      },
       // Estimates
       {
         path: 'estimates',
@@ -690,6 +725,14 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        path: 'scheduling/:id',
+        element: (
+          <SuspenseWrapper>
+            <AppointmentDetailPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
         path: 'scheduling/:id/edit',
         element: (
           <SuspenseWrapper>
@@ -713,12 +756,29 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
+      {
+        path: 'scheduling/territories',
+        element: (
+          <SuspenseWrapper>
+            <TerritoriesListPage />
+          </SuspenseWrapper>
+        ),
+      },
       // Predictive Maintenance
       {
         path: 'maintenance/health-dashboard',
         element: (
           <SuspenseWrapper>
             <EquipmentHealthDashboardPage />
+          </SuspenseWrapper>
+        ),
+      },
+      // Service Reports
+      {
+        path: 'service-reports/:id/viewer',
+        element: (
+          <SuspenseWrapper>
+            <ServiceReportViewer />
           </SuspenseWrapper>
         ),
       },
@@ -783,30 +843,7 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
-      {
-        path: 'job-sheets/templates',
-        element: (
-          <SuspenseWrapper>
-            <JobSheetTemplateListPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'job-sheets/templates/new',
-        element: (
-          <SuspenseWrapper>
-            <JobSheetBuilderPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'job-sheets/templates/:id/edit',
-        element: (
-          <SuspenseWrapper>
-            <JobSheetBuilderPage />
-          </SuspenseWrapper>
-        ),
-      },
+
       {
         path: 'job-sheets/dashboard',
         element: (
@@ -1095,11 +1132,7 @@ export const routes: RouteObject[] = [
       // API Key Management (Company Admin)
       {
         path: 'integrations/api-keys',
-        element: (
-          <SuspenseWrapper>
-            <ApiKeysPage />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/api-keys" replace />,
       },
       {
         path: 'integrations/guide',
@@ -1270,20 +1303,12 @@ export const routes: RouteObject[] = [
       // Security
       {
         path: 'security/audit-logs',
-        element: (
-          <SuspenseWrapper>
-            <AuditLogListPage />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/audit-logs" replace />,
       },
       // Mobile Usage Logs (admin)
       {
         path: 'admin/mobile-logs',
-        element: (
-          <SuspenseWrapper>
-            <MobileUsageLogs />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/mobile-logs" replace />,
       },
       // Reports
       {
@@ -1360,80 +1385,328 @@ export const routes: RouteObject[] = [
           </SuspenseWrapper>
         ),
       },
-      // Settings
+      // Settings Parent and Children
       {
         path: 'settings',
         element: (
           <SuspenseWrapper>
-            <GeneralSettingsPage />
+            <SettingsLayout />
           </SuspenseWrapper>
         ),
-      },
-      {
-        path: 'settings/roles',
-        element: (
-          <SuspenseWrapper>
-            <RolesPermissionsPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'settings/payment-gateways',
-        element: (
-          <SuspenseWrapper>
-            <PaymentGatewaySettingsPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'settings/customer-payment',
-        element: (
-          <SuspenseWrapper>
-            <CustomerPaymentSettingsPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'settings/email-sms-templates',
-        element: (
-          <SuspenseWrapper>
-            <EmailSmsTemplateManagementPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: 'settings/notifications',
-        element: (
-          <SuspenseWrapper>
-            <NotificationPreferencesPage />
-          </SuspenseWrapper>
-        ),
-      },
-      // WhatsApp Channel
-      {
-        path: 'settings/channels/whatsapp',
-        element: (
-          <SuspenseWrapper>
-            <WhatsAppChannelSettingsPage />
-          </SuspenseWrapper>
-        ),
-      },
-      // Email Channel
-      {
-        path: 'settings/channels/email',
-        element: (
-          <SuspenseWrapper>
-            <EmailChannelSettingsPage />
-          </SuspenseWrapper>
-        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="profile" replace />,
+          },
+          {
+            path: 'profile',
+            element: (
+              <SuspenseWrapper>
+                <GeneralSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'currency',
+            element: (
+              <SuspenseWrapper>
+                <CurrencySettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'service-locations',
+            element: (
+              <SuspenseWrapper>
+                <ServiceLocationListPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'service-locations/new',
+            element: (
+              <SuspenseWrapper>
+                <ServiceLocationFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'service-locations/:id',
+            element: (
+              <SuspenseWrapper>
+                <ServiceLocationDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'service-locations/:id/edit',
+            element: (
+              <SuspenseWrapper>
+                <ServiceLocationFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'chatbot',
+            element: (
+              <SuspenseWrapper>
+                <ChatbotSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <SuspenseWrapper>
+                <UserListPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'users/create',
+            element: (
+              <SuspenseWrapper>
+                <UserFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'users/:id',
+            element: (
+              <SuspenseWrapper>
+                <UserDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'users/:id/edit',
+            element: (
+              <SuspenseWrapper>
+                <UserFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'territories',
+            element: (
+              <SuspenseWrapper>
+                <TerritoriesSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'territories/new',
+            element: (
+              <SuspenseWrapper>
+                <TerritoryFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'territories/:id/edit',
+            element: (
+              <SuspenseWrapper>
+                <TerritoryFormPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'skills',
+            element: (
+              <SuspenseWrapper>
+                <SkillsSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'shifts',
+            element: (
+              <SuspenseWrapper>
+                <ShiftsSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'holidays',
+            element: (
+              <SuspenseWrapper>
+                <HolidaysSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'profiles',
+            element: (
+              <SuspenseWrapper>
+                <RolesPermissionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'audit-logs',
+            element: (
+              <SuspenseWrapper>
+                <AuditLogListPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'channels/email',
+            element: (
+              <SuspenseWrapper>
+                <EmailChannelSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'channels/whatsapp',
+            element: (
+              <SuspenseWrapper>
+                <WhatsAppChannelSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'export',
+            element: (
+              <SuspenseWrapper>
+                <DataExportSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'file-storage',
+            element: (
+              <SuspenseWrapper>
+                <FileStoragePage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'payment-gateways',
+            element: (
+              <SuspenseWrapper>
+                <PaymentGatewaySettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customer-payment',
+            element: (
+              <SuspenseWrapper>
+                <CustomerPaymentSettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'email-sms-templates',
+            element: (
+              <SuspenseWrapper>
+                <EmailSmsTemplateManagementPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'notifications',
+            element: (
+              <SuspenseWrapper>
+                <NotificationPreferencesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'security',
+            element: (
+              <SuspenseWrapper>
+                <SecuritySettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'mobile-logs',
+            element: (
+              <SuspenseWrapper>
+                <MobileUsageLogs />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'api-keys',
+            element: (
+              <SuspenseWrapper>
+                <ApiKeysPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/modules',
+            element: (
+              <SuspenseWrapper>
+                <ModulesAndFieldsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/modules/:moduleName/permissions',
+            element: (
+              <SuspenseWrapper>
+                <FieldPermissionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/dispatch-layouts',
+            element: (
+              <SuspenseWrapper>
+                <DispatchConsoleLayoutPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/module-mapping',
+            element: (
+              <SuspenseWrapper>
+                <ModuleMappingPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/templates',
+            element: (
+              <SuspenseWrapper>
+                <TemplatesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/job-sheets',
+            element: (
+              <SuspenseWrapper>
+                <JobSheetTemplateListPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/job-sheets/new',
+            element: (
+              <SuspenseWrapper>
+                <JobSheetBuilderPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/job-sheets/:id/edit',
+            element: (
+              <SuspenseWrapper>
+                <JobSheetBuilderPage />
+              </SuspenseWrapper>
+            ),
+          },
+        ],
       },
       {
         path: 'security/settings',
-        element: (
-          <SuspenseWrapper>
-            <SecuritySettingsPage />
-          </SuspenseWrapper>
-        ),
+        element: <Navigate to="/settings/security" replace />,
       },
       {
         path: 'reports/builder',

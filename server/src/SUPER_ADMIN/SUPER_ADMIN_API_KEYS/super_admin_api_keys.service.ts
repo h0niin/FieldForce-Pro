@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { REPOSITORY } from '../../shared/constants/keynames';
 import { SuperAdminApiKey } from './super_admin_api_keys.entity';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class SuperAdminApiKeysService {

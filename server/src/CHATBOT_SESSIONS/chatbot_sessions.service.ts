@@ -60,20 +60,25 @@ export class ChatbotSessionsService {
       // Call AI chatbot service
       let aiReply: any;
       try {
-        const response = await this.aiServiceClient.post('/api/chat/message', {
-          message: dto.message,
-          session_id: session.id,
-          context: dto.context,
-        }, {
-          headers: {
-            Authorization: `Bearer ${this.generateToken(tenantId)}`,
+        const response = await this.aiServiceClient.post(
+          '/api/chat/message',
+          {
+            message: dto.message,
+            session_id: session.id,
+            context: dto.context,
           },
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${this.generateToken(tenantId)}`,
+            },
+          },
+        );
         aiReply = response.data.data;
       } catch (aiError) {
         this.logger.warn('AI service unavailable, using placeholder: %s', aiError.message);
         aiReply = {
-          reply: 'I apologize, but I am currently unavailable. Please try again later or contact support.',
+          reply:
+            'I apologize, but I am currently unavailable. Please try again later or contact support.',
           session_id: session.id,
           sources: [],
           suggested_actions: [],

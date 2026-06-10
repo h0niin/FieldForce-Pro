@@ -70,8 +70,8 @@ function buildEmailClassificationPrompt(config: {
 
   const priorityKeywords = config.priorityRules?.['keywords']
     ? Object.entries(config.priorityRules['keywords'] as Record<string, string>)
-        .map(([word, level]) => `"${word}" → ${level}`)
-        .join(', ')
+      .map(([word, level]) => `"${word}" → ${level}`)
+      .join(', ')
     : '"urgent" → HIGH, "emergency" → CRITICAL, "asap" → HIGH';
 
   return `

@@ -20,6 +20,8 @@ export interface CreateEstimatePayload {
   discount?: number;
   total?: number;
   custom_fields?: Record<string, unknown>;
+  is_template?: boolean;
+  template_name?: string;
 }
 
 export interface UpdateEstimatePayload {
@@ -43,7 +45,7 @@ export interface ConvertToWorkOrderPayload {
 }
 
 export const estimatesApi = {
-  getAll(params?: PageOptions & { status?: string; excludeStatus?: string; createdBy?: string }) {
+  getAll(params?: PageOptions & { status?: string; excludeStatus?: string; createdBy?: string; isTemplate?: boolean }) {
     return api.get<ApiResponse<Estimate[]>>('/estimates', { params });
   },
 
@@ -81,6 +83,14 @@ export const estimatesApi = {
 
   sendToCustomer(id: string) {
     return api.post<ApiResponse<Estimate>>(`/estimates/${id}/send`);
+  },
+
+  sendWhatsApp(id: string) {
+    return api.post<ApiResponse<Estimate>>(`/estimates/${id}/send-whatsapp`);
+  },
+
+  createFromTemplate(templateId: string, payload?: Partial<CreateEstimatePayload>) {
+    return api.post<ApiResponse<Estimate>>(`/estimates/create-from-template/${templateId}`, payload || {});
   },
 
   generateLink(id: string) {

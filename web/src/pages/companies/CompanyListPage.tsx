@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, GlobalOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCompanies, useDeleteCompany } from '@/hooks/use-companies';
 import type { Company } from '@/types/models.types';
@@ -52,26 +52,26 @@ export default function CompanyListPage() {
       title: t('companies.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/companies/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('companies.columns.industry'),
       dataIndex: 'industry',
       key: 'industry',
-      render: (industry: string) => industry || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (industry: string, record: any) => industry || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('companies.columns.taxId'),
       dataIndex: 'tax_id',
       key: 'tax_id',
-      render: (tax_id: string) => tax_id || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (tax_id: string, record: any) => tax_id || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('companies.columns.website'),
       dataIndex: 'website',
       key: 'website',
-      render: (website: string) =>
+      render: (website: string, record: any) =>
         website ? (
           <Space>
             <GlobalOutlined />
@@ -87,7 +87,7 @@ export default function CompanyListPage() {
       title: t('companies.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -98,14 +98,7 @@ export default function CompanyListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="companies:read">
-            <Tooltip title={t('common.view')}>
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => navigate(`/companies/${record.id}`)}
-              />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="companies:update">
             <Tooltip title={t('common.edit')}>
@@ -113,7 +106,10 @@ export default function CompanyListPage() {
                 type="text"
                 icon={<EditOutlined />}
                 size="small"
-                onClick={() => navigate(`/companies/${record.id}/edit`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/companies/${record.id}/edit`);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -124,7 +120,10 @@ export default function CompanyListPage() {
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
-                onClick={() => handleDelete(record)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(record);
+                }}
               />
             </Tooltip>
           </PermissionGuard>
@@ -166,6 +165,10 @@ export default function CompanyListPage() {
         dataSource={companies}
         rowKey="id"
         loading={isLoading}
+        onRow={(record) => ({
+          onClick: () => navigate(`/companies/${record.id}`),
+          style: { cursor: 'pointer' },
+        })}
         pagination={{
           current: page,
           pageSize,

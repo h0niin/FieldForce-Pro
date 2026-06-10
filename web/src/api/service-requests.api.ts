@@ -33,7 +33,7 @@ export interface UpdateServiceRequestPayload {
 }
 
 export const serviceRequestsApi = {
-  getAll(params?: PageOptions & { status?: string }) {
+  getAll(params?: PageOptions & { status?: string, contact_id?: string, company_id?: string, asset_id?: string }) {
     return api.get<ApiResponse<ServiceRequest[]>>('/service-requests', { params });
   },
 

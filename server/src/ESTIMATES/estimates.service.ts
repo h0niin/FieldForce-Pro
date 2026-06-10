@@ -29,6 +29,9 @@ import { EmailService } from '../shared/services/email.service';
 import { User } from '../USERS/users.entity';
 import { Invoice } from '../INVOICES/invoices.entity';
 import { InvoiceLineItem } from '../INVOICE_LINE_ITEMS/invoice_line_items.entity';
+import { SlaService } from '../SLA_MODULE/sla.service';
+import { WhatsAppWebJsService } from '../WHATSAPP_CHANNELS/whatsapp_webjs.service';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ['sent', 'pending_approval'],
@@ -61,6 +64,9 @@ export class EstimatesService {
     @Optional() private readonly notificationsService: NotificationsService,
     @Optional() private readonly emailService: EmailService,
     @Inject(KEYNAMES.USERS) @Optional() private readonly userRepository: typeof User,
+    private readonly slaService: SlaService,
+    private readonly whatsappWebJsService: WhatsAppWebJsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -69,11 +75,28 @@ export class EstimatesService {
     status?: string,
     excludeStatus?: string,
     createdBy?: string,
+    isTemplate?: boolean,
   ): Promise<PageDto<Estimate>> {
     const where: Record<string, unknown> = {
       tenant_id: tenantId,
       is_deleted: false,
     };
+
+    if ((pageOptionsDto as any).asset_id) {
+      where.asset_id = (pageOptionsDto as any).asset_id;
+    }
+
+    if (isTemplate !== undefined) {
+      if (isTemplate === false) {
+        // Use OR-null so estimates whose is_template column is NULL (rows that
+        // pre-date the column in production) are not silently excluded from the
+        // global list.  Estimates linked to a service request, work order, or
+        // any other FK are returned unconditionally — no FK-based filter here.
+        where.is_template = { [Op.or]: [false, null] };
+      } else {
+        where.is_template = isTemplate;
+      }
+    }
 
     // Filter by status (supports comma-separated list)
     if (status) {
@@ -236,9 +259,13 @@ export class EstimatesService {
     return new PageDto(rows, meta);
   }
 
-  async findAll(tenantId: string): Promise<Estimate[]> {
+  async findAll(tenantId: string, isTemplate?: boolean): Promise<Estimate[]> {
+    const where: Record<string, unknown> = { tenant_id: tenantId, is_deleted: false };
+    if (isTemplate !== undefined) {
+      where.is_template = isTemplate;
+    }
     return this.estimateRepository.findAll({
-      where: { tenant_id: tenantId, is_deleted: false },
+      where,
       include: [
         { model: Contact, attributes: ['id', 'first_name', 'last_name', 'email', 'phone'] },
       ],
@@ -287,7 +314,117 @@ export class EstimatesService {
     // Auto-trigger ESTIMATE_APPROVAL workflow on creation
     await this.autoStartApprovalWorkflow(tenantId, estimate);
 
+    try {
+      await this.slaService.attachSlaToEstimate(tenantId, estimate);
+    } catch (error) {
+      this.logger.error(`Failed to attach SLA for Estimate ${estimate.id}: ${(error as Error).message}`);
+    }
+
+    if (estimate.contact_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Contact',
+          estimate.contact_id,
+          'CREATED',
+          `Estimate #${estimate.estimate_number} was generated.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Contact: ${(err as Error).message}`);
+      }
+    }
+
+    if (estimate.asset_id) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          estimate.asset_id,
+          'CREATED',
+          `Estimate #${estimate.estimate_number} was generated for this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Asset: ${(err as Error).message}`);
+      }
+    }
+
     return estimate;
+  }
+
+  async createFromTemplate(templateId: string, tenantId: string, userId?: string, updates?: Partial<CreateEstimateDto>): Promise<Estimate> {
+    const template = await this.findById(templateId, tenantId);
+    if (!template.is_template) {
+      throw new BadRequestException('Source estimate is not a template');
+    }
+
+    // Prepare new estimate data from template
+    const newDto: CreateEstimateDto = {
+      ...updates,
+      subtotal: template.subtotal,
+      tax: template.tax,
+      discount: template.discount,
+      total: template.total,
+      notes: template.notes,
+      custom_fields: template.custom_fields,
+      is_template: false,
+      status: 'draft',
+    };
+
+    const estimate = await this.create(tenantId, newDto, userId);
+
+    // Copy line items if they exist
+    if (template.line_items && template.line_items.length > 0) {
+      const EstimateLineItemModel = this.estimateRepository.sequelize!.model('EstimateLineItem');
+      await Promise.all(
+        template.line_items.map((item) =>
+          EstimateLineItemModel.create({
+            tenant_id: tenantId,
+            estimate_id: estimate.id,
+            type: item.type,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+            discount: item.discount,
+            total: item.total,
+            sort_order: item.sort_order,
+          })
+        )
+      );
+    }
+
+    return this.findById(estimate.id, tenantId);
+  }
+
+  async sendWhatsApp(id: string, tenantId: string): Promise<Estimate> {
+    const estimate = await this.findById(id, tenantId);
+    
+    if (!estimate.contact || !estimate.contact.phone) {
+      throw new BadRequestException('Estimate does not have a contact with a phone number');
+    }
+
+    // Ensure we have a public token
+    let linkEstimate = estimate;
+    if (!linkEstimate.public_token) {
+      linkEstimate = await this.generatePublicLink(id, tenantId);
+    }
+
+    // We assume the frontend domain is in process.env.FRONTEND_URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const magicLink = `${frontendUrl}/estimates/view/${linkEstimate.public_token}`;
+    
+    const messageBody = `Hello ${estimate.contact.first_name || 'there'}, your estimate ${estimate.estimate_number || ''} is ready for review. You can view and approve it here: ${magicLink}`;
+
+    try {
+      await this.whatsappWebJsService.sendMessage(tenantId, estimate.contact.phone, messageBody);
+      this.logger.log(`WhatsApp message sent for Estimate ${id}`);
+    } catch (error) {
+      this.logger.error(`Failed to send WhatsApp message for Estimate ${id}: ${(error as Error).message}`);
+      throw new BadRequestException('Failed to send WhatsApp message: ' + (error as Error).message);
+    }
+
+    return linkEstimate;
   }
 
   private async autoStartApprovalWorkflow(tenantId: string, estimate: Estimate): Promise<void> {
@@ -339,7 +476,31 @@ export class EstimatesService {
     userId?: string,
   ): Promise<Estimate> {
     const estimate = await this.findById(id, tenantId);
+    
+    // Check if asset_id changed or is present
+    const oldAssetId = estimate.asset_id;
+
     await estimate.update(dto);
+
+    if (dto.asset_id && dto.asset_id !== oldAssetId) {
+      try {
+        await this.activityLogsService.logActivity(
+          tenantId,
+          'Asset',
+          dto.asset_id,
+          'UPDATED',
+          `Estimate #${estimate.estimate_number} was assigned to this asset.`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cross-log Estimate to Asset: ${(err as Error).message}`);
+      }
+    } else if (estimate.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', estimate.asset_id, 'UPDATED', `Estimate #${estimate.estimate_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
+
+    if (estimate.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', estimate.contact_id, 'UPDATED', `Estimate #${estimate.estimate_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
 
     // Auto-complete any ESTIMATE type approvals (the "create estimate" task)
     // so it shows as completed in Document Approvals page
@@ -1118,6 +1279,15 @@ export class EstimatesService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const estimate = await this.findById(id, tenantId);
+
+    // Global Pre-Delete Logging
+    if (estimate.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', estimate.contact_id, 'DELETED', `Estimate #${estimate.estimate_number || id} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+    if (estimate.asset_id) {
+      this.activityLogsService.logActivity(tenantId, 'Asset', estimate.asset_id, 'DELETED', `Estimate #${estimate.estimate_number || id} was deleted.`).catch(err => this.logger.warn(`Failed to log: ${err.message}`));
+    }
+
     await estimate.update({ is_deleted: true });
   }
 }

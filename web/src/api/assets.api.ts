@@ -5,14 +5,19 @@ import type { Asset } from '@/types/models.types';
 export interface CreateAssetPayload {
   name: string;
   contact_id?: string;
-  location_id?: string;
+  company_id?: string;
+  parent_asset_id?: string;
+  service_location_id?: string;
   model?: string;
   serial_number?: string;
   manufacturer?: string;
-  install_date?: string;
+  installation_date?: string;
   warranty_expiry?: string;
+  ordered_date?: string;
+  purchased_date?: string;
+  giai?: string;
   health_score?: number;
-  category?: string;
+  product_category?: string;
   notes?: string;
   custom_fields?: Record<string, unknown>;
 }
@@ -20,14 +25,19 @@ export interface CreateAssetPayload {
 export interface UpdateAssetPayload {
   name?: string;
   contact_id?: string;
-  location_id?: string;
+  company_id?: string;
+  parent_asset_id?: string;
+  service_location_id?: string;
   model?: string;
   serial_number?: string;
   manufacturer?: string;
-  install_date?: string;
+  installation_date?: string;
   warranty_expiry?: string;
+  ordered_date?: string;
+  purchased_date?: string;
+  giai?: string;
   health_score?: number;
-  category?: string;
+  product_category?: string;
   notes?: string;
   custom_fields?: Record<string, unknown>;
 }

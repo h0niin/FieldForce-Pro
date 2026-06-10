@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Op } from 'sequelize';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { REPOSITORY } from '../shared/constants/keynames';
 import { User } from './users.entity';
@@ -75,6 +75,14 @@ export class UsersService {
     return this.userRepository.findAll({
       where: { tenant_id: tenantId, is_deleted: false, is_active: true },
       attributes: ['id', 'first_name', 'last_name', 'email'],
+      include: [
+        {
+          model: Role,
+          through: { attributes: [] },
+          where: { name: { [Op.iLike]: '%technician%' } },
+          required: true,
+        },
+      ],
       order: [['first_name', 'ASC']],
     });
   }

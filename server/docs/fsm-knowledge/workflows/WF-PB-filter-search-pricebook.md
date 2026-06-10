@@ -10,7 +10,7 @@ This workflow covers all filtering, search, sorting, and pagination actions avai
 
 ## Action A — Search by Name or Description
 
-1. In the sidebar, click **Pricebook** (the page title on the list page is "Pricebook").
+1. Open the **Pricebook** page (its list page title is "Pricebook"). *(Note: Pricebook is not currently shown in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. The Pricebook list page loads with subtitle "Manage tiered pricing for services (Good/Better/Best)".
 3. In the search input (placeholder: `Search pricebook items...`, width 400), type the search term.
 4. After a 500 ms debounce, the `search` state updates, `page` resets to 1, and the table re-fetches via the `usePricebookItems` hook.

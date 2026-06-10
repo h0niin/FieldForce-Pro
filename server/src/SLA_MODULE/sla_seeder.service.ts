@@ -109,7 +109,7 @@ export class SlaPolicySeederService implements OnModuleInit {
         },
         {
           tenant_id: tenantId,
-          name: 'Catch-All: Urgent',
+          name: 'Default Urgent SLA',
           category_id: null,
           sub_category_id: null,
           priority_id: priorityMap['Urgent'],
@@ -119,7 +119,7 @@ export class SlaPolicySeederService implements OnModuleInit {
         },
         {
           tenant_id: tenantId,
-          name: 'Catch-All: High',
+          name: 'Default High SLA',
           category_id: null,
           sub_category_id: null,
           priority_id: priorityMap['High'],
@@ -129,7 +129,7 @@ export class SlaPolicySeederService implements OnModuleInit {
         },
         {
           tenant_id: tenantId,
-          name: 'Catch-All: Medium',
+          name: 'Default Medium SLA',
           category_id: null,
           sub_category_id: null,
           priority_id: priorityMap['Medium'],
@@ -139,7 +139,7 @@ export class SlaPolicySeederService implements OnModuleInit {
         },
         {
           tenant_id: tenantId,
-          name: 'Catch-All: Low',
+          name: 'Default Low SLA',
           category_id: null,
           sub_category_id: null,
           priority_id: priorityMap['Low'],

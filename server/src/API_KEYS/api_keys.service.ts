@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Op } from 'sequelize';
 import { ApiKey } from './api_keys.entity';

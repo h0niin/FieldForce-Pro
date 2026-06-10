@@ -104,45 +104,45 @@ export default function TimesheetListPage() {
       title: t('timesheets.columns.clockIn'),
       dataIndex: 'clock_in',
       key: 'clock_in',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime(),
     },
     {
       title: t('timesheets.columns.clockOut'),
       dataIndex: 'clock_out',
       key: 'clock_out',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('timesheets.columns.travel'),
       dataIndex: 'travel_time_minutes',
       key: 'travel_time_minutes',
-      render: (minutes: number) => minutes || 0,
+      render: (minutes: number, record: any) => minutes || 0,
     },
     {
       title: t('timesheets.columns.work'),
       dataIndex: 'work_time_minutes',
       key: 'work_time_minutes',
-      render: (minutes: number) => minutes || 0,
+      render: (minutes: number, record: any) => minutes || 0,
     },
     {
       title: t('timesheets.columns.break'),
       dataIndex: 'break_time_minutes',
       key: 'break_time_minutes',
-      render: (minutes: number) => minutes || 0,
+      render: (minutes: number, record: any) => minutes || 0,
     },
     {
       title: t('timesheets.columns.billable'),
       dataIndex: 'is_billable',
       key: 'is_billable',
-      render: (billable: boolean) =>
+      render: (billable: boolean, record: any) =>
         billable ? <Tag color="green">{t('timesheets.yes')}</Tag> : <Tag color="default">{t('timesheets.no')}</Tag>,
     },
     {
       title: t('timesheets.columns.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {formatStatus(status)}
         </Tag>
@@ -155,11 +155,6 @@ export default function TimesheetListPage() {
       width: 200,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="timesheets:read">
-            <Tooltip title={t('timesheets.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/timesheets/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           {record.status === 'pending' && (
             <>
               <PermissionGuard permission="timesheets:update">

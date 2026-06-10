@@ -7,9 +7,11 @@ import { DatabaseModule } from '../database/database.module';
 import { InvoicesModule } from '../INVOICES/invoices.module';
 import { WorkflowModule } from '../WORKFLOW/workflow.module';
 import { NotificationsModule } from '../NOTIFICATIONS/notifications.module';
+import { SlaModule } from '../SLA_MODULE/sla.module';
+import { ActivityLogsModule } from '../ACTIVITY_LOGS/activity_logs.module';
 
 @Module({
-  imports: [DatabaseModule, InvoicesModule, WorkflowModule, NotificationsModule],
+  imports: [DatabaseModule, InvoicesModule, WorkflowModule, NotificationsModule, SlaModule, ActivityLogsModule],
   controllers: [WorkOrdersController],
   providers: [WorkOrdersService, ...workOrdersProviders, ...workflowTemplatesProviders],
   exports: [WorkOrdersService],

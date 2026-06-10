@@ -81,17 +81,18 @@ const menuSections: MenuSection[] = [
       { key: '/contacts', icon: <ContactsOutlined />, labelKey: 'nav.contacts', permission: 'contacts:read' },
       { key: '/companies', icon: <BankOutlined />, labelKey: 'nav.companies', permission: 'companies:read' },
       { key: '/service-locations', icon: <EnvironmentOutlined />, labelKey: 'nav.serviceLocations', permission: 'service_locations:read' },
+      { key: '/assets', icon: <ToolOutlined />, labelKey: 'nav.assets', permission: 'assets:read' },
     ],
   },
   {
-    section: 'sidebar.operations',
+    section: 'sidebar.workOrderManagement',
     items: [
       { key: '/service-requests', icon: <FileTextOutlined />, labelKey: 'nav.serviceRequests', permission: 'service_requests:read' },
       { key: '/estimates', icon: <CalculatorOutlined />, labelKey: 'nav.estimates', permission: 'estimates:read' },
       { key: '/work-orders', icon: <ScheduleOutlined />, labelKey: 'nav.workOrders', permission: 'work_orders:read' },
-      { key: '/slas', icon: <ClockCircleOutlined />, labelKey: 'SLA Policies', permission: 'settings:read' },
-      // { key: '/assets', icon: <ToolOutlined />, labelKey: 'nav.assets', permission: 'assets:read' },
-      // { key: '/maintenance-plans', icon: <CalendarOutlined />, labelKey: 'nav.maintenancePlans', permission: 'asset_maintenance_plans:read' },
+      { key: '/slas', icon: <ClockCircleOutlined />, labelKey: 'nav.slaPolicies', permission: 'settings:read' },
+      { key: '/service-appointments', icon: <CalendarOutlined />, labelKey: 'sidebar.serviceAppointments', permission: 'service_appointments:read' },
+      { key: '/service-reports', icon: <FileDoneOutlined />, labelKey: 'sidebar.serviceReports', permission: 'reports:read' },
     ],
   },
   {
@@ -106,6 +107,7 @@ const menuSections: MenuSection[] = [
           { key: '/scheduling', labelKey: 'sidebar.dispatchBoard' },
           { key: '/scheduling/calendar', labelKey: 'sidebar.calendarView' },
           { key: '/scheduling/map', labelKey: 'sidebar.mapView' },
+          { key: '/scheduling/territories', labelKey: 'Territories' },
         ],
       },
       { key: '/job-sheets', icon: <FormOutlined />, labelKey: 'nav.jobSheets', permission: 'job_sheets:read' },
@@ -204,35 +206,8 @@ const menuSections: MenuSection[] = [
   {
     section: 'sidebar.systemAnalytics',
     items: [
-      { key: '/users', icon: <UserOutlined />, labelKey: 'nav.users', permission: 'users:read' },
       { key: '/reports', icon: <BarChartOutlined />, labelKey: 'nav.reports', permission: 'reports:read' },
-      { key: '/integrations/api-keys', icon: <KeyOutlined />, labelKey: 'sidebar.apiKeys', permission: 'settings:read' },
-      {
-        key: 'settings-submenu',
-        icon: <SettingOutlined />,
-        labelKey: 'nav.settings',
-        permission: 'settings:read',
-        children: [
-          { key: '/settings', labelKey: 'settings.general' },
-          { key: '/settings/roles', labelKey: 'settings.rolesPermissions', permission: 'roles:read' },
-          { key: '/settings/channels/whatsapp', labelKey: 'settings.whatsappChannel', permission: 'settings:read' },
-          { key: '/settings/channels/email', labelKey: 'settings.emailChannel', permission: 'settings:read' },
-          // { key: '/settings/payment-gateways', labelKey: 'Payment Gateways', permission: 'payment_gateways:read' },
-          // { key: '/settings/email-sms-templates', labelKey: 'Email/SMS Templates', permission: 'templates:read' },
-          // { key: '/settings/notifications', labelKey: 'Notifications', permission: 'notifications:read' },
-        ],
-      },
-      { key: '/admin/mobile-logs', icon: <MobileOutlined />, labelKey: 'Mobile Usage Logs', permission: 'audit_logs:read' },
-      {
-        key: 'security-submenu',
-        icon: <SafetyOutlined />,
-        labelKey: 'nav.security',
-        permission: 'audit_logs:read',
-        children: [
-          // { key: '/security/audit-logs', labelKey: 'nav.auditLogs', permission: 'audit_logs:read' },
-          { key: '/security/settings', labelKey: 'sidebar.securitySettings', permission: 'settings:read' },
-        ],
-      },
+      { key: '/settings', icon: <SettingOutlined />, labelKey: 'nav.settings', permission: 'settings:read' },
     ],
   },
 ];

@@ -26,6 +26,7 @@ This directory feeds the **FSM Expert AI ("Max")** that appears inside the appli
 
 | File | Topic |
 |------|-------|
+| `00-getting-started.md` | First-time setup, onboarding checklist, common first questions |
 | `01-platform-overview.md` | Architecture, navigation, and general concepts |
 | `02-work-orders.md` | Work order lifecycle and workflows |
 | `03-service-requests.md` | Service request handling and approval |
@@ -34,3 +35,25 @@ This directory feeds the **FSM Expert AI ("Max")** that appears inside the appli
 | `06-mobile-app.md` | Mobile app features for field technicians |
 | `07-user-roles-permissions.md` | Role management and permission configuration |
 | `08-settings-customization.md` | Tenant settings, SLAs, and workflow rules |
+| `09-estimates.md` | Estimates (quotes) — create, send, approve, convert to WO |
+| `10-assets.md` | Asset management, health scores, maintenance plans |
+| `11-contacts-companies.md` | Contacts, companies, and service locations |
+| `12-job-sheets.md` | Job sheet templates, completion, and approval |
+| `13-timesheets-trips.md` | Timesheet tracking and GPS trip history |
+| `14-workforce-management.md` | Crews, shifts, territories, time off, skills, equipment |
+| `15-catalog-pricebook.md` | Services catalog, parts catalog, and pricebook tiers |
+| `16-service-agreements.md` | Service agreements, SLA policies, SLA compliance |
+| `17-blueprints.md` | Visual workflow designer / custom state machines |
+| `18-reports-analytics.md` | Reports, custom report builder, dashboard, NL analytics |
+| `19-customer-portal.md` | Customer self-service portal (invoices, tracking, approvals) |
+| `20-communications-notifications.md` | Communications log and notification preferences |
+| `21-webforms-reviews.md` | Embeddable webforms and customer reviews |
+| `22-maintenance-plans.md` | Recurring maintenance schedules and equipment health |
+| `23-live-tracking.md` | Real-time GPS technician tracking |
+| `24-security-audit.md` | Security settings, 2FA, audit logs |
+| `25-voice-vision-ai.md` | Voice notes (transcription) and AI Vision (OCR/document analysis) |
+| `26-fsm-glossary.md` | Definitions of every FSM term used in the platform |
+| `27-faq-new-users.md` | Frequently asked questions for new users |
+| `master-index.md` | Complete capability index linking to all workflow SOPs |
+| `ui-maps/` | Detailed UI maps of key pages (button labels, form fields) |
+| `workflows/` | 100+ step-by-step workflow SOPs for every action in the app |

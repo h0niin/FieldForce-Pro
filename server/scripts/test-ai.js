@@ -72,13 +72,13 @@ CONCEPTUAL QUERIES ("What is X?"):
 async function run() {
   const jsonPath = path.join(__dirname, '../docs/fsm-capabilities.json');
   const knowledgeBase = fs.readFileSync(jsonPath, 'utf-8');
-  
+
   const tbPath = path.join(__dirname, '../docs/fsm-troubleshooting.json');
   const troubleshootingBase = fs.existsSync(tbPath) ? fs.readFileSync(tbPath, 'utf-8') : '[]';
 
   const conceptsPath = path.join(__dirname, '../docs/fsm-concepts.json');
   const conceptsBase = fs.existsSync(conceptsPath) ? fs.readFileSync(conceptsPath, 'utf-8') : '[]';
-  
+
   const systemInstruction = EXPERT_SYSTEM_PROMPT_BASE
     .replace('[INJECT JSON DATA HERE]', () => knowledgeBase)
     .replace('[INJECT TROUBLESHOOTING DATA HERE]', () => troubleshootingBase)
@@ -93,7 +93,7 @@ async function run() {
   });
 
   console.log('Sending prompt to Gemini...');
-  
+
   const result = await model.generateContent("How to add a part to the catalog");
   let rawText = result.response.text();
 
@@ -101,7 +101,7 @@ async function run() {
   rawText = rawText.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim();
   rawText = rawText.replace(/```[a-z_]*\n?/gi, '').replace(/```/g, '').trim();
   rawText = rawText.replace(/\\"/g, '"');
-  
+
   console.log('\n--- RESPONSE START ---\n');
   console.log(rawText);
   console.log('\n--- RESPONSE END ---\n');

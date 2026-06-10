@@ -1,0 +1,55 @@
+[
+  { "c": "sales", "auth": false, "q": "What is FieldForce Pro and what does it do?" },
+  { "c": "sales", "auth": false, "q": "How much does it cost? Do you have a free plan?" },
+  { "c": "sales", "auth": false, "q": "What industries is this built for?" },
+  { "c": "sales", "auth": false, "q": "Does the mobile app work without internet?" },
+  { "c": "sales", "auth": false, "q": "Can I book a demo or talk to someone?" },
+
+  { "c": "core", "auth": true, "q": "How do I create a work order?" },
+  { "c": "core", "auth": true, "q": "How do I convert an estimate into a work order?" },
+  { "c": "core", "auth": true, "q": "How do I send an estimate to a customer for approval?" },
+  { "c": "core", "auth": true, "q": "How do I record a payment against an invoice?" },
+  { "c": "core", "auth": true, "q": "How do I assign a technician to an appointment?" },
+  { "c": "core", "auth": true, "q": "How do I add a new part to the catalog?" },
+  { "c": "core", "auth": true, "q": "How do I approve a job sheet?" },
+  { "c": "core", "auth": true, "q": "How do I invite a new user and send them a magic link?" },
+  { "c": "core", "auth": true, "q": "How do I create a service request?" },
+  { "c": "core", "auth": true, "q": "How do I create an invoice?" },
+  { "c": "core", "auth": true, "q": "How do I create a new customer or contact?" },
+  { "c": "core", "auth": true, "q": "How do I schedule an appointment on the calendar?" },
+
+  { "c": "concept", "auth": true, "q": "What is a blueprint?" },
+  { "c": "concept", "auth": true, "q": "What is a pricebook?" },
+  { "c": "concept", "auth": true, "q": "What is the dispatch board?" },
+  { "c": "concept", "auth": true, "q": "What is a service agreement?" },
+  { "c": "concept", "auth": true, "q": "What's the difference between a work order and a service request?" },
+  { "c": "concept", "auth": true, "q": "What is a job sheet?" },
+
+  { "c": "trouble", "auth": true, "q": "I'm getting a 'no active parts found' error, what do I do?" },
+  { "c": "trouble", "auth": true, "q": "Why can't I convert this work order into an estimate?" },
+  { "c": "trouble", "auth": true, "q": "My magic link expired and the new user can't sign up. Help." },
+
+  { "c": "typo", "auth": true, "q": "how to creat a wrok oder" },
+  { "c": "typo", "auth": true, "q": "how do i use the dispatch bord" },
+  { "c": "typo", "auth": true, "q": "what is mmobile usage logs" },
+
+  { "c": "ambig", "auth": true, "q": "create estimate in work order" },
+  { "c": "ambig", "auth": true, "q": "job sheets" },
+
+  { "c": "new", "auth": true, "q": "How do I upload a document for the AI to read with OCR?" },
+  { "c": "new", "auth": true, "q": "How do I ask a question using natural language analytics?" },
+  { "c": "new", "auth": true, "q": "What can the Vision AI feature do for me?" },
+  { "c": "new", "auth": true, "q": "How do I transcribe a voice note?" },
+  { "c": "new", "auth": true, "q": "How do I create a workflow approval template?" },
+  { "c": "new", "auth": true, "q": "Where do I see documents that are waiting for my approval?" },
+  { "c": "new", "auth": true, "q": "How do I build my own custom dashboard with widgets?" },
+  { "c": "new", "auth": true, "q": "How do I build a custom report?" },
+  { "c": "new", "auth": true, "q": "How do I check the health of my equipment?" },
+  { "c": "new", "auth": true, "q": "How do I view SLA compliance for my service agreements?" },
+  { "c": "new", "auth": true, "q": "As a technician, where do I see the jobs assigned to me?" },
+  { "c": "new", "auth": true, "q": "How do I integrate my website form to create service requests via the API?" },
+
+  { "c": "oos", "auth": true, "q": "Can I integrate FieldForce Pro with QuickBooks accounting?" },
+  { "c": "oos", "auth": true, "q": "How do I permanently delete my entire company account and all data?" },
+  { "c": "oos", "auth": true, "q": "What's the weather like today?" }
+]

@@ -9,12 +9,7 @@ import {
   UseGuards,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ChatbotSessionsService } from './chatbot_sessions.service';
 import { SendMessageDto, QuerySessionsDto } from './dto/chatbot_sessions.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Table, Space, Tag, Tooltip, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTemplates, useDeleteTemplate } from '@/hooks/use-templates';
 import PageHeader from '@/components/common/PageHeader';
@@ -71,14 +71,14 @@ export default function TemplateListPage() {
       title: t('templates.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name: string, record: any) => (<Link to={`/customization/templates/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: t('templates.columns.type'),
       dataIndex: 'type',
       key: 'type',
-      render: (type: string) => (
+      render: (type: string, record: any) => (
         <Tag color={TYPE_COLORS[type] || 'default'}>
           {type ? type.charAt(0).toUpperCase() + type.slice(1) : '-'}
         </Tag>
@@ -88,13 +88,13 @@ export default function TemplateListPage() {
       title: t('templates.columns.subject'),
       dataIndex: 'subject',
       key: 'subject',
-      render: (subject: string) => subject || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (subject: string, record: any) => subject || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('templates.columns.default'),
       dataIndex: 'is_default',
       key: 'is_default',
-      render: (isDefault: boolean) => (
+      render: (isDefault: boolean, record: any) => (
         isDefault ? <Tag color="green">{t('templates.default')}</Tag> : null
       ),
     },
@@ -102,7 +102,7 @@ export default function TemplateListPage() {
       title: t('templates.columns.lastUpdated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
     },
     {
@@ -113,9 +113,7 @@ export default function TemplateListPage() {
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="templates:read">
-            <Tooltip title={t('templates.actions.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/customization/templates/${record.id}`)} />
-            </Tooltip>
+            
           </PermissionGuard>
           <PermissionGuard permission="templates:update">
             <Tooltip title={t('templates.actions.edit')}>

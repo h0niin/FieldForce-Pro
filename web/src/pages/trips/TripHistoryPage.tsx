@@ -179,7 +179,7 @@ export default function TripHistoryPage() {
             <Button
               type="link"
               size="small"
-              onClick={() => navigate(`/work-orders/${record.work_order_id}`)}
+              onClick={(e) => { e.stopPropagation(); navigate(`/work-orders/${record.work_order_id}`); }}
               style={{ padding: 0, fontWeight: 600, fontSize: 13 }}
             >
               {wo.wo_number}
@@ -271,7 +271,7 @@ export default function TripHistoryPage() {
             type="text"
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => openDrawer(record)}
+            onClick={(e) => { e.stopPropagation(); openDrawer(record); }}
           />
         </Tooltip>
       ),

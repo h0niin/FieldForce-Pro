@@ -1,20 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-/**
- * Twilio incoming message webhook payload (relevant fields).
- * @see https://www.twilio.com/docs/messaging/guides/webhook-request
- */
-export class TwilioWebhookPayload {
-  MessageSid?: string;
-  AccountSid?: string;
-  From?: string;       // e.g. "whatsapp:+971501234567"
-  To?: string;         // e.g. "whatsapp:+14155238886"
-  Body?: string;
-  NumMedia?: string;
-  MediaUrl0?: string;
-  MediaContentType0?: string;
-  ProfileName?: string;
-}
 
 /**
  * Meta (WhatsApp Cloud API) incoming webhook payload.

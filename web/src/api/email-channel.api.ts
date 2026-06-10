@@ -6,7 +6,7 @@ import type { ApiResponse } from '@/types/api.types';
 export interface EmailChannelConfig {
   id: string;
   tenant_id: string;
-  connection_method: 'forwarding' | 'mailbox' | 'platform_provided';
+  connection_method: 'forwarding' | 'platform_provided';
   support_email: string | null;
   platform_email: string | null;
   status: 'not_receiving' | 'receiving' | 'error';
@@ -24,7 +24,6 @@ export interface EmailChannelConfig {
   human_handoff_keywords: string[];
   handoff_team: string | null;
   is_active: boolean;
-  imap_config: Record<string, unknown>;
   smtp_config: Record<string, unknown>;
   webhook_secret: string | null;
   created_at: string;
@@ -66,7 +65,7 @@ export interface ConnectionTestResult {
 }
 
 export interface UpsertEmailChannelPayload {
-  connection_method: 'forwarding' | 'mailbox' | 'platform_provided';
+  connection_method: 'forwarding' | 'platform_provided';
   support_email?: string;
   platform_email?: string;
   reply_from_name?: string;
@@ -83,7 +82,6 @@ export interface UpsertEmailChannelPayload {
   human_handoff_keywords?: string[];
   handoff_team?: string;
   is_active?: boolean;
-  imap_config?: Record<string, unknown>;
   smtp_config?: Record<string, unknown>;
   webhook_secret?: string;
 }

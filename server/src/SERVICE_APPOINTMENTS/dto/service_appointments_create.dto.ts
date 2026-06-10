@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -15,7 +16,7 @@ export class CreateServiceAppointmentDto {
   @IsUUID()
   work_order_id: string;
 
-  @ApiPropertyOptional({ description: 'Assigned technician (user) ID — null for unassigned', example: 'uuid' })
+  @ApiPropertyOptional({ description: 'Assigned technician / service resource (user) ID — null for unassigned', example: 'uuid' })
   @IsUUID()
   @IsOptional()
   agent_id?: string;
@@ -27,12 +28,36 @@ export class CreateServiceAppointmentDto {
 
   @ApiPropertyOptional({
     description: 'Appointment status',
-    enum: ['scheduled', 'in_progress', 'completed', 'cancelled'],
+    enum: ['scheduled', 'en_route', 'on_site', 'in_progress', 'on_hold', 'completed', 'cancelled'],
     default: 'scheduled',
   })
-  @IsEnum(['scheduled', 'in_progress', 'completed', 'cancelled'])
+  @IsEnum(['scheduled', 'en_route', 'on_site', 'in_progress', 'on_hold', 'completed', 'cancelled'])
   @IsOptional()
   status?: string;
+
+  @ApiPropertyOptional({ description: 'Short summary of the appointment', example: 'AC servicing' })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  summary?: string;
+
+  @ApiPropertyOptional({
+    description: 'Appointment type',
+    enum: ['Service', 'Installation', 'Maintenance', 'Inspection'],
+    default: 'Service',
+  })
+  @IsEnum(['Service', 'Installation', 'Maintenance', 'Inspection'])
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({
+    description: 'Schedule type',
+    enum: ['time_bound', 'all_day'],
+    default: 'time_bound',
+  })
+  @IsEnum(['time_bound', 'all_day'])
+  @IsOptional()
+  schedule_type?: string;
 
   @ApiProperty({ description: 'Scheduled start date', example: '2025-01-15T09:00:00Z' })
   @IsDateString()
@@ -52,12 +77,30 @@ export class CreateServiceAppointmentDto {
   @IsOptional()
   actual_end?: string;
 
+  @ApiPropertyOptional({ description: 'Due date (YYYY-MM-DD)', example: '2025-01-20' })
+  @IsDateString()
+  @IsOptional()
+  due_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Billing status',
+    enum: ['not_invoiced', 'invoiced'],
+    default: 'not_invoiced',
+  })
+  @IsEnum(['not_invoiced', 'invoiced'])
+  @IsOptional()
+  billing_status?: string;
+
   @ApiPropertyOptional({ description: 'Notes', example: 'Bring extra tools for this job' })
   @IsString()
   @IsOptional()
   notes?: string;
 
   @ApiPropertyOptional({ description: 'Is this a recurring appointment', default: false })
+  @Transform(({ obj }) => {
+    const raw = obj?.is_recurring;
+    return raw === undefined ? undefined : raw === true || raw === 'true';
+  })
   @IsBoolean()
   @IsOptional()
   is_recurring?: boolean;

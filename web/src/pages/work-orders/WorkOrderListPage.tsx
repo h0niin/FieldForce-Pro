@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button, Table, Space, Tooltip, Tag, Select, Tabs, Modal, Input, Form, Avatar, DatePicker } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EditOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, TeamOutlined, UserOutlined, CarOutlined, CalendarOutlined, PlusOutlined } from '@ant-design/icons';
@@ -283,20 +283,20 @@ export default function WorkOrderListPage() {
       title: t('workOrders.columns.woNumber'),
       dataIndex: 'wo_number',
       key: 'wo_number',
-      render: (num: string) => <span style={{ fontWeight: 500 }}>{num || '-'}</span>,
+      render: (num: string, record: any) => <Link to={`/work-orders/${record.id}`}><span style={{ fontWeight: 500 }}>{num || '-'}</span></Link>,
     },
     {
       title: t('workOrders.columns.summary'),
       dataIndex: 'summary',
       key: 'summary',
-      render: (summary: string) => <span style={{ fontWeight: 500 }}>{summary}</span>,
+      render: (summary: string, record: any) => <span style={{ fontWeight: 500 }}>{summary}</span>,
       sorter: (a, b) => a.summary.localeCompare(b.summary),
     },
     {
       title: t('workOrders.columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
-      render: (priority: string) => (
+      render: (priority: string, record: any) => (
         <Tag color={priorityColors[priority] || 'default'}>
           {t(`workOrders.priority.${priority}`, { defaultValue: priority })}
         </Tag>
@@ -306,7 +306,7 @@ export default function WorkOrderListPage() {
       title: t('workOrders.columns.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={statusColors[status] || 'default'}>
           {t(`workOrders.status.${statusKeyMap[status] || status}`, { defaultValue: formatStatus(status) })}
         </Tag>
@@ -324,13 +324,13 @@ export default function WorkOrderListPage() {
       title: t('workOrders.columns.category'),
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (category: string, record: any) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('workOrders.columns.scheduledDate'),
       dataIndex: 'scheduled_start',
       key: 'scheduled_start',
-      render: (date: string) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (date: string, record: any) => date ? formatDateTime(date) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => {
         if (!a.scheduled_start) return 1;
         if (!b.scheduled_start) return -1;
@@ -341,13 +341,13 @@ export default function WorkOrderListPage() {
       title: t('workOrders.columns.assignedTo'),
       dataIndex: 'assigned_to',
       key: 'assigned_to',
-      render: (assignee: string) => assignee || <span style={{ opacity: 0.5 }}>-</span>,
+      render: (assignee: string, record: any) => assignee || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
       title: t('workOrders.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -376,19 +376,14 @@ export default function WorkOrderListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <PermissionGuard permission="work-orders:read">
-            <Tooltip title={t('workOrders.tooltips.view')}>
-              <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/work-orders/${record.id}`)} />
-            </Tooltip>
-          </PermissionGuard>
           <PermissionGuard permission="work-orders:update">
             <Tooltip title={t('workOrders.tooltips.edit')}>
-              <Button type="text" icon={<EditOutlined />} size="small" onClick={() => navigate(`/work-orders/${record.id}/edit`)} />
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/work-orders/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="work-orders:delete">
             <Tooltip title={t('workOrders.tooltips.delete')}>
-              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record)} />
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -401,7 +396,7 @@ export default function WorkOrderListPage() {
       title: t('workOrders.approvals.columns.workOrder'),
       dataIndex: 'document_id',
       key: 'document_id',
-      render: (docId: string) => (
+      render: (docId: string, record: any) => (
         <Button type="link" size="small" style={{ padding: 0 }} onClick={() => navigate(`/work-orders/${docId}`)}>
           {docId.slice(0, 8)}...
         </Button>
@@ -437,14 +432,14 @@ export default function WorkOrderListPage() {
       dataIndex: 'order_no',
       key: 'order_no',
       width: 80,
-      render: (step: number) => <Tag>{t('workOrders.approvals.step', { step })}</Tag>,
+      render: (step: number, record: any) => <Tag>{t('workOrders.approvals.step', { step })}</Tag>,
     },
     {
       title: t('workOrders.approvals.columns.status'),
       dataIndex: 'status',
       key: 'status',
       width: 130,
-      render: (status: string) => (
+      render: (status: string, record: any) => (
         <Tag color={approvalStatusColors[status] || 'default'}>
           {approvalStatusLabels[status] || status}
         </Tag>
@@ -454,7 +449,7 @@ export default function WorkOrderListPage() {
       title: t('workOrders.approvals.columns.requested'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => formatDateTime(date),
+      render: (date: string, record: any) => formatDateTime(date),
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
@@ -463,9 +458,6 @@ export default function WorkOrderListPage() {
       width: 240,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t('workOrders.tooltips.viewWorkOrder')}>
-            <Button type="text" icon={<EyeOutlined />} size="small" onClick={() => navigate(`/work-orders/${record.document_id}`)} />
-          </Tooltip>
           <Button
             type="primary"
             size="small"
@@ -557,6 +549,10 @@ export default function WorkOrderListPage() {
                   rowKey="id"
                   loading={isLoading}
                   scroll={{ x: 1400 }}
+                  onRow={(record) => ({
+                    onClick: () => navigate(`/work-orders/${record.id}`),
+                    style: { cursor: 'pointer' },
+                  })}
                   pagination={{
                     current: page,
                     pageSize,

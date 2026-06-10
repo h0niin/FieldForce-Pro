@@ -12,9 +12,12 @@ import { invoiceLineItemsProviders } from '../INVOICE_LINE_ITEMS/invoice_line_it
 import { NotificationsModule } from '../NOTIFICATIONS/notifications.module';
 import { EmailService } from '../shared/services/email.service';
 import { usersProviders } from '../USERS/users.provider';
+import { SlaModule } from '../SLA_MODULE/sla.module';
+import { WhatsAppChannelsModule } from '../WHATSAPP_CHANNELS/whatsapp_channels.module';
+import { ActivityLogsModule } from '../ACTIVITY_LOGS/activity_logs.module';
 
 @Module({
-  imports: [DatabaseModule, WorkflowModule, WorkOrdersModule, WorkOrderLineItemsModule, NotificationsModule],
+  imports: [DatabaseModule, WorkflowModule, WorkOrdersModule, WorkOrderLineItemsModule, NotificationsModule, SlaModule, WhatsAppChannelsModule, ActivityLogsModule],
   controllers: [EstimatesController],
   providers: [EstimatesService, EmailService, ...estimatesProviders, ...workflowTemplatesProviders, ...invoicesProviders, ...invoiceLineItemsProviders, ...usersProviders],
   exports: [EstimatesService],

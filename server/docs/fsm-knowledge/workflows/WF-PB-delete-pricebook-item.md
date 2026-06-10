@@ -10,7 +10,7 @@ This workflow covers deleting a pricebook item from the Pricebook list page.
 
 ## Steps
 
-1. In the sidebar, click **Pricebook** (the page title on the list page is "Pricebook").
+1. Open the **Pricebook** page (its list page title is "Pricebook"). *(Note: Pricebook is not currently shown in the main sidebar menu — open it via a direct link or ask your administrator to enable it.)*
 2. The Pricebook list page loads with the subtitle "Manage tiered pricing for services (Good/Better/Best)".
 3. Locate the desired pricebook item row in the table.
 4. In the **Actions** column, click the icon-only danger button with tooltip **Delete** (DeleteOutlined icon, rendered in red danger style).

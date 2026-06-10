@@ -630,7 +630,7 @@ export default function RolesPermissionsPage() {
     <div>
       <PageHeader
         title={t('settings.rolesPermissions')}
-        subtitle={t('rolesPermissions.subtitle')}
+        subtitle="Establish administrative access controls by defining system roles and granular feature permissions. Manage access constraints across the customer directory, scheduling tools, billing, and system configurations."
       />
 
       <Tabs items={items} defaultActiveKey="roles" />

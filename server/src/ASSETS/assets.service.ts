@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Asset } from './assets.entity';
 import { CreateAssetDto } from './dto/assets_create.dto';
 import { UpdateAssetDto } from './dto/assets_update.dto';
@@ -10,6 +10,9 @@ import { Contact } from '../CONTACTS/contacts.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
 import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
 import { Op } from 'sequelize';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
+import { Company } from '../COMPANIES/companies.entity';
+import { generateEntityDiff } from '../utils/diff-logger.util';
 
 @Injectable()
 export class AssetsService {
@@ -18,6 +21,7 @@ export class AssetsService {
     private readonly assetRepository: typeof Asset,
     @Inject(KEYNAMES.WORK_ORDERS)
     private readonly workOrderRepository: typeof WorkOrder,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -42,8 +46,8 @@ export class AssetsService {
     const { count, rows } = await this.assetRepository.findAndCountAll({
       where,
       include: [
-        { model: Contact, attributes: ['id', 'first_name', 'last_name'] },
-        { model: ServiceLocation, attributes: ['id', 'address'] },
+        { model: Contact, as: 'contact', attributes: ['id', 'first_name', 'last_name'] },
+        { model: ServiceLocation, as: 'location', attributes: ['id', 'address'] },
       ],
       order: [['created_at', pageOptionsDto.order]],
       limit: pageOptionsDto.take,
@@ -62,24 +66,43 @@ export class AssetsService {
   }
 
   async findById(id: string, tenantId: string): Promise<Asset> {
-    const asset = await this.assetRepository.findOne({
-      where: { id, tenant_id: tenantId, is_deleted: false },
-      include: [
-        { model: Contact, attributes: ['id', 'first_name', 'last_name', 'email', 'phone'] },
-        { model: ServiceLocation, attributes: ['id', 'address', 'lat', 'lng'] },
-      ],
-    });
-    if (!asset) {
-      throw new NotFoundException('Asset not found');
+    try {
+      const asset = await this.assetRepository.findOne({
+        where: { id, tenant_id: tenantId, is_deleted: false },
+        include: [
+          { model: Contact, as: 'contact', attributes: ['id', 'first_name', 'last_name'] },
+          { model: ServiceLocation, as: 'location', attributes: ['id', 'address', 'lat', 'lng'] },
+          { model: Company, as: 'company', attributes: ['id', 'name'] },
+          { model: Asset, as: 'parent_asset', attributes: ['id', 'name', 'serial_number'] },
+        ],
+      });
+      if (!asset) {
+        throw new NotFoundException('Asset not found');
+      }
+      return asset;
+    } catch (error: any) {
+      if (error instanceof NotFoundException) throw error;
+      console.error(`Error in AssetsService.findById: ${error.message}`);
+      throw new BadRequestException('Failed to load asset details');
     }
-    return asset;
   }
 
   async create(tenantId: string, dto: CreateAssetDto): Promise<Asset> {
-    return this.assetRepository.create({
+    const asset = await this.assetRepository.create({
       tenant_id: tenantId,
       ...dto,
     });
+
+    await this.activityLogsService.logActivity(tenantId, 'Asset', asset.id, 'CREATED', `Asset '${asset.name}' was created.`).catch(() => {});
+
+    if (asset.contact_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Contact', asset.contact_id, 'CREATED', `Asset '${asset.name}' was assigned to this record.`).catch(() => {});
+    }
+    if (asset.company_id) {
+      await this.activityLogsService.logActivity(tenantId, 'Company', asset.company_id, 'CREATED', `Asset '${asset.name}' was assigned to this record.`).catch(() => {});
+    }
+
+    return asset;
   }
 
   async update(
@@ -88,12 +111,47 @@ export class AssetsService {
     dto: UpdateAssetDto,
   ): Promise<Asset> {
     const asset = await this.findById(id, tenantId);
+    
+    const diffArray = generateEntityDiff(asset, dto);
+    const diffString = diffArray.join(', ');
+    const description = diffString !== '' ? diffString : 'Asset details were updated.';
+
     await asset.update(dto);
+
+    if (diffString !== '') {
+      await this.activityLogsService.logActivity(tenantId, 'Asset', asset.id, 'UPDATED', description).catch(() => {});
+    }
+
+    if (asset.contact_id && diffString !== '') {
+      await this.activityLogsService.logActivity(tenantId, 'Contact', asset.contact_id, 'UPDATED', `Asset '${asset.name}': ${description}`).catch(() => {});
+    }
+    if (asset.company_id && diffString !== '') {
+      await this.activityLogsService.logActivity(tenantId, 'Company', asset.company_id, 'UPDATED', `Asset '${asset.name}': ${description}`).catch(() => {});
+    }
+
     return asset;
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
-    const asset = await this.findById(id, tenantId);
+    const asset = await this.assetRepository.findOne({
+      where: { id, tenant_id: tenantId, is_deleted: false },
+    });
+    if (!asset) {
+      throw new NotFoundException('Asset not found');
+    }
+
+    const linkedWorkOrders = await this.workOrderRepository.count({
+      where: { asset_id: id, tenant_id: tenantId, is_deleted: false },
+    });
+
+    const childAssets = await this.assetRepository.count({
+      where: { parent_asset_id: id, tenant_id: tenantId, is_deleted: false },
+    });
+
+    if (linkedWorkOrders > 0 || childAssets > 0) {
+      throw new BadRequestException('Asset cannot be deleted because it is currently linked to active service records or child assets.');
+    }
+
     await asset.update({ is_deleted: true });
   }
 

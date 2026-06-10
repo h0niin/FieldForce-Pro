@@ -4,12 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
   GoneException,
+  Logger,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Invoice } from './invoices.entity';
 import { CreateInvoiceDto } from './dto/invoices_create.dto';
 import { UpdateInvoiceDto } from './dto/invoices_update.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
+import { InvoiceQueryDto } from './dto/invoices_query.dto';
 import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { KEYNAMES } from '../shared/constants/keynames';
@@ -17,6 +19,7 @@ import { Op } from 'sequelize';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { DocumentApprovalsService } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.service';
 import { DocumentTypeEnum } from '../shared/enums/workflow.enum';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ['pending_approval', 'sent', 'void'],
@@ -33,20 +36,30 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
 
 @Injectable()
 export class InvoicesService {
+  private readonly logger = new Logger(InvoicesService.name);
+
   constructor(
     @Inject(KEYNAMES.INVOICES)
     private readonly invoiceRepository: typeof Invoice,
     private readonly documentApprovalsService: DocumentApprovalsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) { }
 
   async findAllPaginated(
     tenantId: string,
-    pageOptionsDto: PageOptionsDto,
+    pageOptionsDto: InvoiceQueryDto,
   ): Promise<PageDto<Invoice>> {
     const where: Record<string, unknown> = {
       tenant_id: tenantId,
       is_deleted: false,
     };
+
+    if (pageOptionsDto.company_id) {
+      where.company_id = pageOptionsDto.company_id;
+    }
+    if (pageOptionsDto.contact_id) {
+      where.contact_id = pageOptionsDto.contact_id;
+    }
 
     if (pageOptionsDto.search) {
       where[Op.or as unknown as string] = [
@@ -111,10 +124,19 @@ export class InvoicesService {
       dto.invoice_number = await this.generateInvoiceNumber(tenantId);
     }
 
-    return this.invoiceRepository.create({
+    const invoice = await this.invoiceRepository.create({
       tenant_id: tenantId,
       ...dto,
     });
+
+    if (invoice.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', invoice.contact_id, 'CREATED', `Invoice #${invoice.invoice_number} was generated.`).catch(err => this.logger.warn(err.message));
+    }
+    if (invoice.company_id) {
+      this.activityLogsService.logActivity(tenantId, 'Company', invoice.company_id, 'CREATED', `Invoice #${invoice.invoice_number} was generated for this company.`).catch(err => this.logger.warn(err.message));
+    }
+
+    return invoice;
   }
 
   async update(
@@ -124,6 +146,14 @@ export class InvoicesService {
   ): Promise<Invoice> {
     const invoice = await this.findById(id, tenantId);
     await invoice.update(dto);
+
+    if (invoice.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', invoice.contact_id, 'UPDATED', `Invoice #${invoice.invoice_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
+    if (invoice.company_id) {
+      this.activityLogsService.logActivity(tenantId, 'Company', invoice.company_id, 'UPDATED', `Invoice #${invoice.invoice_number} was updated.`).catch(err => this.logger.warn(err.message));
+    }
+
     return invoice;
   }
 
@@ -223,6 +253,14 @@ export class InvoicesService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     const invoice = await this.findById(id, tenantId);
+
+    if (invoice.contact_id) {
+      this.activityLogsService.logActivity(tenantId, 'Contact', invoice.contact_id, 'DELETED', `Invoice #${invoice.invoice_number} was deleted.`).catch(err => this.logger.warn(err.message));
+    }
+    if (invoice.company_id) {
+      this.activityLogsService.logActivity(tenantId, 'Company', invoice.company_id, 'DELETED', `Invoice #${invoice.invoice_number} was deleted.`).catch(err => this.logger.warn(err.message));
+    }
+
     await invoice.update({ is_deleted: true });
   }
 

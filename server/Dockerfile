@@ -1,28 +1,40 @@
 # syntax=docker/dockerfile:1
 # ── Stage 1: Install dependencies (production only) ────────
-FROM node:20-alpine AS deps
+FROM node:20-alpine3.19 AS deps
 
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package.json package-lock.json* ./
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
 # ── Stage 2: Build TypeScript ──────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.19 AS builder
 
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package.json package-lock.json* ./
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 COPY . .
 RUN npm run build
 
 # ── Stage 3: Production runtime ───────────────────────────
-FROM node:20-alpine AS runtime
+FROM node:20-alpine3.19 AS runtime
 
-RUN apk add --no-cache wget
+RUN apk add --no-cache \
+    wget \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 

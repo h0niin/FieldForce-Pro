@@ -9,8 +9,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpsertEmailChannelDto {
-  @ApiProperty({ enum: ['forwarding', 'mailbox', 'platform_provided'] })
-  @IsEnum(['forwarding', 'mailbox', 'platform_provided'])
+  @ApiProperty({ enum: ['forwarding', 'platform_provided'] })
+  @IsEnum(['forwarding', 'platform_provided'])
   connection_method: string;
 
   @ApiPropertyOptional({ description: 'The support email address customers will email' })
@@ -92,11 +92,6 @@ export class UpsertEmailChannelDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
-
-  @ApiPropertyOptional({ description: 'IMAP connection config (for mailbox method)' })
-  @IsOptional()
-  @IsObject()
-  imap_config?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'SMTP config for outbound replies' })
   @IsOptional()

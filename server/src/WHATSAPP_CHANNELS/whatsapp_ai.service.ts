@@ -60,7 +60,7 @@ DEFAULT PRIORITY: ${config.defaultPriority || 'Medium'}
 LANGUAGES: ${config.languages?.join(', ') || 'English'}
 
 CONVERSATION FLOW:
-1. If this is a new conversation, greet the customer
+1. If this is a new conversation, greet the customer using this exact text or tone: "${config.greeting}"
 2. Understand their issue from their messages
 3. Ask for missing required fields one at a time (don't overwhelm)
 4. When you have enough info, present a summary and ask "Shall I create this service request?"
@@ -177,9 +177,9 @@ export class WhatsAppAiService {
         return this.parseAiResponse(response, existingCollectedData);
       } catch (fallbackError) {
         this.logger.error(`Gemini fallback also failed: ${fallbackError.message}`);
-        
+
         let errorMessage = "I'm having trouble processing your request right now. Please try again in a moment.";
-        
+
         // Detect quota exceeded error specifically
         if (
           fallbackError.message?.toLowerCase().includes('quota') ||

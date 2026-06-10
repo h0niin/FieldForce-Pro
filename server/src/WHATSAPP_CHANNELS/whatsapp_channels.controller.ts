@@ -16,8 +16,9 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiExcludeEndpoint } from '@nestj
 import { Request, Response } from 'express';
 import { WhatsAppChannelsService } from './whatsapp_channels.service';
 import { WhatsAppWebhookService } from './whatsapp_webhook.service';
+import { WhatsAppWebJsService } from './whatsapp_webjs.service';
 import { UpsertWhatsAppChannelDto, TestConnectionDto } from './dto/upsert-channel.dto';
-import { TwilioWebhookPayload, MetaWebhookPayload, MetaWebhookVerifyQuery } from './dto/whatsapp-webhook.dto';
+import { MetaWebhookPayload, MetaWebhookVerifyQuery } from './dto/whatsapp-webhook.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
@@ -32,6 +33,7 @@ export class WhatsAppChannelsController {
   constructor(
     private readonly channelsService: WhatsAppChannelsService,
     private readonly webhookService: WhatsAppWebhookService,
+    private readonly webJsService: WhatsAppWebJsService,
   ) {}
 
   // ─── Channel Config Endpoints (authenticated) ─────────────────────────────────
@@ -75,16 +77,62 @@ export class WhatsAppChannelsController {
     return DataResponseDto.success(channel, 'WhatsApp channel disconnected');
   }
 
-  @Get('channel/qr-code')
+  // ─── Web JS Endpoints (authenticated) ─────────────────────────────────────────
+
+  @Post('webjs/initialize')
   @ApiBearerAuth()
-  @Permissions('settings:read')
-  @ApiOperation({ summary: 'Get Twilio QR code info for customer scanning' })
-  async getQrCode(@TenantId() tenantId: string) {
-    const qrInfo = await this.channelsService.getQrCodeInfo(tenantId);
-    return DataResponseDto.success(qrInfo, 'QR code info fetched');
+  @Permissions('settings:update')
+  @ApiOperation({ summary: 'Initialize whatsapp-web.js client and start QR code generation' })
+  async initializeWebJs(@TenantId() tenantId: string) {
+    const channel = await this.channelsService.getChannel(tenantId);
+
+    const result = await this.webJsService.initializeClient(
+      tenantId,
+      // onConnected callback — update channel status in DB
+      async (phoneNumber: string) => {
+        await this.channelsService.upsertChannel(tenantId, {
+          connection_method: 'web_js',
+          phone_number: phoneNumber,
+          is_active: true,
+        } as any);
+        // Update status directly
+        const ch = await this.channelsService.getChannel(tenantId);
+        if (ch) await ch.update({ status: 'connected' });
+      },
+      // onMessage callback — process incoming messages through AI
+      async (from: string, body: string, profileName: string, mediaUrl: string | null) => {
+        const ch = await this.channelsService.getChannel(tenantId);
+        if (!ch) return 'Channel not configured';
+        const response = await this.webhookService.processWebJsMessage(ch, from, body, profileName, mediaUrl);
+        return response;
+      },
+    );
+
+    return DataResponseDto.success(result, result.message);
   }
 
-  // ─── Conversation Endpoints (authenticated) ──────────────────────────────────
+  @Get('webjs/qr')
+  @ApiBearerAuth()
+  @Permissions('settings:read')
+  @ApiOperation({ summary: 'Get the latest QR code or connection status for Web JS' })
+  async getWebJsQr(@TenantId() tenantId: string) {
+    const result = this.webJsService.getQrStatus(tenantId);
+    return DataResponseDto.success(result, 'QR status fetched');
+  }
+
+  @Post('webjs/disconnect')
+  @ApiBearerAuth()
+  @Permissions('settings:update')
+  @ApiOperation({ summary: 'Disconnect and destroy whatsapp-web.js client' })
+  async disconnectWebJs(@TenantId() tenantId: string) {
+    await this.webJsService.destroyClient(tenantId);
+    const channel = await this.channelsService.getChannel(tenantId);
+    if (channel) {
+      await channel.update({ status: 'disconnected', is_active: false });
+    }
+    return DataResponseDto.success(null, 'Web JS client disconnected');
+  }
+
 
   @Get('conversations')
   @ApiBearerAuth()
@@ -112,25 +160,6 @@ export class WhatsAppChannelsController {
 
   // ─── Webhook Endpoints (public — validated internally) ───────────────────────
 
-  @Post('webhook/twilio')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiExcludeEndpoint()
-  async twilioWebhook(@Body() body: TwilioWebhookPayload, @Res() res: Response) {
-    this.logger.log('Twilio webhook received');
-
-    try {
-      const reply = await this.webhookService.handleTwilioWebhook(body);
-
-      // Twilio expects TwiML response
-      res.set('Content-Type', 'text/xml');
-      res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${this.escapeXml(reply)}</Message></Response>`);
-    } catch (error) {
-      this.logger.error(`Twilio webhook error: ${error.message}`);
-      res.set('Content-Type', 'text/xml');
-      res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
-    }
-  }
 
   @Get('webhook/meta')
   @Public()
@@ -146,7 +175,7 @@ export class WhatsAppChannelsController {
     if (mode === 'subscribe' && token) {
       // Verify against stored verify_token — check all active business_api channels
       const channels = await this.channelsService['channelRepo'].findAll({
-        where: { connection_method: 'business_api', is_active: true },
+        where: { is_active: true },
       });
 
       const isValid = channels.some((ch) => {
@@ -181,14 +210,4 @@ export class WhatsAppChannelsController {
     return 'EVENT_RECEIVED';
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-  private escapeXml(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  }
 }

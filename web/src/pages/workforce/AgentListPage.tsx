@@ -121,7 +121,7 @@ export default function AgentListPage() {
       dataIndex: 'last_login_at',
       key: 'last_login_at',
       width: 160,
-      render: (val: string | null) =>
+      render: (val: string | null, record: any) =>
         val ? formatDateTime(val) : <span style={{ color: '#999' }}>{t('agentListPage.never')}</span>,
       sorter: (a, b) => {
         if (!a.last_login_at) return -1;

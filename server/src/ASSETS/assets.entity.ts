@@ -9,6 +9,14 @@ import {
 import { Tenant } from '../TENANTS/tenants.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
+import { Company } from '../COMPANIES/companies.entity';
+
+export enum AssetStatus {
+  OPERATIONAL = 'OPERATIONAL',
+  NEEDS_REPAIR = 'NEEDS_REPAIR',
+  IN_REPAIR = 'IN_REPAIR',
+  DECOMMISSIONED = 'DECOMMISSIONED',
+}
 
 @Table({
   tableName: 'assets',
@@ -30,7 +38,7 @@ export class Asset extends Model {
   })
   tenant_id: string;
 
-  @BelongsTo(() => Tenant)
+  @BelongsTo(() => Tenant, { as: 'tenant' })
   tenant: Tenant;
 
   @ForeignKey(() => Contact)
@@ -40,17 +48,37 @@ export class Asset extends Model {
   })
   contact_id: string;
 
-  @BelongsTo(() => Contact)
+  @BelongsTo(() => Contact, { as: 'contact' })
   contact: Contact;
+
+  @ForeignKey(() => Company)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  company_id: string;
+
+  @BelongsTo(() => Company, { as: 'company' })
+  company: Company;
+
+  @ForeignKey(() => Asset)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  parent_asset_id: string;
+
+  @BelongsTo(() => Asset, { foreignKey: 'parent_asset_id', as: 'parent_asset' })
+  parent_asset: Asset;
 
   @ForeignKey(() => ServiceLocation)
   @Column({
     type: DataType.UUID,
     allowNull: true,
   })
-  location_id: string;
+  service_location_id: string;
 
-  @BelongsTo(() => ServiceLocation)
+  @BelongsTo(() => ServiceLocation, { foreignKey: 'service_location_id', as: 'location' })
   location: ServiceLocation;
 
   @Column({
@@ -68,6 +96,7 @@ export class Asset extends Model {
   @Column({
     type: DataType.STRING(200),
     allowNull: true,
+    unique: true,
   })
   serial_number: string;
 
@@ -81,7 +110,13 @@ export class Asset extends Model {
     type: DataType.DATEONLY,
     allowNull: true,
   })
-  install_date: string;
+  installation_date: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  last_service_date: Date;
 
   @Column({
     type: DataType.DATEONLY,
@@ -90,23 +125,41 @@ export class Asset extends Model {
   warranty_expiry: string;
 
   @Column({
-    type: DataType.DECIMAL(5, 2),
-    allowNull: true,
-    defaultValue: null,
-  })
-  health_score: number;
-
-  @Column({
     type: DataType.STRING(100),
     allowNull: true,
   })
-  category: string;
+  product_category: string;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(AssetStatus)),
+    allowNull: false,
+    defaultValue: AssetStatus.OPERATIONAL,
+  })
+  status: AssetStatus;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
   notes: string;
+
+  @Column({
+    type: DataType.STRING(200),
+    allowNull: true,
+  })
+  giai: string;
+
+  @Column({
+    type: DataType.DATEONLY,
+    allowNull: true,
+  })
+  ordered_date: string;
+
+  @Column({
+    type: DataType.DATEONLY,
+    allowNull: true,
+  })
+  purchased_date: string;
 
   @Column({
     type: DataType.JSONB,

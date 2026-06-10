@@ -47,11 +47,7 @@ export class AiController {
     const history = body.history ?? [];
     const isAuthenticated = body.isAuthenticated ?? false;
 
-    const reply = await this.aiService.generateChatResponse(
-      history,
-      body.message,
-      isAuthenticated,
-    );
+    const reply = await this.aiService.generateChatResponse(history, body.message, isAuthenticated);
 
     return { reply };
   }

@@ -8,12 +8,15 @@ import { PageMetaDto } from '../shared/dto/page-meta.dto';
 import { KEYNAMES } from '../shared/constants/keynames';
 import { Asset } from '../ASSETS/assets.entity';
 import { Op } from 'sequelize';
+import { ActivityLogsService } from '../ACTIVITY_LOGS/activity_logs.service';
+import { generateEntityDiff } from '../utils/diff-logger.util';
 
 @Injectable()
 export class AssetMaintenancePlansService {
   constructor(
     @Inject(KEYNAMES.ASSET_MAINTENANCE_PLANS)
     private readonly maintenancePlanRepository: typeof AssetMaintenancePlan,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   async findAllPaginated(
@@ -57,7 +60,7 @@ export class AssetMaintenancePlansService {
     const plan = await this.maintenancePlanRepository.findOne({
       where: { id, tenant_id: tenantId, is_deleted: false },
       include: [
-        { model: Asset, attributes: ['id', 'name', 'serial_number', 'manufacturer'] },
+        { model: Asset, attributes: ['id', 'name', 'serial_number', 'manufacturer', 'contact_id', 'company_id'] },
       ],
     });
     if (!plan) {
@@ -67,10 +70,21 @@ export class AssetMaintenancePlansService {
   }
 
   async create(tenantId: string, dto: CreateAssetMaintenancePlanDto): Promise<AssetMaintenancePlan> {
-    return this.maintenancePlanRepository.create({
+    const plan = await this.maintenancePlanRepository.create({
       tenant_id: tenantId,
       ...dto,
     });
+    
+    const fullPlan = await this.findById(plan.id, tenantId);
+    if (fullPlan.asset) {
+      if ((fullPlan.asset as any).contact_id) {
+        await this.activityLogsService.logActivity(tenantId, 'Contact', (fullPlan.asset as any).contact_id, 'CREATED', `Maintenance Plan '${plan.name}' was assigned to Asset '${fullPlan.asset.name}'.`).catch(() => {});
+      }
+      if ((fullPlan.asset as any).company_id) {
+        await this.activityLogsService.logActivity(tenantId, 'Company', (fullPlan.asset as any).company_id, 'CREATED', `Maintenance Plan '${plan.name}' was assigned to Asset '${fullPlan.asset.name}'.`).catch(() => {});
+      }
+    }
+    return fullPlan;
   }
 
   async update(
@@ -79,7 +93,22 @@ export class AssetMaintenancePlansService {
     dto: UpdateAssetMaintenancePlanDto,
   ): Promise<AssetMaintenancePlan> {
     const plan = await this.findById(id, tenantId);
+    
+    const diffArray = generateEntityDiff(plan, dto);
+    const diffString = diffArray.join(', ');
+    const description = diffString !== '' ? diffString : 'Maintenance Plan details were updated.';
+
     await plan.update(dto);
+
+    if (plan.asset && diffString !== '') {
+      if ((plan.asset as any).contact_id) {
+        await this.activityLogsService.logActivity(tenantId, 'Contact', (plan.asset as any).contact_id, 'UPDATED', `Maintenance Plan '${plan.name}': ${description}`).catch(() => {});
+      }
+      if ((plan.asset as any).company_id) {
+        await this.activityLogsService.logActivity(tenantId, 'Company', (plan.asset as any).company_id, 'UPDATED', `Maintenance Plan '${plan.name}': ${description}`).catch(() => {});
+      }
+    }
+
     return plan;
   }
 

@@ -30,6 +30,9 @@ export class SlaEscalation extends Model {
   @Column({ type: DataType.INTEGER, allowNull: false })
   trigger_time_minutes: number;
 
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  warning_percentage: number;
+
   @Column({ type: DataType.JSONB, allowNull: false })
   actions: any;
 
