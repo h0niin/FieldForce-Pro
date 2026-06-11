@@ -29,25 +29,18 @@ export class CreateServiceRequestDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Priority ID (UUID, legacy)', example: 'uuid' })
+  @ApiPropertyOptional({ description: 'Priority ID', example: 'uuid' })
   @IsUUID()
   @IsOptional()
   priority_id?: string;
 
-  @ApiPropertyOptional({ description: 'Priority value e.g. LOW, MEDIUM, HIGH, CRITICAL', example: 'MEDIUM' })
-  @IsString()
-  @IsOptional()
-  priority?: string;
-
-  @ApiPropertyOptional({ description: 'Category ID', example: 'uuid' })
+  @ApiProperty({ description: 'Category ID', example: 'uuid' })
   @IsUUID()
-  @IsOptional()
-  category_id?: string;
+  category_id: string;
 
-  @ApiPropertyOptional({ description: 'Sub Category ID', example: 'uuid' })
+  @ApiProperty({ description: 'Sub Category ID', example: 'uuid' })
   @IsUUID()
-  @IsOptional()
-  sub_category_id?: string;
+  sub_category_id: string;
 
   @ApiPropertyOptional({
     description: 'Status',

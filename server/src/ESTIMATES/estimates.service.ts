@@ -87,15 +87,7 @@ export class EstimatesService {
     }
 
     if (isTemplate !== undefined) {
-      if (isTemplate === false) {
-        // Use OR-null so estimates whose is_template column is NULL (rows that
-        // pre-date the column in production) are not silently excluded from the
-        // global list.  Estimates linked to a service request, work order, or
-        // any other FK are returned unconditionally — no FK-based filter here.
-        where.is_template = { [Op.or]: [false, null] };
-      } else {
-        where.is_template = isTemplate;
-      }
+      where.is_template = isTemplate;
     }
 
     // Filter by status (supports comma-separated list)

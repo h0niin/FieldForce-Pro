@@ -78,36 +78,6 @@ export class Contact extends Model {
   billing_address: string;
 
   @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
-  })
-  salutation: string;
-
-  @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
-  })
-  mobile: string;
-
-  @Column({
-    type: DataType.STRING(255),
-    allowNull: true,
-  })
-  secondary_email: string;
-
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: true,
-  })
-  department: string;
-
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: true,
-  })
-  title: string;
-
-  @Column({
     type: DataType.ARRAY(DataType.STRING),
     allowNull: true,
     defaultValue: [],

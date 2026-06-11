@@ -35,9 +35,9 @@ export class SlaAuditLog extends Model {
   @ForeignKey(() => ServiceRequest)
   @Column({
     type: DataType.UUID,
-    allowNull: true,
+    allowNull: false,
   })
-  service_request_id: string | null;
+  service_request_id: string;
 
   @BelongsTo(() => ServiceRequest)
   service_request: ServiceRequest;

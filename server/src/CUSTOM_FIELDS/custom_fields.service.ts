@@ -6,6 +6,7 @@ import {
 import { CustomField } from './custom_fields.entity';
 import { CreateCustomFieldDto } from './dto/custom_fields_create.dto';
 import { UpdateCustomFieldDto } from './dto/custom_fields_update.dto';
+import { BatchUpdateCustomFieldsDto } from './dto/custom_fields_batch_update.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { PageDto } from '../shared/dto/page.dto';
 import { PageMetaDto } from '../shared/dto/page-meta.dto';
@@ -49,7 +50,7 @@ export class CustomFieldsService {
   async findAll(tenantId: string): Promise<CustomField[]> {
     return this.customFieldRepository.findAll({
       where: { tenant_id: tenantId, is_deleted: false },
-      order: [['sort_order', 'ASC'], ['created_at', 'DESC']],
+      order: [['section_order', 'ASC'], ['sort_order', 'ASC'], ['created_at', 'DESC']],
     });
   }
 
@@ -70,7 +71,7 @@ export class CustomFieldsService {
         tenant_id: tenantId,
         is_deleted: false,
       },
-      order: [['sort_order', 'ASC']],
+      order: [['section_order', 'ASC'], ['sort_order', 'ASC']],
     });
   }
 
@@ -94,5 +95,27 @@ export class CustomFieldsService {
   async delete(id: string, tenantId: string): Promise<void> {
     const field = await this.findById(id, tenantId);
     await field.update({ is_deleted: true });
+  }
+
+  /**
+   * Batch update multiple fields at once — used by the layout drag-and-drop editor
+   * to persist all reordering/property changes in a single request.
+   */
+  async batchUpdate(
+    tenantId: string,
+    dto: BatchUpdateCustomFieldsDto,
+  ): Promise<{ updated: number }> {
+    let updated = 0;
+    for (const item of dto.fields) {
+      const { id, ...patch } = item;
+      const field = await this.customFieldRepository.findOne({
+        where: { id, tenant_id: tenantId, is_deleted: false },
+      });
+      if (field) {
+        await field.update(patch);
+        updated++;
+      }
+    }
+    return { updated };
   }
 }

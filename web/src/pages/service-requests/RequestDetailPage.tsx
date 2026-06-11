@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Card, Descriptions, Button, Space, Skeleton, Tag, Steps, Modal, Input, Alert, Select, Tabs, Table, Badge, Typography, List, Avatar, Divider, Spin } from 'antd';
-import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, MinusCircleOutlined, UserAddOutlined, SwapOutlined, EnvironmentOutlined, PlusOutlined, FileTextOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Descriptions, Button, Space, Skeleton, Tag, Steps, Modal, Input, Alert, Select, Tabs, Table, Badge } from 'antd';
+import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, MinusCircleOutlined, UserAddOutlined, SwapOutlined, EnvironmentOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
   useServiceRequest,
@@ -14,9 +14,6 @@ import {
 } from '@/hooks/use-service-requests';
 import { useEstimatesByServiceRequest } from '@/hooks/use-estimates';
 import { useAgents } from '@/hooks/use-users';
-import { useAllWorkOrders } from '@/hooks/use-work-orders';
-import { useAllCompanies } from '@/hooks/use-companies';
-import { useServiceRequestNotes, useCreateServiceRequestNote } from '@/hooks/use-service-request-notes';
 import { useAuthStore } from '@/store/auth.store';
 import { usePermission } from '@/components/permissions/usePermission';
 import PageHeader from '@/components/common/PageHeader';
@@ -53,28 +50,13 @@ const statusLabels: Record<string, string> = {
   spam: 'Flagged',
 };
 
-const woStatusColors: Record<string, string> = {
-  new: 'blue',
-  estimated: 'gold',
-  approved: 'green',
-  scheduled: 'cyan',
-  in_progress: 'processing',
-  on_hold: 'orange',
-  completed: 'success',
-  closed: 'default',
-  cancelled: 'error',
-};
-
 const estimateStatusColors: Record<string, string> = {
   draft: 'default',
   pending_approval: 'orange',
-  pending_internal_approval: 'orange',
   sent: 'blue',
   viewed: 'cyan',
   approved: 'green',
-  customer_approved: 'green',
   rejected: 'red',
-  customer_rejected: 'red',
   expired: 'orange',
   converted_to_wo: 'purple',
   converted_to_invoice: 'geekblue',
@@ -108,7 +90,6 @@ interface ApprovalItem {
 export default function RequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { isAdmin } = usePermission();
@@ -127,25 +108,9 @@ export default function RequestDetailPage() {
   const [selectedApprovalId, setSelectedApprovalId] = useState<string>('');
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    const tab = (location.state as { tab?: string } | null)?.tab;
-    // 'estimates' was the old key — map to new 'related-list' tab
-    if (tab === 'estimates' || tab === 'related-list') return 'related-list';
-    return tab || 'details';
-  });
-  const [noteText, setNoteText] = useState('');
+  const [activeTab, setActiveTab] = useState('details');
 
-  const { data: dispatcherNotes = [], isLoading: notesLoading } = useServiceRequestNotes(id!, activeTab === 'details');
-  const createNote = useCreateServiceRequestNote();
-
-  const { data: srEstimates = [], isLoading: estimatesLoading } = useEstimatesByServiceRequest(id!, activeTab === 'related-list');
-  const { data: allWorkOrders = [] } = useAllWorkOrders();
-  const { data: allCompanies = [] } = useAllCompanies();
-
-  const srWorkOrders = useMemo(
-    () => allWorkOrders.filter((wo) => wo.request_id === id),
-    [allWorkOrders, id],
-  );
+  const { data: srEstimates = [], isLoading: estimatesLoading } = useEstimatesByServiceRequest(id!, activeTab === 'estimates');
 
   const handleDelete = () => {
     if (!request) return;
@@ -518,255 +483,92 @@ export default function RequestDetailPage() {
                 <Card title="Attachments" style={{ marginTop: 16 }}>
                   <FileUploadZone requestId={request.id} />
                 </Card>
-
-                {/* ── Dispatcher Notes ── */}
-                <Card
-                  title={<Space><MessageOutlined />Dispatcher Notes</Space>}
-                  style={{ marginTop: 16 }}
-                >
-                  <Input.TextArea
-                    rows={3}
-                    placeholder="Add a dispatcher note..."
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <Button
-                    type="primary"
-                    size="small"
-                    loading={createNote.isPending}
-                    disabled={!noteText.trim()}
-                    onClick={async () => {
-                      if (!noteText.trim() || !id) return;
-                      const authorName = user
-                        ? `${user.first_name || ''} ${(user as any).last_name || ''}`.trim()
-                        : 'Unknown';
-                      await createNote.mutateAsync({
-                        service_request_id: id,
-                        user_id: user?.id,
-                        author_name: authorName || 'Unknown',
-                        content: noteText.trim(),
-                      });
-                      setNoteText('');
-                    }}
-                  >
-                    Save Note
-                  </Button>
-
-                  {notesLoading ? (
-                    <div style={{ textAlign: 'center', padding: 24 }}><Spin /></div>
-                  ) : dispatcherNotes.length === 0 ? (
-                    <div style={{ padding: '16px 0', color: '#9ca3af', fontSize: 13, textAlign: 'center', marginTop: 12 }}>
-                      No notes yet.
-                    </div>
-                  ) : (
-                    <>
-                      <Divider style={{ margin: '16px 0 8px' }} />
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={dispatcherNotes}
-                        renderItem={(note: any) => (
-                          <List.Item style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-                            <List.Item.Meta
-                              avatar={<Avatar icon={<UserOutlined />} size="small" />}
-                              title={
-                                <Space size={8} style={{ fontSize: 13 }}>
-                                  <span style={{ fontWeight: 600 }}>{note.author_name || 'Unknown'}</span>
-                                  <span style={{ color: '#9ca3af', fontSize: 12, fontWeight: 400 }}>
-                                    {formatDateTime(note.created_at)}
-                                  </span>
-                                </Space>
-                              }
-                              description={
-                                <span style={{ fontSize: 13, color: 'inherit', whiteSpace: 'pre-wrap' }}>
-                                  {note.content}
-                                </span>
-                              }
-                            />
-                          </List.Item>
-                        )}
-                      />
-                    </>
-                  )}
-                </Card>
               </>
             ),
           },
           {
-            key: 'related-list',
-            label: 'Related List',
+            key: 'estimates',
+            label: (
+              <span>
+                <FileTextOutlined style={{ marginRight: 4 }} />
+                Estimates
+                {srEstimates.length > 0 && (
+                  <Badge count={srEstimates.length} size="small" style={{ marginLeft: 6 }} />
+                )}
+              </span>
+            ),
             children: (
-              <div>
-                {/* ── Estimates Section ── */}
-                <div style={{ marginBottom: 32 }}>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 0', borderBottom: '2px solid #f0f0f0', marginBottom: 0,
-                  }}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>Estimates</span>
+              <Card
+                title="Linked Estimates"
+                extra={
+                  isAdmin && (
                     <Button
-                      type="link"
-                      style={{ color: '#16a34a', padding: 0, fontWeight: 500, fontSize: 13 }}
-                      onClick={() => navigate(
-                        `/estimates/new?service_request_id=${request.id}${request.contact_id ? `&contact_id=${request.contact_id}` : ''}`,
-                      )}
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() =>
+                        navigate(
+                          `/estimates/new?service_request_id=${request.id}${request.contact_id ? `&contact_id=${request.contact_id}` : ''}`,
+                        )
+                      }
                     >
-                      + Create
+                      Create Estimate
                     </Button>
-                  </div>
-
-                  {estimatesLoading ? (
-                    <div style={{ textAlign: 'center', padding: 32 }}><Spin /></div>
-                  ) : srEstimates.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '28px 0', color: '#6b7280', fontSize: 13 }}>
-                      No Records Found
-                    </div>
-                  ) : (
-                    <Table
-                      dataSource={srEstimates}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                      style={{ marginTop: 0 }}
-                      onRow={(record) => ({ onClick: () => navigate(`/estimates/${record.id}`), style: { cursor: 'pointer' } })}
-                      columns={[
-                        {
-                          title: 'Estimate #',
-                          dataIndex: 'estimate_number',
-                          render: (num: string, row: any) => (
-                            <Button type="link" style={{ padding: 0 }} onClick={(e) => { e.stopPropagation(); navigate(`/estimates/${row.id}`); }}>
-                              {num || '-'}
-                            </Button>
-                          ),
-                        },
-                        {
-                          title: 'Summary',
-                          key: 'summary',
-                          render: (_: any, row: any) => ((row.custom_fields as any)?.title) || '-',
-                        },
-                        {
-                          title: 'Status',
-                          dataIndex: 'status',
-                          render: (s: string) => (
-                            <Tag color={estimateStatusColors[s] || 'default'} style={{ borderRadius: 12, fontSize: 11 }}>
-                              {s.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                            </Tag>
-                          ),
-                        },
-                        {
-                          title: 'Contact',
-                          key: 'contact',
-                          render: (_: any, row: any) => row.contact
-                            ? `${row.contact.first_name} ${row.contact.last_name || ''}`.trim()
-                            : '-',
-                        },
-                        {
-                          title: 'Company',
-                          key: 'company',
-                          render: (_: any, row: any) => {
-                            if (!row.contact?.company_id) return '-';
-                            const co = allCompanies.find((c) => c.id === row.contact.company_id);
-                            return co?.name || '-';
-                          },
-                        },
-                        {
-                          title: 'Grand Total (₹)',
-                          dataIndex: 'total',
-                          align: 'right' as const,
-                          render: (t: number) => `₹${Number(t || 0).toFixed(2)}`,
-                        },
-                        {
-                          title: 'Estimate Owner',
-                          key: 'owner',
-                          render: () => '-',
-                        },
-                      ]}
-                    />
-                  )}
-                </div>
-
-                {/* ── Work Orders Section ── */}
-                <div>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 0', borderBottom: '2px solid #f0f0f0', marginBottom: 0,
-                  }}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>Work Orders</span>
-                    <Button
-                      type="link"
-                      style={{ color: '#16a34a', padding: 0, fontWeight: 500, fontSize: 13 }}
-                      onClick={() => navigate(`/work-orders/new?service_request_id=${request.id}`)}
-                    >
-                      + Create
-                    </Button>
-                  </div>
-
-                  {srWorkOrders.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '28px 0', color: '#6b7280', fontSize: 13 }}>
-                      No Records Found
-                    </div>
-                  ) : (
-                    <Table
-                      dataSource={srWorkOrders}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                      onRow={(record) => ({ onClick: () => navigate(`/work-orders/${record.id}`), style: { cursor: 'pointer' } })}
-                      columns={[
-                        {
-                          title: 'Work Order #',
-                          dataIndex: 'wo_number',
-                          render: (num: string, row: any) => (
-                            <Button type="link" style={{ padding: 0 }} onClick={(e) => { e.stopPropagation(); navigate(`/work-orders/${row.id}`); }}>
-                              {num || '-'}
-                            </Button>
-                          ),
-                        },
-                        { title: 'Summary', dataIndex: 'summary' },
-                        {
-                          title: 'Status',
-                          dataIndex: 'status',
-                          render: (s: string) => (
-                            <Tag color={woStatusColors[s] || 'default'} style={{ borderRadius: 12, fontSize: 11 }}>
-                              {s.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                            </Tag>
-                          ),
-                        },
-                        {
-                          title: 'Contact',
-                          key: 'contact',
-                          render: (_: any, row: any) => row.contact
-                            ? `${row.contact.first_name} ${row.contact.last_name || ''}`.trim()
-                            : '-',
-                        },
-                        {
-                          title: 'Company',
-                          key: 'company',
-                          render: (_: any, row: any) => {
-                            if (!row.contact?.company_id) return '-';
-                            const co = allCompanies.find((c) => c.id === row.contact.company_id);
-                            return co?.name || '-';
-                          },
-                        },
-                        {
-                          title: 'Assigned Technician',
-                          key: 'technician',
-                          render: (_: any, row: any) => {
-                            if (!row.assigned_to) return '-';
-                            const agent = agents.find((a) => a.id === row.assigned_to);
-                            return agent ? `${agent.first_name} ${agent.last_name}` : '-';
-                          },
-                        },
-                        {
-                          title: 'Created Date',
-                          dataIndex: 'created_at',
-                          render: (d: string) => formatDateTime(d),
-                        },
-                      ]}
-                    />
-                  )}
-                </div>
-              </div>
+                  )
+                }
+              >
+                <Table
+                  dataSource={srEstimates}
+                  loading={estimatesLoading}
+                  rowKey="id"
+                  pagination={false}
+                  locale={{ emptyText: 'No estimates linked to this service request yet.' }}
+                  columns={[
+                    {
+                      title: 'Estimate #',
+                      dataIndex: 'estimate_number',
+                      render: (num: string, row: any) => (
+                        <Button type="link" style={{ padding: 0 }} onClick={() => navigate(`/estimates/${row.id}`)}>
+                          {num}
+                        </Button>
+                      ),
+                    },
+                    {
+                      title: 'Status',
+                      dataIndex: 'status',
+                      render: (s: string) => (
+                        <Tag color={estimateStatusColors[s] || 'default'}>
+                          {s.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: 'Customer',
+                      dataIndex: 'contact',
+                      render: (c: any) => (c ? `${c.first_name} ${c.last_name}` : '-'),
+                    },
+                    {
+                      title: 'Total',
+                      dataIndex: 'total',
+                      align: 'right' as const,
+                      render: (t: number) => `$${Number(t || 0).toFixed(2)}`,
+                    },
+                    {
+                      title: 'Created',
+                      dataIndex: 'created_at',
+                      render: (d: string) => formatDateTime(d),
+                    },
+                    {
+                      title: '',
+                      key: 'action',
+                      render: (_: any, row: any) => (
+                        <Button size="small" onClick={() => navigate(`/estimates/${row.id}`)}>
+                          View
+                        </Button>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
             ),
           },
         ]}

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -30,6 +31,7 @@ export default function ContactFormPage() {
         billing_address: contact.billing_address,
         company_id: contact.company_id,
         tags: contact.tags || [],
+        custom_fields: contact.custom_fields || {},
       });
     }
   }, [contact, form]);
@@ -133,6 +135,8 @@ export default function ContactFormPage() {
               style={{ width: '100%' }}
             />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Contacts" />
 
           <Form.Item>
             <Space>

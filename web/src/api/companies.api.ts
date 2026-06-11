@@ -4,30 +4,20 @@ import type { Company } from '@/types/models.types';
 
 export interface CreateCompanyPayload {
   name: string;
-  company_type?: string;
-  phone?: string;
-  email?: string;
   industry?: string;
   billing_address?: string;
-  service_address?: string;
   tax_id?: string;
   website?: string;
-  tags?: string[];
   notes?: string;
   custom_fields?: Record<string, unknown>;
 }
 
 export interface UpdateCompanyPayload {
   name?: string;
-  company_type?: string;
-  phone?: string;
-  email?: string;
   industry?: string;
   billing_address?: string;
-  service_address?: string;
   tax_id?: string;
   website?: string;
-  tags?: string[];
   notes?: string;
   custom_fields?: Record<string, unknown>;
 }

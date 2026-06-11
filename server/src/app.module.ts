@@ -93,7 +93,9 @@ import { TenantModulesModule } from './TENANT_MODULES/tenant_modules.module';
 import { FieldPermissionsModule } from './FIELD_PERMISSIONS/field_permissions.module';
 import { DispatchConsoleLayoutsModule } from './DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.module';
 import { ModuleMappingsModule } from './MODULE_MAPPINGS/module_mappings.module';
-import { ServiceRequestNotesModule } from './SERVICE_REQUEST_NOTES/service_request_notes.module';
+import { TimeBasedRulesModule } from './TIME_BASED_RULES/time_based_rules.module';
+import { AutomationActionsModule } from './AUTOMATION_ACTIONS/automation_actions.module';
+import { ScheduledReportsModule } from './SCHEDULED_REPORTS/scheduled_reports.module';
 
 @Module({
   imports: [
@@ -188,7 +190,9 @@ import { ServiceRequestNotesModule } from './SERVICE_REQUEST_NOTES/service_reque
     FieldPermissionsModule,
     DispatchConsoleLayoutsModule,
     ModuleMappingsModule,
-    ServiceRequestNotesModule,
+    TimeBasedRulesModule,
+    AutomationActionsModule,
+    ScheduledReportsModule,
   ],
   providers: [
     {

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(npx expo install expo-local-authentication)",
+      "Bash(npx expo install expo-document-picker)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(cmd /c \"dir /b /s \"\"C:\\\\Users\\\\BAIRUHA TECH\\\\Desktop\\\\fsm\\\\server\\\\src\\\\auth\"\"\")",
+      "Bash(git -C \"/c/Users/BAIRUHA TECH/Desktop/fsm/mobile\" ls-files)",
+      "Bash(git -C \"/c/Users/BAIRUHA TECH/Desktop/fsm/server\" ls-files)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run migrate:fix-signature:*)"
+    ]
+  }
+}

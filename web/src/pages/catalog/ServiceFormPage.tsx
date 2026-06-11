@@ -4,6 +4,7 @@ import { Card, Form, Input, Button, Space, Skeleton, InputNumber, Select, Switch
 import { useTranslation } from 'react-i18next';
 import { useServiceCatalogItem, useCreateServiceCatalog, useUpdateServiceCatalog } from '@/hooks/use-services-catalog';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -28,6 +29,7 @@ export default function ServiceFormPage() {
         duration_minutes: service.duration_minutes,
         category: service.category,
         is_active: service.is_active,
+        custom_fields: service.custom_fields || {},
       });
     }
   }, [service, form]);
@@ -124,6 +126,8 @@ export default function ServiceFormPage() {
           <Form.Item name="is_active" label={t('serviceForm.active')} valuePropName="checked">
             <Switch />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Services Catalog" />
 
           <Form.Item>
             <Space>

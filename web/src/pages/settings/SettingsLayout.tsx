@@ -24,14 +24,21 @@ import {
   FileTextOutlined,
   DatabaseOutlined,
   CloudServerOutlined,
+  ThunderboltOutlined,
+  ScheduleOutlined,
+  BulbOutlined,
+  FieldTimeOutlined,
+  LockOutlined as LockFilledOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { useUiStore } from '@/store/ui.store';
 
 interface SettingSubmodule {
   key: string;
   label: string;
   icon: JSX.Element;
   path: string;
+  badge?: string;
 }
 
 interface SettingCategory {
@@ -43,6 +50,9 @@ export default function SettingsLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const settingsSidebarHidden = useUiStore((s) => s.settingsSidebarHidden);
+  const theme = useUiStore((s) => s.theme);
+  const isDark = theme === 'dark';
 
   const categories: SettingCategory[] = [
     {
@@ -200,6 +210,41 @@ export default function SettingsLayout() {
           icon: <FileTextOutlined />,
           path: '/settings/customization/templates',
         },
+        {
+          key: 'field-level-permissions',
+          label: t('settings.submodules.fieldLevelPermissions', 'Field Level Permissions'),
+          icon: <LockFilledOutlined />,
+          path: '/settings/customization/field-permissions',
+        },
+      ],
+    },
+    {
+      title: t('settings.categories.automation', 'Automation'),
+      items: [
+        {
+          key: 'workflow-rules',
+          label: t('settings.submodules.workflowRules', 'Workflow rules'),
+          icon: <ThunderboltOutlined />,
+          path: '/settings/automation/workflow-rules',
+        },
+        {
+          key: 'time-based-rules',
+          label: t('settings.submodules.timeBasedRules', 'Time Based Rules'),
+          icon: <FieldTimeOutlined />,
+          path: '/settings/automation/time-based-rules',
+        },
+        {
+          key: 'actions',
+          label: t('settings.submodules.automationActions', 'Actions'),
+          icon: <BulbOutlined />,
+          path: '/settings/automation/actions',
+        },
+        {
+          key: 'scheduled-reports',
+          label: t('settings.submodules.scheduledReports', 'Scheduled Report'),
+          icon: <ScheduleOutlined />,
+          path: '/settings/automation/scheduled-reports',
+        },
       ],
     },
     {
@@ -234,12 +279,24 @@ export default function SettingsLayout() {
       style={{
         display: 'flex',
         minHeight: 'calc(100vh - 120px)',
-        gap: 24,
+        gap: settingsSidebarHidden ? 0 : 24,
         padding: '12px 0',
+        transition: 'gap 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       className="fade-in-up"
     >
-      {/* Settings Navigation Menu Sidebar */}
+      {/* Settings Navigation Menu Sidebar — slides out when hidden (e.g. layout editor) */}
+      <div
+        style={{
+          width: settingsSidebarHidden ? 0 : 280,
+          flexShrink: 0,
+          overflow: 'hidden',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: settingsSidebarHidden ? 0 : 1,
+          // Keep pointer-events off while hidden so nothing is accidentally clickable
+          pointerEvents: settingsSidebarHidden ? 'none' : 'auto',
+        }}
+      >
       <Card
         style={{
           width: 280,
@@ -303,7 +360,7 @@ export default function SettingsLayout() {
                       }}
                       onMouseEnter={(e) => {
                         if (!active) {
-                          e.currentTarget.style.backgroundColor = 'var(--bg-color)';
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.04)' : 'var(--bg-color)';
                           e.currentTarget.style.color = 'var(--primary-color)';
                         }
                       }}
@@ -317,7 +374,25 @@ export default function SettingsLayout() {
                       <span style={{ fontSize: 16, display: 'flex', alignItems: 'center' }}>
                         {item.icon}
                       </span>
-                      <span>{item.label}</span>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {item.badge && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            background: 'linear-gradient(135deg, #00a86b, #00c87a)',
+                            color: '#fff',
+                            padding: '2px 6px',
+                            borderRadius: 10,
+                            lineHeight: '14px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -326,6 +401,7 @@ export default function SettingsLayout() {
           ))}
         </div>
       </Card>
+      </div>
 
       {/* Settings Active View Content Area */}
       <div style={{ flex: 1, minWidth: 0 }}>

@@ -16,23 +16,17 @@ export class CreateContactDto {
   @IsUUID()
   company_id?: string;
 
-  @ApiPropertyOptional({ example: 'Mr.' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  salutation?: string;
-
   @ApiProperty({ example: 'John' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   first_name: string;
 
-  @ApiPropertyOptional({ example: 'Doe' })
-  @IsOptional()
+  @ApiProperty({ example: 'Doe' })
   @IsString()
+  @IsNotEmpty()
   @MaxLength(100)
-  last_name?: string;
+  last_name: string;
 
   @ApiPropertyOptional({ example: 'john.doe@example.com' })
   @IsOptional()
@@ -45,30 +39,6 @@ export class CreateContactDto {
   @IsString()
   @MaxLength(20)
   phone?: string;
-
-  @ApiPropertyOptional({ example: '+1987654321' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  mobile?: string;
-
-  @ApiPropertyOptional({ example: 'secondary@example.com' })
-  @IsOptional()
-  @IsEmail()
-  @MaxLength(255)
-  secondary_email?: string;
-
-  @ApiPropertyOptional({ example: 'Engineering' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  department?: string;
-
-  @ApiPropertyOptional({ example: 'Senior Engineer' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  title?: string;
 
   @ApiPropertyOptional({ example: '123 Service St, City, State, 12345' })
   @IsOptional()

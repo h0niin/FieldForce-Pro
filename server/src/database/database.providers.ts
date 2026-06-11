@@ -24,7 +24,6 @@ import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
 import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
 import { ServiceReport } from '../SERVICE_REPORTS/service_reports.entity';
-import { ServiceAppointmentTrip } from '../SERVICE_APPOINTMENTS/service_appointment_trips.entity';
 import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
 import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
 import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
@@ -102,7 +101,6 @@ export const databaseProviders = [
   { provide: REPOSITORY.WORK_ORDER_NOTES, useValue: WorkOrderNote },
   { provide: REPOSITORY.WORK_ORDER_ATTACHMENTS, useValue: WorkOrderAttachment },
   { provide: REPOSITORY.SERVICE_APPOINTMENTS, useValue: ServiceAppointment },
-  { provide: REPOSITORY.SERVICE_APPOINTMENT_TRIPS, useValue: ServiceAppointmentTrip },
   { provide: REPOSITORY.JOB_SHEET_TEMPLATES, useValue: JobSheetTemplate },
   { provide: REPOSITORY.JOB_SHEET_INSTANCES, useValue: JobSheetInstance },
   { provide: REPOSITORY.JOB_SHEET_ITEMS, useValue: JobSheetItem },

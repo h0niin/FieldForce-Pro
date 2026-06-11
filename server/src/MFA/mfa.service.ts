@@ -190,7 +190,8 @@ export class MFAService {
       throw new BadRequestException('TOTP not configured for this user');
     }
 
-    return authenticator.verify({ token: code, secret: user.totp_secret });
+    const isValid = authenticator.verify({ token: code, secret: user.totp_secret });
+    return isValid;
   }
 
   async verifyAndEnableTOTP(

@@ -1,37 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Button, Table, Space, Tooltip, Tag, Switch } from 'antd';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button, Table, Space, Tooltip, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import {
-  usePartsCatalog,
-  useUpdatePartsCatalog,
-  useDeletePartsCatalog,
-} from '@/hooks/use-parts-catalog';
+import { usePartsCatalog, useDeletePartsCatalog } from '@/hooks/use-parts-catalog';
 import type { PartsCatalogItem } from '@/types/models.types';
 import PageHeader from '@/components/common/PageHeader';
 import { showConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PermissionGuard } from '@/components/permissions';
+import { formatCurrency } from '@/utils/format-currency';
 import SearchFilter from '@/components/common/SearchFilter';
-import PartQuickCreateDrawer from '@/components/estimates/PartQuickCreateDrawer';
 
 export default function PartsCatalogPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<PartsCatalogItem | null>(null);
-
   const { data, isLoading } = usePartsCatalog({ page, take: pageSize, search });
-  const updatePart = useUpdatePartsCatalog();
   const deletePart = useDeletePartsCatalog();
 
   const parts = data?.data || [];
   const meta = data?.meta;
 
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -40,24 +35,10 @@ export default function PartsCatalogPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const openCreate = () => {
-    setEditingItem(null);
-    setDrawerOpen(true);
-  };
-
-  const openEdit = (record: PartsCatalogItem) => {
-    setEditingItem(record);
-    setDrawerOpen(true);
-  };
-
-  const handleToggleActive = (record: PartsCatalogItem) => {
-    updatePart.mutate({ id: record.id, is_active: !record.is_active });
-  };
-
   const handleDelete = (part: PartsCatalogItem) => {
     showConfirmDialog({
-      title: 'Delete Part',
-      content: `Are you sure you want to delete "${part.name}"?`,
+      title: t('partsCatalog.deletePart'),
+      content: t('partsCatalog.deleteConfirm', { name: part.name }),
       onOk: async () => {
         await deletePart.mutateAsync(part.id);
       },
@@ -67,112 +48,74 @@ export default function PartsCatalogPage() {
 
   const columns: ColumnsType<PartsCatalogItem> = [
     {
-      title: 'Name',
+      title: t('partsCatalog.columns.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (name: string, record) => (
-        <span
-          style={{ fontWeight: 500, color: '#1890ff', cursor: 'pointer' }}
-          onClick={() => openEdit(record)}
-        >
-          {name}
-        </span>
-      ),
+      render: (name: string, record: any) => <Link to={`/catalog/parts/${record.id}`}><span style={{ fontWeight: 500 }}>{name}</span></Link>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: 'SKU',
+      title: t('partsCatalog.columns.sku'),
       dataIndex: 'sku',
       key: 'sku',
       render: (sku: string) => sku || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
-      title: 'Category',
+      title: t('partsCatalog.columns.category'),
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) =>
-        category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
+      render: (category: string) => category ? <Tag>{category}</Tag> : <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
-      title: 'Unit Price',
+      title: t('partsCatalog.columns.price'),
       dataIndex: 'unit_price',
       key: 'unit_price',
       render: (price: number | null) =>
-        price !== null && price !== undefined
-          ? `₹${Number(price).toFixed(2)}`
-          : <span style={{ opacity: 0.5 }}>-</span>,
+        price !== null && price !== undefined ? formatCurrency(price) : <span style={{ opacity: 0.5 }}>-</span>,
       sorter: (a, b) => (a.unit_price || 0) - (b.unit_price || 0),
     },
     {
-      title: 'Stock Qty',
+      title: t('partsCatalog.columns.stockQty'),
       key: 'stock_qty',
       render: (_, record) => {
-        const isLow = record.stock_qty <= record.reorder_level;
+        const isLowStock = record.stock_qty <= record.reorder_level;
         return (
-          <span style={{ color: isLow ? '#ef4444' : undefined, fontWeight: isLow ? 600 : undefined }}>
-            {record.stock_qty}
-            {isLow && (
-              <Tag color="red" style={{ marginLeft: 6, fontSize: 11 }}>
-                Low
-              </Tag>
-            )}
-          </span>
+          <Space>
+            <span>{record.stock_qty}</span>
+            {isLowStock && <Tag color="red">{t('partsCatalog.lowStock')}</Tag>}
+          </Space>
         );
       },
       sorter: (a, b) => a.stock_qty - b.stock_qty,
     },
     {
-      title: 'Reorder Level',
-      dataIndex: 'reorder_level',
-      key: 'reorder_level',
-      render: (level: number) =>
-        level !== null && level !== undefined ? level : <span style={{ opacity: 0.5 }}>-</span>,
-    },
-    {
-      title: 'Supplier',
+      title: t('partsCatalog.columns.supplier'),
       dataIndex: 'supplier',
       key: 'supplier',
       render: (supplier: string) => supplier || <span style={{ opacity: 0.5 }}>-</span>,
     },
     {
-      title: 'Active',
+      title: t('partsCatalog.columns.active'),
       dataIndex: 'is_active',
       key: 'is_active',
-      render: (active: boolean, record) => (
-        <Switch
-          checked={active}
-          size="small"
-          loading={updatePart.isPending}
-          onChange={() => handleToggleActive(record)}
-        />
-      ),
+      render: (active: boolean) =>
+        active ? <Tag color="green">{t('partsCatalog.active')}</Tag> : <Tag color="red">{t('partsCatalog.inactive')}</Tag>,
     },
     {
-      title: 'Actions',
+      title: t('partsCatalog.columns.actions'),
       key: 'actions',
       fixed: 'right',
-      width: 100,
+      width: 150,
       render: (_, record) => (
         <Space size="small">
           <PermissionGuard permission="parts-catalog:update">
-            <Tooltip title="Edit">
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                size="small"
-                onClick={(e) => { e.stopPropagation(); openEdit(record); }}
-              />
+            <Tooltip title={t('partsCatalog.actions.edit')}>
+              <Button type="text" icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); navigate(`/catalog/parts/${record.id}/edit`); }} />
             </Tooltip>
           </PermissionGuard>
           <PermissionGuard permission="parts-catalog:delete">
-            <Tooltip title="Delete">
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                size="small"
-                onClick={(e) => { e.stopPropagation(); handleDelete(record); }}
-              />
+            <Tooltip title={t('partsCatalog.actions.delete')}>
+              <Button type="text" danger icon={<DeleteOutlined />} size="small" onClick={(e) => { e.stopPropagation(); handleDelete(record); }} />
             </Tooltip>
           </PermissionGuard>
         </Space>
@@ -183,12 +126,12 @@ export default function PartsCatalogPage() {
   return (
     <div>
       <PageHeader
-        title="Parts Catalog"
-        subtitle="Manage your parts inventory and pricing"
+        title={t('partsCatalog.title')}
+        subtitle={t('partsCatalog.subtitle')}
         extra={
           <PermissionGuard permission="parts-catalog:create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              New Part
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/catalog/parts/new')}>
+              {t('partsCatalog.addPart')}
             </Button>
           </PermissionGuard>
         }
@@ -196,7 +139,7 @@ export default function PartsCatalogPage() {
 
       <div style={{ marginBottom: 16 }}>
         <SearchFilter
-          placeholder="Search parts..."
+          placeholder={t('partsCatalog.searchPlaceholder')}
           allowClear
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
@@ -209,9 +152,8 @@ export default function PartsCatalogPage() {
         dataSource={parts}
         rowKey="id"
         loading={isLoading}
-        scroll={{ x: 900 }}
         onRow={(record) => ({
-          onClick: () => openEdit(record),
+          onClick: () => navigate(`/catalog/parts/${record.id}`),
           style: { cursor: 'pointer' },
         })}
         pagination={{
@@ -219,19 +161,12 @@ export default function PartsCatalogPage() {
           pageSize,
           total: meta?.itemCount || 0,
           showSizeChanger: true,
-          showTotal: (total) => `${total} parts`,
+          showTotal: (total) => t('partsCatalog.paginationTotal', { total }),
           onChange: (newPage, newPageSize) => {
             setPage(newPage);
             setPageSize(newPageSize);
           },
         }}
-      />
-
-      <PartQuickCreateDrawer
-        open={drawerOpen}
-        editItem={editingItem}
-        onClose={() => { setDrawerOpen(false); setEditingItem(null); }}
-        onSuccess={() => { setDrawerOpen(false); setEditingItem(null); }}
       />
     </div>
   );

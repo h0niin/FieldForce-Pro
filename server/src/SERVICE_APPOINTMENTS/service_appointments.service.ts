@@ -10,14 +10,9 @@ import { KEYNAMES } from '../shared/constants/keynames';
 import { Op } from 'sequelize';
 import { WorkOrder } from '../WORK_ORDERS/work_orders.entity';
 import { Contact } from '../CONTACTS/contacts.entity';
-import { Company } from '../COMPANIES/companies.entity';
 import { ServiceLocation } from '../SERVICE_LOCATIONS/service_locations.entity';
-import { ServiceRequest } from '../SERVICE_REQUESTS/service_requests.entity';
-import { ServiceAppointmentTrip } from './service_appointment_trips.entity';
 import { User } from '../USERS/users.entity';
 import { Role } from '../ROLES/roles.entity';
-import { randomUUID } from 'crypto';
-import { CreateServiceAppointmentTripDto, UpdateServiceAppointmentTripDto } from './dto/service_appointment_trips.dto';
 import { NotificationsService } from '../NOTIFICATIONS/notifications.service';
 import { DocumentApprovalsService } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.service';
 import { DocumentApproval } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.entity';
@@ -110,15 +105,9 @@ export class ServiceAppointmentsService implements OnModuleInit {
         required: false,
       },
       {
-        model: User,
-        as: 'creator',
-        attributes: ['id', 'first_name', 'last_name', 'email'],
-        required: false,
-      },
-      {
         model: WorkOrder,
         include: [
-          { model: Contact, include: [{ model: Company, required: false }] },
+          { model: Contact },
           { model: ServiceLocation },
         ],
       },
@@ -145,119 +134,6 @@ export class ServiceAppointmentsService implements OnModuleInit {
     };
   }
 
-  // ── Service Appointments module helpers ──────────────────────────────
-
-  /** Difference between two dates in whole seconds, or null if either is missing. */
-  private durationSeconds(start?: Date | string | null, end?: Date | string | null): number | null {
-    if (!start || !end) return null;
-    const ms = new Date(end).getTime() - new Date(start).getTime();
-    if (!Number.isFinite(ms) || ms < 0) return null;
-    return Math.round(ms / 1000);
-  }
-
-  /** Generate the next per-tenant appointment number (AP-1, AP-2, ...). */
-  private async nextAppointmentNumber(tenantId: string): Promise<string> {
-    const count = await this.serviceAppointmentRepository.count({ where: { tenant_id: tenantId } });
-    return `AP-${count + 1}`;
-  }
-
-  /** Pull preferred date/time hints from the work order's linked service request. */
-  private async preferredFromWorkOrder(
-    workOrderId: string,
-    tenantId: string,
-  ): Promise<{ preferred_date_1?: string; preferred_date_2?: string; preferred_time?: string }> {
-    try {
-      const wo = await WorkOrder.findOne({
-        where: { id: workOrderId, tenant_id: tenantId },
-        attributes: ['id', 'request_id'],
-      });
-      if (!wo?.request_id) return {};
-      const sr = await ServiceRequest.findOne({
-        where: { id: wo.request_id, tenant_id: tenantId },
-        attributes: ['id', 'custom_fields'],
-      });
-      const cf = (sr?.custom_fields as Record<string, unknown> | null) || {};
-      return {
-        preferred_date_1: (cf.preferred_date_1 as string) || undefined,
-        preferred_date_2: (cf.preferred_date_2 as string) || undefined,
-        preferred_time: (cf.preferred_time as string) || undefined,
-      };
-    } catch (error) {
-      this.logger.warn(`Failed to read preferred dates for WO ${workOrderId}: ${error.message}`);
-      return {};
-    }
-  }
-
-  /** Resolve a user's display name (best-effort). */
-  private async userName(userId?: string | null): Promise<string | null> {
-    if (!userId) return null;
-    const user = await User.findByPk(userId, { attributes: ['first_name', 'last_name'] });
-    return user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || null : null;
-  }
-
-  /**
-   * Append an activity-timeline entry into custom_fields.activity. Stored in
-   * JSONB so the Overview tab can render a chronological history without a new
-   * table. Sequelize needs the JSONB reference reassigned + marked changed.
-   */
-  private async appendActivity(
-    appointment: ServiceAppointment,
-    type: string,
-    description: string,
-    userId?: string | null,
-  ): Promise<void> {
-    const cf = { ...((appointment.custom_fields as Record<string, unknown>) || {}) };
-    const activity = Array.isArray(cf.activity) ? [...(cf.activity as unknown[])] : [];
-    activity.push({
-      id: randomUUID(),
-      type,
-      description,
-      user_id: userId || null,
-      user_name: await this.userName(userId),
-      at: new Date().toISOString(),
-    });
-    cf.activity = activity;
-    appointment.set('custom_fields', cf);
-    appointment.changed('custom_fields', true);
-    await appointment.save();
-  }
-
-  /**
-   * Recompute the parent work order's status from its appointments:
-   *  - all (non-cancelled) appointments completed → WO completed
-   *  - any appointment in_progress → WO in_progress
-   *  - otherwise leave the WO status unchanged (e.g. a lone cancellation)
-   */
-  private async syncWorkOrderStatus(workOrderId: string, tenantId: string): Promise<void> {
-    if (!workOrderId) return;
-    try {
-      const appointments = await this.serviceAppointmentRepository.findAll({
-        where: { work_order_id: workOrderId, tenant_id: tenantId, is_deleted: false },
-        attributes: ['id', 'status'],
-      });
-      if (appointments.length === 0) return;
-
-      const active = appointments.filter((a) => a.status !== 'cancelled');
-      let nextStatus: string | null = null;
-
-      if (active.length > 0 && active.every((a) => a.status === 'completed')) {
-        nextStatus = 'completed';
-      } else if (appointments.some((a) => a.status === 'in_progress')) {
-        nextStatus = 'in_progress';
-      }
-
-      if (!nextStatus) return;
-
-      const wo = await WorkOrder.findOne({ where: { id: workOrderId, tenant_id: tenantId, is_deleted: false } });
-      if (wo && wo.status !== nextStatus && wo.status !== 'closed' && wo.status !== 'cancelled') {
-        await wo.update({ status: nextStatus });
-        this.logger.log(`Work order ${workOrderId} status auto-updated to '${nextStatus}' from appointments`);
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to sync work order ${workOrderId} status: ${error.message}`);
-    }
-  }
-
   async findAllPaginated(
     tenantId: string,
     pageOptionsDto: PageOptionsDto,
@@ -265,15 +141,6 @@ export class ServiceAppointmentsService implements OnModuleInit {
     excludeStatus?: string,
     hasPendingApproval?: boolean,
     unassigned?: boolean,
-    filters?: {
-      scheduleType?: string;
-      name?: string;
-      dateFrom?: string;
-      dateTo?: string;
-      contact?: string;
-      company?: string;
-      email?: string;
-    },
   ): Promise<PageDto<any>> {
     const where: Record<string, unknown> = {
       tenant_id: tenantId,
@@ -283,27 +150,6 @@ export class ServiceAppointmentsService implements OnModuleInit {
     // Only return appointments with no technician assigned
     if (unassigned) {
       where.agent_id = { [Op.is]: null };
-    }
-
-    // Schedule type filter (time_bound | all_day)
-    if (filters?.scheduleType) {
-      where.schedule_type = filters.scheduleType;
-    }
-
-    // Service Appointment Name (summary / appointment number) text search
-    if (filters?.name) {
-      where[Op.or as unknown as string] = [
-        { summary: { [Op.iLike]: `%${filters.name}%` } },
-        { appointment_number: { [Op.iLike]: `%${filters.name}%` } },
-      ];
-    }
-
-    // Appointment time range (filters on scheduled_start)
-    if (filters?.dateFrom || filters?.dateTo) {
-      const range: Record<symbol, Date> = {};
-      if (filters.dateFrom) range[Op.gte] = new Date(filters.dateFrom);
-      if (filters.dateTo) range[Op.lte] = new Date(filters.dateTo);
-      where.scheduled_start = range;
     }
 
     // Filter by status (supports comma-separated list)
@@ -341,70 +187,19 @@ export class ServiceAppointmentsService implements OnModuleInit {
       where.id = { [Op.in]: ids };
     }
 
-    if (pageOptionsDto.search && !filters?.name) {
+    if (pageOptionsDto.search) {
       where[Op.or as unknown as string] = [
-        { summary: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
-        { appointment_number: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
         { notes: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
         { status: { [Op.iLike]: `%${pageOptionsDto.search}%` } },
       ];
     }
 
-    // When filtering by contact / company / email we constrain the joined
-    // work order → contact → company tree (required joins).
-    const filterByRelations = !!(filters?.contact || filters?.company || filters?.email);
-    let include = this.standardInclusions;
-    if (filterByRelations) {
-      const contactWhere: Record<string, unknown> = {};
-      if (filters?.contact) {
-        contactWhere[Op.or as unknown as string] = [
-          { first_name: { [Op.iLike]: `%${filters.contact}%` } },
-          { last_name: { [Op.iLike]: `%${filters.contact}%` } },
-        ];
-      }
-      if (filters?.email) {
-        contactWhere.email = { [Op.iLike]: `%${filters.email}%` };
-      }
-      const companyInclude: Record<string, unknown> = { model: Company, required: !!filters?.company };
-      if (filters?.company) {
-        companyInclude.where = { name: { [Op.iLike]: `%${filters.company}%` } };
-      }
-      include = [
-        {
-          model: User,
-          as: 'agent',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
-          required: false,
-        },
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
-          required: false,
-        },
-        {
-          model: WorkOrder,
-          required: true,
-          include: [
-            {
-              model: Contact,
-              required: true,
-              where: Object.keys(contactWhere).length ? contactWhere : undefined,
-              include: [companyInclude],
-            },
-            { model: ServiceLocation },
-          ],
-        },
-      ] as unknown as typeof include;
-    }
-
     const { count, rows } = await this.serviceAppointmentRepository.findAndCountAll({
       where,
-      include,
+      include: this.standardInclusions,
       order: [['created_at', pageOptionsDto.order]],
       limit: pageOptionsDto.take,
       offset: pageOptionsDto.skip,
-      distinct: true,
     });
 
     const mappedRows = rows.map(r => this.mapToMobile(r));
@@ -423,14 +218,7 @@ export class ServiceAppointmentsService implements OnModuleInit {
 
   async findById(id: string, tenantId: string): Promise<any> {
     const appointment = await this.findModelById(id, tenantId);
-    const mapped: any = this.mapToMobile(appointment);
-    if (mapped) {
-      const cf = (mapped.custom_fields as Record<string, unknown>) || {};
-      mapped.trips = await this.listTrips(id, tenantId);
-      mapped.activity = Array.isArray(cf.activity) ? cf.activity : [];
-      mapped.note_entries = Array.isArray(cf.notes) ? cf.notes : [];
-    }
-    return mapped;
+    return this.mapToMobile(appointment);
   }
 
   private async findModelById(id: string, tenantId: string): Promise<ServiceAppointment> {
@@ -536,39 +324,13 @@ export class ServiceAppointmentsService implements OnModuleInit {
   }
 
 
-  async create(tenantId: string, dto: CreateServiceAppointmentDto, userId?: string): Promise<any> {
+  async create(tenantId: string, dto: CreateServiceAppointmentDto): Promise<any> {
     await this.checkAppointmentLimit(tenantId);
-
-    const appointment_number = await this.nextAppointmentNumber(tenantId);
-    const scheduled_duration = this.durationSeconds(dto.scheduled_start, dto.scheduled_end);
-    const actual_duration = this.durationSeconds(dto.actual_start, dto.actual_end);
-
-    // Auto-fill summary and preferred date/time hints from the parent work order / SR.
-    let summary = dto.summary;
-    if (!summary) {
-      const wo = await WorkOrder.findOne({
-        where: { id: dto.work_order_id, tenant_id: tenantId },
-        attributes: ['summary'],
-      });
-      summary = wo?.summary || undefined;
-    }
-    const preferred = await this.preferredFromWorkOrder(dto.work_order_id, tenantId);
 
     const appointment = await this.serviceAppointmentRepository.create({
       tenant_id: tenantId,
       ...dto,
-      summary,
-      appointment_number,
-      scheduled_duration,
-      actual_duration,
-      created_by: userId || null,
-      ...preferred,
     });
-
-    await this.appendActivity(appointment, 'created', `Appointment ${appointment_number} created`, userId);
-
-    // A newly created appointment can move the work order into a scheduled/in-progress flow.
-    await this.syncWorkOrderStatus(dto.work_order_id, tenantId);
 
     const created = await this.findById(appointment.id, tenantId);
 
@@ -628,22 +390,7 @@ export class ServiceAppointmentsService implements OnModuleInit {
     dto: UpdateServiceAppointmentDto,
   ): Promise<any> {
     const appointment = await this.findModelById(id, tenantId);
-
-    const patch: Record<string, unknown> = { ...dto };
-
-    // Recalculate durations whenever the relevant timestamps change.
-    const newScheduledStart = dto.scheduled_start ?? appointment.scheduled_start;
-    const newScheduledEnd = dto.scheduled_end ?? appointment.scheduled_end;
-    if (dto.scheduled_start !== undefined || dto.scheduled_end !== undefined) {
-      patch.scheduled_duration = this.durationSeconds(newScheduledStart, newScheduledEnd);
-    }
-    const newActualStart = dto.actual_start ?? appointment.actual_start;
-    const newActualEnd = dto.actual_end ?? appointment.actual_end;
-    if (dto.actual_start !== undefined || dto.actual_end !== undefined) {
-      patch.actual_duration = this.durationSeconds(newActualStart, newActualEnd);
-    }
-
-    await appointment.update(patch);
+    await appointment.update(dto);
     return this.findById(id, tenantId);
   }
 
@@ -651,7 +398,6 @@ export class ServiceAppointmentsService implements OnModuleInit {
     id: string,
     tenantId: string,
     dto: UpdateServiceAppointmentStatusDto,
-    userId?: string,
   ): Promise<any> {
     const appointment = await this.findModelById(id, tenantId);
 
@@ -663,33 +409,7 @@ export class ServiceAppointmentsService implements OnModuleInit {
       );
     }
 
-    // Stamp actual start/end as work begins/completes and recompute actual duration.
-    const patch: Record<string, unknown> = { status: dto.status };
-    let actualStart = appointment.actual_start;
-    let actualEnd = appointment.actual_end;
-    if (dto.status === 'in_progress' && !actualStart) {
-      actualStart = new Date();
-      patch.actual_start = actualStart;
-    }
-    if (dto.status === 'completed' && !actualEnd) {
-      actualEnd = new Date();
-      patch.actual_end = actualEnd;
-    }
-    if (patch.actual_start || patch.actual_end) {
-      patch.actual_duration = this.durationSeconds(actualStart, actualEnd);
-    }
-
-    await appointment.update(patch);
-
-    await this.appendActivity(
-      appointment,
-      'status_change',
-      `Status changed from ${previousStatus} to ${dto.status}`,
-      userId,
-    );
-
-    // Roll the parent work order's status up from its appointments.
-    await this.syncWorkOrderStatus(appointment.work_order_id, tenantId);
+    await appointment.update({ status: dto.status });
 
     // Resolve any pending SCHEDULE approval whenever the appointment status changes.
     try {
@@ -1013,90 +733,6 @@ export class ServiceAppointmentsService implements OnModuleInit {
     const mappedRows = rows.map(r => this.mapToMobile(r));
     const meta = new PageMetaDto({ pageOptionsDto, itemCount: count });
     return new PageDto(mappedRows, meta);
-  }
-
-  // ── Trips (manual web entry) ─────────────────────────────────────────
-
-  async listTrips(appointmentId: string, tenantId: string): Promise<ServiceAppointmentTrip[]> {
-    return ServiceAppointmentTrip.findAll({
-      where: { appointment_id: appointmentId, tenant_id: tenantId, is_deleted: false },
-      order: [['trip_date', 'ASC'], ['created_at', 'ASC']],
-    });
-  }
-
-  async addTrip(
-    appointmentId: string,
-    tenantId: string,
-    dto: CreateServiceAppointmentTripDto,
-    userId?: string,
-  ): Promise<ServiceAppointmentTrip> {
-    const appointment = await this.findModelById(appointmentId, tenantId);
-    const trip = await ServiceAppointmentTrip.create({
-      tenant_id: tenantId,
-      appointment_id: appointmentId,
-      created_by: userId || null,
-      ...dto,
-    });
-    await this.appendActivity(
-      appointment,
-      'trip_added',
-      `Trip added: ${dto.start_location} → ${dto.end_location}`,
-      userId,
-    );
-    return trip;
-  }
-
-  async updateTrip(
-    appointmentId: string,
-    tripId: string,
-    tenantId: string,
-    dto: UpdateServiceAppointmentTripDto,
-  ): Promise<ServiceAppointmentTrip> {
-    const trip = await ServiceAppointmentTrip.findOne({
-      where: { id: tripId, appointment_id: appointmentId, tenant_id: tenantId, is_deleted: false },
-    });
-    if (!trip) {
-      throw new NotFoundException('Trip not found');
-    }
-    await trip.update({ ...dto });
-    return trip;
-  }
-
-  async deleteTrip(appointmentId: string, tripId: string, tenantId: string): Promise<void> {
-    const trip = await ServiceAppointmentTrip.findOne({
-      where: { id: tripId, appointment_id: appointmentId, tenant_id: tenantId, is_deleted: false },
-    });
-    if (!trip) {
-      throw new NotFoundException('Trip not found');
-    }
-    await trip.update({ is_deleted: true });
-  }
-
-  // ── Notes (stored in custom_fields.notes) ────────────────────────────
-
-  async addNote(
-    appointmentId: string,
-    tenantId: string,
-    content: string,
-    userId?: string,
-  ): Promise<any[]> {
-    const appointment = await this.findModelById(appointmentId, tenantId);
-    const cf = { ...((appointment.custom_fields as Record<string, unknown>) || {}) };
-    const notes = Array.isArray(cf.notes) ? [...(cf.notes as unknown[])] : [];
-    const entry = {
-      id: randomUUID(),
-      content,
-      user_id: userId || null,
-      user_name: await this.userName(userId),
-      created_at: new Date().toISOString(),
-    };
-    notes.push(entry);
-    cf.notes = notes;
-    appointment.set('custom_fields', cf);
-    appointment.changed('custom_fields', true);
-    await appointment.save();
-    await this.appendActivity(appointment, 'note_added', 'Note added', userId);
-    return notes as any[];
   }
 
   async delete(id: string, tenantId: string): Promise<void> {

@@ -26,7 +26,6 @@ import { WorkOrderLineItem } from '../WORK_ORDER_LINE_ITEMS/work_order_line_item
 import { WorkOrderNote } from '../WORK_ORDER_NOTES/work_order_notes.entity';
 import { WorkOrderAttachment } from '../WORK_ORDER_ATTACHMENTS/work_order_attachments.entity';
 import { ServiceAppointment } from '../SERVICE_APPOINTMENTS/service_appointments.entity';
-import { ServiceAppointmentTrip } from '../SERVICE_APPOINTMENTS/service_appointment_trips.entity';
 import { JobSheetTemplate } from '../JOB_SHEET_TEMPLATES/job_sheet_templates.entity';
 import { JobSheetInstance } from '../JOB_SHEET_INSTANCES/job_sheet_instances.entity';
 import { JobSheetItem } from '../JOB_SHEET_ITEMS/job_sheet_items.entity';
@@ -97,8 +96,9 @@ import { TenantModule } from '../TENANT_MODULES/tenant_modules.entity';
 import { FieldPermission } from '../FIELD_PERMISSIONS/field_permissions.entity';
 import { DispatchConsoleLayout } from '../DISPATCH_CONSOLE_LAYOUTS/dispatch_console_layouts.entity';
 import { ModuleMapping } from '../MODULE_MAPPINGS/module_mappings.entity';
-import { CompanyType } from '../COMPANY_TYPES/company_types.entity';
-import { ServiceRequestNote } from '../SERVICE_REQUEST_NOTES/service_request_notes.entity';
+import { TimeBasedRule } from '../TIME_BASED_RULES/time_based_rules.entity';
+import { AutomationAction } from '../AUTOMATION_ACTIONS/automation_actions.entity';
+import { ScheduledReport } from '../SCHEDULED_REPORTS/scheduled_reports.entity';
 
 @Module({
   imports: [
@@ -118,7 +118,7 @@ import { ServiceRequestNote } from '../SERVICE_REQUEST_NOTES/service_request_not
           ServiceRequest,
           Estimate, EstimateLineItem,
           WorkOrder, WorkOrderLineItem, WorkOrderNote, WorkOrderAttachment,
-          ServiceAppointment, ServiceAppointmentTrip,
+          ServiceAppointment,
           JobSheetTemplate, JobSheetInstance, JobSheetItem,
           Timesheet, Trip, AgentLocation,
           Invoice, InvoiceLineItem, Payment, PaymentGateway,
@@ -141,7 +141,7 @@ import { ServiceRequestNote } from '../SERVICE_REQUEST_NOTES/service_request_not
           WorkingCalendar, SlaEscalation, SlaPauseTrigger,
           EmailChannel, EmailThread, Territory, ServiceReport,
           TenantModule, FieldPermission, DispatchConsoleLayout, ModuleMapping,
-          CompanyType, ServiceRequestNote,
+          TimeBasedRule, AutomationAction, ScheduledReport,
         ],
         autoLoadModels: true,
         synchronize: !configService.isProduction,

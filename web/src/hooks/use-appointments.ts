@@ -1,16 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  appointmentsApi,
-  CreateAppointmentPayload,
-  UpdateAppointmentPayload,
-  AppointmentListParams,
-  TripPayload,
-} from '@/api/appointments.api';
+import { appointmentsApi, CreateAppointmentPayload, UpdateAppointmentPayload } from '@/api/appointments.api';
 import type { PageOptions } from '@/types/api.types';
 import { useNotificationStore } from '@/store/notification.store';
 
 export function useAppointments(
-  params?: AppointmentListParams,
+  params?: PageOptions & { status?: string; excludeStatus?: string; hasPendingApproval?: string; unassigned?: string },
   enabled = true,
   options?: { refetchInterval?: number },
 ) {
@@ -91,36 +85,6 @@ export function useCreateAppointment() {
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create appointment' });
-    },
-  });
-}
-
-/**
- * Create an appointment from the Service Appointments list drawer. Returns the
- * created appointment so the caller can navigate (Schedule And Dispatch) and
- * shows the spec toast "✓ Service Appointment AP-X created".
- */
-export function useScheduleAppointment() {
-  const queryClient = useQueryClient();
-  const addNotification = useNotificationStore((s) => s.add);
-
-  return useMutation({
-    mutationFn: async (payload: CreateAppointmentPayload) => {
-      const response = await appointmentsApi.create(payload);
-      return response.data.data!;
-    },
-    onSuccess: (appointment) => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
-      addNotification(
-        { type: 'success', message: `✓ Service Appointment ${appointment?.appointment_number || ''} created`.trim() },
-        4000,
-      );
-    },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        || 'Failed to create service appointment';
-      addNotification({ type: 'error', message: msg });
     },
   });
 }
@@ -214,70 +178,6 @@ export function useAppointmentApprovals(appointmentId: string) {
       return response.data.data!;
     },
     enabled: !!appointmentId,
-  });
-}
-
-export function useAppointmentTrips(appointmentId: string) {
-  return useQuery({
-    queryKey: ['appointments', appointmentId, 'trips'],
-    queryFn: async () => {
-      const response = await appointmentsApi.getTrips(appointmentId);
-      return response.data.data || [];
-    },
-    enabled: !!appointmentId,
-  });
-}
-
-export function useAddAppointmentTrip(appointmentId: string) {
-  const queryClient = useQueryClient();
-  const addNotification = useNotificationStore((s) => s.add);
-  return useMutation({
-    mutationFn: (payload: TripPayload) => appointmentsApi.addTrip(appointmentId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', appointmentId] });
-      addNotification({ type: 'success', message: '✓ Trip added' }, 3000);
-    },
-    onError: () => addNotification({ type: 'error', message: 'Failed to add trip' }),
-  });
-}
-
-export function useUpdateAppointmentTrip(appointmentId: string) {
-  const queryClient = useQueryClient();
-  const addNotification = useNotificationStore((s) => s.add);
-  return useMutation({
-    mutationFn: ({ tripId, ...payload }: Partial<TripPayload> & { tripId: string }) =>
-      appointmentsApi.updateTrip(appointmentId, tripId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', appointmentId] });
-      addNotification({ type: 'success', message: '✓ Trip updated' }, 3000);
-    },
-    onError: () => addNotification({ type: 'error', message: 'Failed to update trip' }),
-  });
-}
-
-export function useDeleteAppointmentTrip(appointmentId: string) {
-  const queryClient = useQueryClient();
-  const addNotification = useNotificationStore((s) => s.add);
-  return useMutation({
-    mutationFn: (tripId: string) => appointmentsApi.deleteTrip(appointmentId, tripId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', appointmentId] });
-      addNotification({ type: 'success', message: '✓ Trip deleted' }, 3000);
-    },
-    onError: () => addNotification({ type: 'error', message: 'Failed to delete trip' }),
-  });
-}
-
-export function useAddAppointmentNote(appointmentId: string) {
-  const queryClient = useQueryClient();
-  const addNotification = useNotificationStore((s) => s.add);
-  return useMutation({
-    mutationFn: (content: string) => appointmentsApi.addNote(appointmentId, content),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', appointmentId] });
-      addNotification({ type: 'success', message: '✓ Note added' }, 3000);
-    },
-    onError: () => addNotification({ type: 'error', message: 'Failed to add note' }),
   });
 }
 

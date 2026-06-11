@@ -8,6 +8,7 @@ import { useContactsByCompany } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
 import { useServiceLocationsByCompany } from '@/hooks/use-service-locations';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 import { formatEnumText } from '@/utils/string';
 
 const { TextArea } = Input;
@@ -55,6 +56,7 @@ export default function AssetFormPage() {
           parent_asset_id: assetData.parent_asset_id,
           notes: assetData.notes,
           status: assetData.status || 'OPERATIONAL',
+          custom_fields: assetData.custom_fields || {},
         });
       }
     }
@@ -210,6 +212,9 @@ export default function AssetFormPage() {
                   </Form.Item>
                 </Col>
               </Row>
+            </Card>
+            <Card title="Additional Information" style={{ marginBottom: 24 }}>
+              <CustomFieldsSection moduleName="Assets" />
             </Card>
           </Col>
 

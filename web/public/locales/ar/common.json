@@ -46,7 +46,6 @@
     "mainNavigation": "القائمة الرئيسية",
     "customerManagement": "إدارة العملاء",
     "operations": "العمليات",
-    "workOrderManagement": "إدارة أوامر العمل",
     "schedulingWorkforce": "الجدولة والقوى العاملة",
     "financial": "المالية",
     "catalogPricing": "الكتالوج والأسعار",
@@ -68,9 +67,7 @@
     "auditLogs": "سجلات التدقيق",
     "myJobs": "مهامي",
     "mySchedule": "جدولي",
-    "notifications": "الإشعارات",
-    "serviceAppointments": "مواعيد الخدمة",
-    "serviceReports": "تقارير الخدمة"
+    "notifications": "الإشعارات"
   },
   "header": {
     "search": "بحث...",

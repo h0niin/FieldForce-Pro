@@ -8,6 +8,7 @@ import { useAllContacts } from '@/hooks/use-contacts';
 import { useAllServiceLocations } from '@/hooks/use-service-locations';
 import { useAllAssets } from '@/hooks/use-assets';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -37,6 +38,7 @@ export default function WorkOrderFormPage() {
         category: workOrder.category,
         slaHours: (workOrder as any).slaHours ?? 24,
         scheduled_start: workOrder.scheduled_start ? dayjs(workOrder.scheduled_start) : null,
+        custom_fields: workOrder.custom_fields || {},
       });
     }
   }, [workOrder, form]);
@@ -52,10 +54,10 @@ export default function WorkOrderFormPage() {
     try {
       if (isEdit) {
         // Strip slaHours from update payload because backend does not accept it for updates
-        const { slaHours, ...updatePayload } = payload;
+        const { slaHours, ...updatePayload } = payload as any;
         await updateWorkOrder.mutateAsync({ id: id!, ...updatePayload });
       } else {
-        await createWorkOrder.mutateAsync(payload as Record<string, unknown> & { summary: string });
+        await createWorkOrder.mutateAsync(payload as any);
       }
       navigate('/work-orders');
     } catch {
@@ -197,6 +199,8 @@ export default function WorkOrderFormPage() {
               disabled={!!workOrder?.estimate_id}
             />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Work Orders" />
 
           <Form.Item>
             <Space>

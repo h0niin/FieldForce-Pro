@@ -46,7 +46,6 @@
     "mainNavigation": "പ്രധാന നാവിഗേഷൻ",
     "customerManagement": "കസ്റ്റമർ മാനേജ്‌മെന്റ്",
     "operations": "പ്രവർത്തനങ്ങൾ",
-    "workOrderManagement": "വർക്ക് ഓർഡർ മാനേജ്മെന്റ്",
     "schedulingWorkforce": "ഷെഡ്യൂളിംഗും വർക്ക്ഫോഴ്‌സും",
     "financial": "സാമ്പത്തികം",
     "catalogPricing": "കാറ്റലോഗും പ്രൈസിംഗും",
@@ -68,9 +67,7 @@
     "auditLogs": "ഓഡിറ്റ് ലോഗുകൾ",
     "myJobs": "എന്റെ ജോലികൾ",
     "mySchedule": "എന്റെ ഷെഡ്യൂൾ",
-    "notifications": "അറിയിപ്പുകൾ",
-    "serviceAppointments": "സേവന അപ്പോയിന്റ്മെന്റുകൾ",
-    "serviceReports": "സേവന റിപ്പോർട്ടുകൾ"
+    "notifications": "അറിയിപ്പുകൾ"
   },
   "header": {
     "search": "തിരയുക...",

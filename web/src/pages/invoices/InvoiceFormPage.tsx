@@ -7,6 +7,7 @@ import { useInvoice, useCreateInvoice, useUpdateInvoice } from '@/hooks/use-invo
 import { useAllContacts } from '@/hooks/use-contacts';
 import { useAllWorkOrders } from '@/hooks/use-work-orders';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -31,6 +32,7 @@ export default function InvoiceFormPage() {
         due_date: invoice.due_date ? dayjs(invoice.due_date) : null,
         currency: invoice.currency,
         notes: invoice.notes,
+        custom_fields: invoice.custom_fields || {},
       });
     }
   }, [invoice, form]);
@@ -125,6 +127,8 @@ export default function InvoiceFormPage() {
           <Form.Item name="notes" label={t('invoiceForm.notes')}>
             <TextArea rows={4} placeholder={t('invoiceForm.notesPlaceholder')} />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Invoices" />
 
           <Form.Item>
             <Space>

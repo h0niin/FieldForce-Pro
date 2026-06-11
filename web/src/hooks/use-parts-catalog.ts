@@ -43,9 +43,9 @@ export function useCreatePartsCatalog() {
 
   return useMutation({
     mutationFn: (payload: CreatePartsCatalogPayload) => partsCatalogApi.create(payload),
-    onSuccess: (_res, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts-catalog'] });
-      addNotification({ type: 'success', message: `✓ Part created — ${variables.name}` }, 3000);
+      addNotification({ type: 'success', message: 'Part created successfully' });
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create part' });
@@ -62,7 +62,7 @@ export function useUpdatePartsCatalog() {
       partsCatalogApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts-catalog'] });
-      addNotification({ type: 'success', message: '✓ Part updated' }, 3000);
+      addNotification({ type: 'success', message: 'Part updated successfully' });
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to update part' });
@@ -78,7 +78,7 @@ export function useDeletePartsCatalog() {
     mutationFn: (id: string) => partsCatalogApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts-catalog'] });
-      addNotification({ type: 'success', message: '✓ Part deleted' }, 3000);
+      addNotification({ type: 'success', message: 'Part deleted successfully' });
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to delete part' });

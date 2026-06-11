@@ -49,7 +49,7 @@ export class ServiceAppointment extends Model {
   @Column({
     type: DataType.UUID,
     allowNull: true,
-    comment: 'FK to users - assigned technician / service resource (null when unassigned)',
+    comment: 'FK to users - assigned technician (null when unassigned)',
   })
   agent_id: string;
 
@@ -72,96 +72,6 @@ export class ServiceAppointment extends Model {
 
   @BelongsTo(() => Asset)
   asset: Asset;
-
-  // ── Service Appointments module (web) — additive fields ──
-  @Column({
-    type: DataType.STRING(50),
-    allowNull: true,
-    comment: 'Auto-generated appointment number, format AP-1, AP-2',
-  })
-  appointment_number: string;
-
-  @Column({
-    type: DataType.STRING(500),
-    allowNull: true,
-  })
-  summary: string;
-
-  @Column({
-    type: DataType.STRING(50),
-    allowNull: true,
-    defaultValue: 'Service',
-    comment: 'Service | Installation | Maintenance | Inspection',
-  })
-  type: string;
-
-  @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
-    defaultValue: 'time_bound',
-    comment: 'time_bound | all_day',
-  })
-  schedule_type: string;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-    comment: 'Auto-calculated from scheduled start/end, stored as seconds',
-  })
-  scheduled_duration: number;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-    comment: 'Auto-calculated from actual start/end, stored as seconds',
-  })
-  actual_duration: number;
-
-  @Column({
-    type: DataType.DATEONLY,
-    allowNull: true,
-  })
-  due_date: string;
-
-  @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
-    defaultValue: 'not_invoiced',
-    comment: 'not_invoiced | invoiced',
-  })
-  billing_status: string;
-
-  @Column({
-    type: DataType.DATEONLY,
-    allowNull: true,
-    comment: 'Preferred date 1 pulled from the linked service request',
-  })
-  preferred_date_1: string;
-
-  @Column({
-    type: DataType.DATEONLY,
-    allowNull: true,
-    comment: 'Preferred date 2 pulled from the linked service request',
-  })
-  preferred_date_2: string;
-
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: true,
-    comment: 'Preferred time pulled from the linked service request',
-  })
-  preferred_time: string;
-
-  @ForeignKey(() => User)
-  @Column({
-    type: DataType.UUID,
-    allowNull: true,
-    comment: 'FK to users - who created the appointment',
-  })
-  created_by: string;
-
-  @BelongsTo(() => User, 'created_by')
-  creator: User;
 
   @Column({
     type: DataType.STRING(50),

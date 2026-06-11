@@ -4,6 +4,7 @@ import { Card, Form, Input, Button, Space, Skeleton, InputNumber, Select, Switch
 import { useTranslation } from 'react-i18next';
 import { usePartsCatalogItem, useCreatePartsCatalog, useUpdatePartsCatalog } from '@/hooks/use-parts-catalog';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -30,6 +31,7 @@ export default function PartFormPage() {
         supplier: part.supplier,
         category: part.category,
         is_active: part.is_active,
+        custom_fields: part.custom_fields || {},
       });
     }
   }, [part, form]);
@@ -130,6 +132,8 @@ export default function PartFormPage() {
           <Form.Item name="is_active" label={t('partForm.active')} valuePropName="checked">
             <Switch />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Parts Catalog" />
 
           <Form.Item>
             <Space>

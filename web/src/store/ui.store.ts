@@ -16,6 +16,9 @@ interface UiState {
   setCurrency: (currency: CurrencyType) => void;
   chatbotEnabled: boolean;
   setChatbotEnabled: (enabled: boolean) => void;
+  /** Hides the Settings nav sidebar (e.g. for full-screen layout editors) */
+  settingsSidebarHidden: boolean;
+  setSettingsSidebarHidden: (hidden: boolean) => void;
 }
 
 const detectDefaultCurrency = (): CurrencyType => {
@@ -39,6 +42,8 @@ export const useUiStore = create<UiState>()(
       theme: 'light',
       locale: 'en',
       currency: detectDefaultCurrency(),
+      // settingsSidebarHidden is intentionally NOT persisted — always resets on reload
+      settingsSidebarHidden: false,
 
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -47,9 +52,19 @@ export const useUiStore = create<UiState>()(
       setCurrency: (currency) => set({ currency }),
       chatbotEnabled: true,
       setChatbotEnabled: (enabled) => set({ chatbotEnabled: enabled }),
+      setSettingsSidebarHidden: (hidden) => set({ settingsSidebarHidden: hidden }),
     }),
     {
       name: 'ui-storage',
+      // Exclude ephemeral state from persistence
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        theme: state.theme,
+        locale: state.locale,
+        currency: state.currency,
+        chatbotEnabled: state.chatbotEnabled,
+      }),
     },
   ),
 );
+

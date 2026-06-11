@@ -65,10 +65,9 @@ export function useCreateContact() {
 
   return useMutation({
     mutationFn: (payload: CreateContactPayload) => contactsApi.create(payload),
-    onSuccess: (response, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      const fullName = [variables.first_name, variables.last_name].filter(Boolean).join(' ');
-      addNotification({ type: 'success', message: `✓ Contact created — ${fullName}` }, 3000);
+      addNotification({ type: 'success', message: 'Contact created successfully' });
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to create contact' });

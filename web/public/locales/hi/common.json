@@ -46,7 +46,6 @@
     "mainNavigation": "मुख्य नेविगेशन",
     "customerManagement": "ग्राहक प्रबंधन",
     "operations": "संचालन",
-    "workOrderManagement": "वर्क ऑर्डर प्रबंधन",
     "schedulingWorkforce": "शेड्यूलिंग और वर्कफोर्स",
     "financial": "वित्तीय",
     "catalogPricing": "कैटलॉग और मूल्य निर्धारण",
@@ -68,9 +67,7 @@
     "auditLogs": "ऑडिट लॉग्स",
     "myJobs": "मेरे कार्य",
     "mySchedule": "मेरा शेड्यूल",
-    "notifications": "सूचनाएं",
-    "serviceAppointments": "सेवा अपॉइंटमेंट",
-    "serviceReports": "सेवा रिपोर्ट"
+    "notifications": "सूचनाएं"
   },
   "header": {
     "search": "खोजें ...",

@@ -15,8 +15,6 @@ export function useEstimates(params?: PageOptions & { status?: string; excludeSt
       };
     },
     enabled,
-    staleTime: 0,        // always consider data stale — force refetch on mount
-    refetchOnMount: true, // always refetch when the component mounts
   });
 }
 

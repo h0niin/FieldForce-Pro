@@ -2,7 +2,6 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ServiceAppointmentsController } from './service_appointments.controller';
 import { ServiceAppointmentsService } from './service_appointments.service';
 import { serviceAppointmentsProviders } from './service_appointments.provider';
-import { serviceAppointmentTripsProviders } from './service_appointment_trips.provider';
 import { documentApprovalsProviders } from '../WORKFLOW/WORKFLOW_DOCUMENT_APPROVALS/document_approvals.provider';
 import { DatabaseModule } from '../database/database.module';
 import { NotificationsModule } from '../NOTIFICATIONS/notifications.module';
@@ -21,7 +20,7 @@ import { SubscriptionPlansModule } from '../SUBSCRIPTION_PLANS/subscription_plan
     SubscriptionPlansModule,
   ],
   controllers: [ServiceAppointmentsController],
-  providers: [ServiceAppointmentsService, ...serviceAppointmentsProviders, ...serviceAppointmentTripsProviders, ...documentApprovalsProviders],
+  providers: [ServiceAppointmentsService, ...serviceAppointmentsProviders, ...documentApprovalsProviders],
   exports: [ServiceAppointmentsService],
 })
 export class ServiceAppointmentsModule {}

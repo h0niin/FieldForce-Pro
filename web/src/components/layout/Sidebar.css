@@ -50,3 +50,21 @@
 .ant-layout-sider-collapsed .sidebar-section-title {
   display: none;
 }
+.sidebar-scrollable-area::-webkit-scrollbar {
+  display: none;
+}
+.sidebar-scrollable-area {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Dark mode hover states for main sidebar items */
+body.dark .sidebar-menu .ant-menu-item:hover {
+  color: #60a5fa !important;
+  background-color: rgba(37, 99, 235, 0.15) !important;
+}
+
+body.dark .sidebar-menu .ant-menu-submenu-title:hover {
+  color: #60a5fa !important;
+  background-color: rgba(37, 99, 235, 0.15) !important;
+}

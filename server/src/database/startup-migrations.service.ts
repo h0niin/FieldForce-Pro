@@ -902,76 +902,26 @@ export class StartupMigrationsService implements OnApplicationBootstrap {
       },
       {
         name: 'customization: create module_mappings table',
-        sql: `CREATE TABLE IF NOT EXISTS module_mappings (
+        sql: `DO $$ BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'module_mappings' AND column_name = 'source_field'
+                ) THEN
+                  DROP TABLE IF EXISTS module_mappings CASCADE;
+                END IF;
+              END $$;
+              CREATE TABLE IF NOT EXISTS module_mappings (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
                 source_module VARCHAR(100) NOT NULL,
                 target_module VARCHAR(100) NOT NULL,
-                source_field VARCHAR(100) NOT NULL,
-                target_field VARCHAR(100) NOT NULL,
-                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                UNIQUE (tenant_id, source_module, target_module, source_field)
+                field_mappings JSONB NOT NULL DEFAULT '[]'::jsonb,
+                created_by UUID,
+                updated_by UUID,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                UNIQUE (tenant_id, source_module, target_module)
               );`,
-
-      },
-
-      // ── Companies: extended profile columns ──────────────────────────────
-      { name: 'companies: add company_type column', sql: `ALTER TABLE companies ADD COLUMN IF NOT EXISTS company_type VARCHAR(100);` },
-      { name: 'companies: add phone column', sql: `ALTER TABLE companies ADD COLUMN IF NOT EXISTS phone VARCHAR(20);` },
-      { name: 'companies: add email column', sql: `ALTER TABLE companies ADD COLUMN IF NOT EXISTS email VARCHAR(255);` },
-      { name: 'companies: add service_address column', sql: `ALTER TABLE companies ADD COLUMN IF NOT EXISTS service_address TEXT;` },
-      { name: 'companies: add tags column', sql: `ALTER TABLE companies ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';` },
-
-      // ── Contacts: extended profile columns ───────────────────────────────
-      { name: 'contacts: add salutation column', sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS salutation VARCHAR(20);` },
-      { name: 'contacts: add mobile column', sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS mobile VARCHAR(20);` },
-      { name: 'contacts: add secondary_email column', sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS secondary_email VARCHAR(255);` },
-      { name: 'contacts: add department column', sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS department VARCHAR(100);` },
-      { name: 'contacts: add title column', sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS title VARCHAR(100);` },
-
-      // ── Company Types: per-tenant custom dropdown values ──────────────────
-      {
-        name: 'company_types: create table',
-        sql: `CREATE TABLE IF NOT EXISTS company_types (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-          name VARCHAR(100) NOT NULL,
-          is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-        );`,
-      },
-
-      // ── SLA audit logs: allow work-order-only entries (no SR) ────────────
-      {
-        name: 'sla_audit_logs: make service_request_id nullable',
-        sql: `DO $$ BEGIN
-                IF EXISTS (
-                  SELECT 1 FROM information_schema.columns
-                  WHERE table_name = 'sla_audit_logs'
-                  AND column_name = 'service_request_id'
-                  AND is_nullable = 'NO'
-                ) THEN
-                  ALTER TABLE sla_audit_logs ALTER COLUMN service_request_id DROP NOT NULL;
-                END IF;
-              END $$;`,
-      },
-
-      // ── Service Request Notes: dispatcher append-only notes ───────────────
-      {
-        name: 'service_request_notes: create table',
-        sql: `CREATE TABLE IF NOT EXISTS service_request_notes (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-          service_request_id UUID NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
-          user_id UUID,
-          author_name VARCHAR(200),
-          content TEXT NOT NULL,
-          is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-        );`,
       },
     ];
 
