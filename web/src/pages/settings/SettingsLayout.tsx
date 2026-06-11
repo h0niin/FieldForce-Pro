@@ -31,6 +31,7 @@ import {
   LockOutlined as LockFilledOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { useUiStore } from '@/store/ui.store';
 
 interface SettingSubmodule {
   key: string;
@@ -49,6 +50,9 @@ export default function SettingsLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const settingsSidebarHidden = useUiStore((s) => s.settingsSidebarHidden);
+  const theme = useUiStore((s) => s.theme);
+  const isDark = theme === 'dark';
 
   const categories: SettingCategory[] = [
     {
@@ -275,12 +279,24 @@ export default function SettingsLayout() {
       style={{
         display: 'flex',
         minHeight: 'calc(100vh - 120px)',
-        gap: 24,
+        gap: settingsSidebarHidden ? 0 : 24,
         padding: '12px 0',
+        transition: 'gap 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       className="fade-in-up"
     >
-      {/* Settings Navigation Menu Sidebar */}
+      {/* Settings Navigation Menu Sidebar — slides out when hidden (e.g. layout editor) */}
+      <div
+        style={{
+          width: settingsSidebarHidden ? 0 : 280,
+          flexShrink: 0,
+          overflow: 'hidden',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: settingsSidebarHidden ? 0 : 1,
+          // Keep pointer-events off while hidden so nothing is accidentally clickable
+          pointerEvents: settingsSidebarHidden ? 'none' : 'auto',
+        }}
+      >
       <Card
         style={{
           width: 280,
@@ -344,7 +360,7 @@ export default function SettingsLayout() {
                       }}
                       onMouseEnter={(e) => {
                         if (!active) {
-                          e.currentTarget.style.backgroundColor = 'var(--bg-color)';
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.04)' : 'var(--bg-color)';
                           e.currentTarget.style.color = 'var(--primary-color)';
                         }
                       }}
@@ -385,6 +401,7 @@ export default function SettingsLayout() {
           ))}
         </div>
       </Card>
+      </div>
 
       {/* Settings Active View Content Area */}
       <div style={{ flex: 1, minWidth: 0 }}>

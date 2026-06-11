@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { usePayment, useCreatePayment, useUpdatePayment } from '@/hooks/use-payments';
 import { useAllInvoices } from '@/hooks/use-invoices';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -30,6 +31,7 @@ export default function PaymentFormPage() {
         gateway_transaction_id: payment.gateway_transaction_id,
         paid_at: payment.paid_at ? dayjs(payment.paid_at) : null,
         notes: payment.notes,
+        custom_fields: payment.custom_fields || {},
       });
     }
   }, [payment, form]);
@@ -46,7 +48,7 @@ export default function PaymentFormPage() {
       if (isEdit) {
         await updatePayment.mutateAsync({ id: id!, ...payload });
       } else {
-        await createPayment.mutateAsync(payload as Record<string, unknown> & { invoice_id: string; amount: number });
+        await createPayment.mutateAsync(payload as any);
       }
       navigate('/payments');
     } catch {
@@ -135,6 +137,8 @@ export default function PaymentFormPage() {
           <Form.Item name="notes" label={t('paymentForm.notes')}>
             <TextArea rows={4} placeholder={t('paymentForm.notesPlaceholder')} />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Payments" />
 
           <Form.Item>
             <Space>

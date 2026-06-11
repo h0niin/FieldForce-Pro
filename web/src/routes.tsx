@@ -130,6 +130,7 @@ const DispatchConsoleLayoutPage = lazy(() => import('@/pages/settings/customizat
 const TemplatesPage = lazy(() => import('@/pages/settings/customization/TemplatesPage'));
 const ModuleMappingPage = lazy(() => import('@/pages/settings/customization/ModuleMappingPage'));
 const FieldLevelPermissionsPage = lazy(() => import('@/pages/settings/customization/FieldLevelPermissionsPage'));
+const ModuleLayoutEditorPage = lazy(() => import('@/pages/settings/customization/ModuleLayoutEditorPage'));
 const WorkflowRulesSettingsPage = lazy(() => import('@/pages/settings/automation/WorkflowRulesSettingsPage'));
 const TimeBasedRulesPage = lazy(() => import('@/pages/settings/automation/TimeBasedRulesPage'));
 const AutomationActionsPage = lazy(() => import('@/pages/settings/automation/AutomationActionsPage'));
@@ -1619,6 +1620,14 @@ export const routes: RouteObject[] = [
             element: (
               <SuspenseWrapper>
                 <ModulesAndFieldsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: 'customization/modules/:moduleName/layout',
+            element: (
+              <SuspenseWrapper>
+                <ModuleLayoutEditorPage />
               </SuspenseWrapper>
             ),
           },

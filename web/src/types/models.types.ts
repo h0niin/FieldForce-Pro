@@ -750,10 +750,18 @@ export interface CustomField {
   tenant_id: string;
   module: string;
   field_name: string;
+  field_label?: string;
   field_type: string;
   options: Record<string, unknown>;
   is_required: boolean;
   sort_order: number;
+  section_name?: string;
+  section_order?: number;
+  is_system?: boolean;
+  is_visible?: boolean;
+  char_limit?: number;
+  is_pii?: boolean;
+  is_encrypted?: boolean;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;

@@ -21,6 +21,7 @@ import {
   usePaymentReport,
 } from '@/hooks/use-reports';
 import { formatCurrency } from '@/utils/format-currency';
+import { useUiStore } from '@/store/ui.store';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -28,6 +29,8 @@ const { RangePicker } = DatePicker;
 export default function ReportListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const theme = useUiStore((s) => s.theme);
+  const isDark = theme === 'dark';
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().subtract(30, 'days'),
@@ -220,9 +223,9 @@ export default function ReportListPage() {
                 <Row gutter={[12, 12]}>
                   {card.stats.map((stat, idx) => (
                     <Col span={12} key={idx}>
-                      <div style={{ background: '#fafafa', borderRadius: 8, padding: '12px 14px' }}>
+                      <div style={{ background: isDark ? '#1f1f1f' : '#fafafa', borderRadius: 8, padding: '12px 14px' }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>{stat.label}</Text>
-                        <div style={{ fontSize: 18, fontWeight: 600, marginTop: 2, color: '#262626' }}>
+                        <div style={{ fontSize: 18, fontWeight: 600, marginTop: 2, color: isDark ? '#f3f4f6' : '#262626' }}>
                           {stat.value}
                         </div>
                       </div>

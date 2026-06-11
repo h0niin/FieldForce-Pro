@@ -109,7 +109,7 @@ const menuSections: MenuSection[] = [
         ],
       },
       { key: '/job-sheets', icon: <FormOutlined />, labelKey: 'nav.jobSheets', permission: 'job_sheets:read' },
-      // { key: '/timesheets', icon: <ClockCircleOutlined />, labelKey: 'nav.timesheets', permission: 'timesheets:read' },
+      { key: '/timesheets', icon: <ClockCircleOutlined />, labelKey: 'nav.timesheets', permission: 'timesheets:read' },
       // { key: '/workforce', icon: <TeamOutlined />, labelKey: 'nav.workforce', permission: 'workforce:read' },
       { key: '/trips/history', icon: <CompassOutlined />, labelKey: 'sidebar.tripHistory', permission: 'trips:read' },
     ],
@@ -291,7 +291,7 @@ export default function Sidebar() {
       collapsedWidth={80}
       theme="light"
       style={{
-        overflow: 'auto',
+        overflow: 'hidden',
         height: '100vh',
         position: 'fixed',
         left: i18n.dir() === 'rtl' ? 'auto' : 0,
@@ -304,10 +304,12 @@ export default function Sidebar() {
       }}
       trigger={null}
     >
-      {/* Logo Section */}
-      <div
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {/* Logo Section */}
+        <div
         style={{
           height: 80,
+          flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -356,7 +358,7 @@ export default function Sidebar() {
       </div>
 
       {/* Menu Sections */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 24 }} className="sidebar-scrollable-area">
         {activeSections.map((section, index) => (
           <div key={index} style={{ marginBottom: 12 }}>
             {!collapsed && section.section && (
@@ -392,6 +394,7 @@ export default function Sidebar() {
             />
           </div>
         ))}
+      </div>
       </div>
     </Sider>
   );

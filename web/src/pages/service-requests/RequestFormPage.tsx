@@ -15,6 +15,7 @@ import { useAllServiceLocations } from '@/hooks/use-service-locations';
 import { useAgents } from '@/hooks/use-users';
 import PageHeader from '@/components/common/PageHeader';
 import CreateContactModal from '@/components/contacts/CreateContactModal';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 import type { ServiceLocation } from '@/types/models.types';
 
 const { TextArea } = Input;
@@ -207,6 +208,7 @@ export default function RequestFormPage() {
         channel: request.channel,
         scheduled_start: request.scheduled_start ? dayjs(request.scheduled_start) : null,
         technician_ids: request.technicians?.map((t) => t.id) || [],
+        custom_fields: request.custom_fields || {},
       });
       setSelectedLocationId(request.location_id || null);
       if (request.location_id && locations) {
@@ -803,6 +805,10 @@ export default function RequestFormPage() {
             </Card>
           </Col>
         </Row>
+
+        <Card title="Additional Information" style={{ marginBottom: 24 }}>
+          <CustomFieldsSection moduleName="Requests" />
+        </Card>
 
         <Card>
           <Space>

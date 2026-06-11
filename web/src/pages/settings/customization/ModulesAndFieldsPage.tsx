@@ -107,10 +107,10 @@ function ModuleCard({ record, customFieldCount, onToggle, isToggling }: ModuleCa
 
   const menuItems: MenuProps['items'] = [
     {
-      key: 'custom-fields',
-      label: 'Manage Custom Fields',
+      key: 'layout-editor',
+      label: 'Manage Layout & Fields',
       icon: <FormOutlined />,
-      onClick: () => navigate(`/customization/custom-fields?module=${encodeURIComponent(record.module_name)}`),
+      onClick: () => navigate(`/settings/customization/modules/${encodeURIComponent(record.module_name)}/layout`),
     },
     {
       key: 'field-permissions',
@@ -191,7 +191,25 @@ function ModuleCard({ record, customFieldCount, onToggle, isToggling }: ModuleCa
       {/* Module Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-          <Text strong style={{ fontSize: 14, color: isDark ? '#e5e7eb' : '#1a1a2e' }}>
+          <Text
+            strong
+            onClick={() => navigate(`/settings/customization/modules/${encodeURIComponent(record.module_name)}/layout`)}
+            style={{
+              fontSize: 14,
+              color: isDark ? '#e5e7eb' : '#1a1a2e',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = '#1890ff';
+              (e.currentTarget as HTMLElement).style.textDecoration = 'underline';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = isDark ? '#e5e7eb' : '#1a1a2e';
+              (e.currentTarget as HTMLElement).style.textDecoration = 'none';
+            }}
+          >
             {record.module_name}
           </Text>
           {customFieldCount > 0 && (
@@ -216,7 +234,7 @@ function ModuleCard({ record, customFieldCount, onToggle, isToggling }: ModuleCa
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <Tooltip title={record.is_active ? 'Disable module' : 'Enable module'}>
           <Switch
             checked={record.is_active}

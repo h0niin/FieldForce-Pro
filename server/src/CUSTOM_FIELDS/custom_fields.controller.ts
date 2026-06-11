@@ -12,6 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CustomFieldsService } from './custom_fields.service';
 import { CreateCustomFieldDto } from './dto/custom_fields_create.dto';
 import { UpdateCustomFieldDto } from './dto/custom_fields_update.dto';
+import { BatchUpdateCustomFieldsDto } from './dto/custom_fields_batch_update.dto';
 import { PageOptionsDto } from '../shared/dto/page-options.dto';
 import { DataResponseDto } from '../shared/dto/data-response.dto';
 import { TenantId } from '../shared/decorator/tenant.decorator';
@@ -43,7 +44,7 @@ export class CustomFieldsController {
 
   @Get('module/:module')
   @Permissions('custom_fields:read')
-  @ApiOperation({ summary: 'Get custom fields by module' })
+  @ApiOperation({ summary: 'Get custom fields by module (ordered by section + sort)' })
   async findByModule(
     @Param('module') module: string,
     @TenantId() tenantId: string,
@@ -66,6 +67,17 @@ export class CustomFieldsController {
   async create(@TenantId() tenantId: string, @Body() dto: CreateCustomFieldDto) {
     const field = await this.customFieldsService.create(tenantId, dto);
     return DataResponseDto.created(field, 'Custom field created successfully');
+  }
+
+  @Put('batch-update')
+  @Permissions('custom_fields:update')
+  @ApiOperation({ summary: 'Batch update multiple custom fields (layout drag-and-drop save)' })
+  async batchUpdate(
+    @TenantId() tenantId: string,
+    @Body() dto: BatchUpdateCustomFieldsDto,
+  ) {
+    const result = await this.customFieldsService.batchUpdate(tenantId, dto);
+    return DataResponseDto.success(result, `${result.updated} fields updated successfully`);
   }
 
   @Put(':id')

@@ -44,6 +44,26 @@ export class CustomField extends Model {
   field_name: string;
 
   @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+    defaultValue: null,
+  })
+  field_label: string | null;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true,
+    defaultValue: 'General',
+  })
+  section_name: string;
+
+  @Column({
+    type: DataType.INTEGER,
+    defaultValue: 0,
+  })
+  section_order: number;
+
+  @Column({
     type: DataType.ENUM(
       'text', 'number', 'date', 'dropdown', 'checkbox',
       'multi_select', 'lookup', 'email', 'phone', 'url',
@@ -65,6 +85,36 @@ export class CustomField extends Model {
     defaultValue: false,
   })
   is_required: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  is_system: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  is_visible: boolean;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
+  char_limit: number;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  is_pii: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  is_encrypted: boolean;
 
   @Column({
     type: DataType.INTEGER,

@@ -4,6 +4,7 @@ import { Card, Form, Input, Button, Space, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useCompany, useCreateCompany, useUpdateCompany } from '@/hooks/use-companies';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -27,6 +28,7 @@ export default function CompanyFormPage() {
         tax_id: company.tax_id,
         website: company.website,
         notes: company.notes,
+        custom_fields: company.custom_fields || {},
       });
     }
   }, [company, form]);
@@ -109,6 +111,8 @@ export default function CompanyFormPage() {
           <Form.Item name="notes" label={t('companyForm.notes')}>
             <TextArea rows={4} placeholder={t('companyForm.notesPlaceholder')} />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Companies" />
 
           <Form.Item>
             <Space>

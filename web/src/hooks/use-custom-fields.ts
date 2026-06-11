@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { customFieldsApi, CreateCustomFieldPayload, UpdateCustomFieldPayload } from '@/api/custom-fields.api';
+import {
+  customFieldsApi,
+  CreateCustomFieldPayload,
+  UpdateCustomFieldPayload,
+  BatchUpdateFieldItem,
+} from '@/api/custom-fields.api';
 import type { PageOptions } from '@/types/api.types';
 import { useNotificationStore } from '@/store/notification.store';
 
@@ -80,6 +85,22 @@ export function useDeleteCustomField() {
     },
     onError: () => {
       addNotification({ type: 'error', message: 'Failed to delete custom field' });
+    },
+  });
+}
+
+export function useBatchUpdateCustomFields() {
+  const queryClient = useQueryClient();
+  const addNotification = useNotificationStore((s) => s.add);
+
+  return useMutation({
+    mutationFn: (fields: BatchUpdateFieldItem[]) => customFieldsApi.batchUpdate(fields),
+    onSuccess: (_, fields) => {
+      queryClient.invalidateQueries({ queryKey: ['custom-fields'] });
+      addNotification({ type: 'success', message: `Layout saved (${fields.length} fields updated)` });
+    },
+    onError: () => {
+      addNotification({ type: 'error', message: 'Failed to save layout' });
     },
   });
 }

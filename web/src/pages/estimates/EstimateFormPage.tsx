@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { useEstimate, useCreateEstimate, useUpdateEstimate } from '@/hooks/use-estimates';
 import { useAllContacts } from '@/hooks/use-contacts';
 import PageHeader from '@/components/common/PageHeader';
+import CustomFieldsSection from '@/components/common/CustomFieldsSection';
 
 const { TextArea } = Input;
 
@@ -30,6 +31,7 @@ export default function EstimateFormPage() {
         notes: estimate.notes,
         expiry_date: estimate.expiry_date ? dayjs(estimate.expiry_date) : null,
         scheduled_start: estimate.scheduled_start ? dayjs(estimate.scheduled_start) : null,
+        custom_fields: estimate.custom_fields || {},
       });
     }
   }, [estimate, form]);
@@ -118,6 +120,8 @@ export default function EstimateFormPage() {
           <Form.Item name="notes" label={t('estimateForm.notes')}>
             <TextArea rows={4} placeholder={t('estimateForm.additionalNotes')} />
           </Form.Item>
+
+          <CustomFieldsSection moduleName="Estimates" />
 
           <Form.Item>
             <Space>
